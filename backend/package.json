@@ -1,0 +1,23 @@
+{
+  "name": "solomonbharat-backend",
+  "version": "1.0.0",
+  "description": "Backend for Solomon Bharat MVP",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^4.24.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
