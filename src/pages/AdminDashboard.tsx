@@ -608,6 +608,19 @@ const AdminDashboard = () => {
               </div>
             </div>
           </Link>
+
+          <Link 
+            to="/admin/project-status"
+            className="bg-gradient-to-r from-green-50 to-blue-50 p-4 sm:p-6 rounded-lg border-2 border-green-200 hover:border-green-300 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <Award className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
+              <div>
+                <h3 className="font-semibold text-green-900 text-sm sm:text-base">🏆 Project Status</h3>
+                <p className="text-xs sm:text-sm text-green-700">100% Feature Completion</p>
+              </div>
+            </div>
+          </Link>
         </div>
 
         {/* Q&A Management Section */}
