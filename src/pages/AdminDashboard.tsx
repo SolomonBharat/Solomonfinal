@@ -23,6 +23,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import QASystem from '../components/QASystem';
 
 const demoRFQs: RFQ[] = [];
 
@@ -522,6 +523,18 @@ const AdminDashboard = () => {
                 <h3 className="font-semibold text-gray-900">Platform Settings</h3>
                 <p className="text-sm text-gray-600">Configure system parameters</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Q&A Management Section */}
+        <div className="mt-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Supplier Questions Pending Review</h3>
+            </div>
+            <div className="p-6">
+              <QASystem mode="admin_review" />
             </div>
           </div>
         </div>

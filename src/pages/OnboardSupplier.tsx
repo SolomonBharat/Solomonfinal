@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Building2, User, Mail, Phone, MapPin, FileText, Award, Globe, Package, DollarSign, Users, Calendar, CheckCircle, ArrowRight } from 'lucide-react';
+import FileUpload from '../components/FileUpload';
 
 // Enhanced Database Layer with proper data management
 export interface User {
@@ -410,7 +411,12 @@ const OnboardSupplier: React.FC = () => {
     exportCountries: [] as string[],
     productionCapacity: '',
     minimumOrderQuantity: '',
-    qualityStandards: ''
+    qualityStandards: '',
+    
+    // Factory Information
+    factoryVideo: null as File | null,
+    factoryImages: [] as File[],
+    factoryDescription: ''
   });
 
   const businessTypes = [
@@ -522,6 +528,12 @@ const OnboardSupplier: React.FC = () => {
         quality_standards: formData.qualityStandards,
         gst_number: formData.gstNumber,
         iec_code: formData.iecCode,
+        factory_video: formData.factoryVideo?.name || null,
+        factory_images: formData.factoryImages.map(f => f.name) || [],
+        factory_description: formData.factoryDescription,
+        factory_video: formData.factoryVideo?.name || null,
+        factory_images: formData.factoryImages.map(f => f.name) || [],
+        factory_description: formData.factoryDescription,
         rating: 0,
         total_orders: 0,
         verified: false,
@@ -593,7 +605,10 @@ const OnboardSupplier: React.FC = () => {
       exportCountries: [],
       productionCapacity: '',
       minimumOrderQuantity: '',
-      qualityStandards: ''
+      qualityStandards: '',
+      factoryVideo: null,
+      factoryImages: [],
+      factoryDescription: ''
     });
   };
 
@@ -954,6 +969,44 @@ const OnboardSupplier: React.FC = () => {
                     rows={3}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     placeholder="Describe your quality standards and processes"
+                  />
+                </div>
+
+                {/* Factory Information */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factory Description
+                  </label>
+                  <textarea
+                    value={formData.factoryDescription}
+                    onChange={(e) => handleInputChange('factoryDescription', e.target.value)}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="Describe your factory, production processes, and facilities"
+                  />
+                </div>
+
+                <div>
+                  <FileUpload
+                    label="Factory Video"
+                    description="Upload a video showcasing your factory and production capabilities"
+                    acceptedTypes="video/*"
+                    maxFiles={1}
+                    maxSize={100}
+                    multiple={false}
+                    onFileSelect={(files) => handleInputChange('factoryVideo', files[0] || null)}
+                  />
+                </div>
+
+                <div>
+                  <FileUpload
+                    label="Factory Images"
+                    description="Upload images of your factory, equipment, and production areas"
+                    acceptedTypes="image/*"
+                    maxFiles={10}
+                    maxSize={10}
+                    multiple={true}
+                    onFileSelect={(files) => handleInputChange('factoryImages', files)}
                   />
                 </div>
               </div>
