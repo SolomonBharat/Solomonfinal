@@ -16,7 +16,8 @@ import {
   X,
   Star,
   MapPin,
-  Award,
+  Building,
+  Package
   Building,
   Phone,
   Mail,
