@@ -284,6 +284,7 @@ const SupplierQuote = () => {
                   </p>
                 </div>
               </div>
+                        <input
             </div>
                           id="moq"
                           name="moq"

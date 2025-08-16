@@ -330,6 +330,7 @@ const QuotationComparison = () => {
                             <p className="text-xs text-gray-500">{quote.supplier.company}</p>
                             <p className="text-xs text-gray-500">{quote.supplier.location}</p>
                             <p className="text-sm font-medium text-gray-900">{quote.supplier.name.split(' ')[0]}</p>
+                          </div>
                         </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4">
