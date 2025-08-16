@@ -69,10 +69,6 @@ const AdminSuppliers = () => {
     setSuppliers(convertedSuppliers);
   }, []);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
-
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSuppliers(prev => 
       prev.includes(supplierId) 

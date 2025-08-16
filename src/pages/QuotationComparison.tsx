@@ -94,7 +94,6 @@ const QuotationComparison = () => {
     }
     
     // Get RFQ details for notification
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const rfq = userRFQs.find((r: any) => r.id === rfqId);
 
     // Notify admin immediately about quote acceptance
@@ -120,7 +119,6 @@ const QuotationComparison = () => {
     const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
     
     // Update RFQ status to closed in localStorage
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const updatedRFQs = userRFQs.map((rfq: any) => 
       rfq.id === rfqId ? { ...rfq, status: 'closed' } : rfq
     );
