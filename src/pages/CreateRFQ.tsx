@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import FileUpload from '../components/FileUpload';
+import AIInsights from '../components/AIInsights';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -20,7 +22,7 @@ const CreateRFQ = () => {
     quality_standards: '',
     certifications_needed: '',
     additional_requirements: '',
-    product_images: [],
+    product_images: [] as File[],
     delivery_country: ''
   });
 
@@ -77,7 +79,7 @@ const CreateRFQ = () => {
       buyer_country: user?.country,
       buyer_email: user?.email,
       buyer_phone: user?.phone,
-      product_images: formData.product_images.map(f => f.name)
+      product_images: formData.product_images.map((f: File) => f.name)
     };
     
     // Add to localStorage for demo (in production, this would be Supabase)
@@ -333,6 +335,18 @@ const CreateRFQ = () => {
                 </div>
               </div>
 
+              {/* Product Images Upload */}
+              <div>
+                <FileUpload
+                  label="Product Images"
+                  description="Upload reference images of the product you want to source"
+                  acceptedTypes="image/*"
+                  maxFiles={5}
+                  maxSize={10}
+                  onFileSelect={(files) => setFormData(prev => ({ ...prev, product_images: files }))}
+                />
+              </div>
+
               {/* Additional Requirements */}
               <div>
                 <label htmlFor="additional_requirements" className="block text-sm font-medium text-gray-700 mb-2">
@@ -348,6 +362,17 @@ const CreateRFQ = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+
+              {/* AI Insights */}
+              {(formData.title || formData.description || formData.category) && (
+                <div>
+                  <AIInsights 
+                    type="rfq" 
+                    data={formData}
+                    onInsightUpdate={(insights) => console.log('AI Insights:', insights)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Form Actions */}
