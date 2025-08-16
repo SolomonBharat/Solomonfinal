@@ -329,6 +329,7 @@ const QuotationComparison = () => {
                             </div>
                             <p className="text-xs text-gray-500">{quote.supplier.company}</p>
                             <p className="text-xs text-gray-500">{quote.supplier.location}</p>
+                          </div>
                             <div className="flex items-center mt-1">
                               <Star className="h-3 w-3 text-yellow-400 fill-current" />
                               <span className="text-xs text-gray-600 ml-1">{quote.supplier.rating}</span>
