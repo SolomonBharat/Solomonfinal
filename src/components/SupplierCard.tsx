@@ -45,12 +45,12 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
             )}
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-semibold text-gray-900">{supplier.name.split(' ')[0]}</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{supplier.name}</h3>
                 {supplier.verified && (
                   <CheckCircle className="h-4 w-4 text-green-500" />
                 )}
               </div>
-              <p className="text-sm text-gray-600">{supplier.company}</p>
+              <p className="text-sm text-gray-600">Verified Supplier</p>
               <div className="flex items-center text-gray-500 text-sm mt-1">
                 <MapPin className="h-3 w-3 mr-1" />
                 <span>{supplier.location}</span>
@@ -71,6 +71,23 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Contact Information */}
+        {showContact && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <h5 className="text-sm font-semibold text-blue-900 mb-2">📞 Contact Details</h5>
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center text-blue-800">
+                <Mail className="h-3 w-3 mr-2" />
+                <span>{supplier.email}</span>
+              </div>
+              <div className="flex items-center text-blue-800">
+                <Phone className="h-3 w-3 mr-2" />
+                <span>{supplier.phone}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Business Details */}
         <div className="grid grid-cols-2 gap-4 mb-4">

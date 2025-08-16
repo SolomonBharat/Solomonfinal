@@ -171,7 +171,7 @@ const MatchingResults = () => {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {supplier.name.split(' ')[0]}
+                        {supplier.name}
                       </h3>
                       <div className="flex items-center text-gray-600 text-sm">
                         <MapPin className="h-4 w-4 mr-1" />
@@ -239,7 +239,7 @@ const MatchingResults = () => {
                   {/* Actions */}
                   <div className="flex space-x-3">
                     <button 
-                      onClick={() => alert(`📋 SUPPLIER DETAILS\n\n👤 Supplier: ${supplier.name.split(' ')[0]}\n📍 Location: ${supplier.location}\n⭐ Rating: ${supplier.rating}/5\n🏆 Experience: ${supplier.years_experience} years\n📦 MOQ: ${supplier.moq}\n⏰ Lead Time: ${supplier.lead_time}\n\n🎯 Specializations:\n${supplier.specialization.join(', ')}\n\n🏅 Certifications:\n${supplier.certifications.join(', ')}\n\n💬 Contact through platform messaging only`)}
+                      onClick={() => alert(`📋 SUPPLIER DETAILS\n\n👤 Supplier: ${supplier.name}\n📍 Location: ${supplier.location}\n⭐ Rating: ${supplier.rating}/5\n🏆 Experience: ${supplier.years_experience} years\n📦 MOQ: ${supplier.moq}\n⏰ Lead Time: ${supplier.lead_time}\n\n🎯 Specializations:\n${supplier.specialization.join(', ')}\n\n🏅 Certifications:\n${supplier.certifications.join(', ')}\n\n💬 Contact through platform messaging only`)}
                       className="flex-1 bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100"
                     >
                       View Details

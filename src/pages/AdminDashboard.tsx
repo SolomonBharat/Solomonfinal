@@ -71,7 +71,6 @@ const AdminDashboard = () => {
   const [showRFQModal, setShowRFQModal] = useState(false);
   const [pendingRFQs, setPendingRFQs] = useState<RFQ[]>([]);
   const [pendingQuotations, setPendingQuotations] = useState<Quotation[]>([]);
-  const [sampleRequests, setSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     // Load RFQs
@@ -102,9 +101,6 @@ const AdminDashboard = () => {
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     setQuotations(supplierQuotations);
     setPendingQuotations(supplierQuotations.filter((q: any) => q.status === 'pending_review'));
-
-    // Load sample requests
-    loadSampleRequests();
   }, []);
 
   const [stats, setStats] = useState({
@@ -540,109 +536,6 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Sample Requests Management */}
-        <div className="mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">📦 Sample Request Management</h3>
-              <span className="text-sm text-gray-500">{sampleRequests.length} total requests</span>
-            </div>
-            <div className="p-4 sm:p-6">
-              {sampleRequests.length > 0 ? (
-                <div className="space-y-4">
-                  {sampleRequests.map((request) => (
-                    <div key={request.id} className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-orange-700">Buyer:</span>
-                          <span className="text-sm text-orange-900">{request.buyer_company}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-orange-700">Supplier:</span>
-                          <span className="text-sm text-orange-900">{request.supplier_company}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-orange-700">Product:</span>
-                          <span className="text-sm text-orange-900">{request.rfq_title}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-orange-700">Status:</span>
-                          <span className={`text-sm font-medium ${
-                            request.status === 'pending' ? 'text-orange-600' :
-                            request.status === 'shipped' ? 'text-blue-600' :
-                            'text-green-600'
-                          }`}>
-                            {request.status === 'pending' ? 'Awaiting Shipment' :
-                             request.status === 'shipped' ? 'Sample Shipped' :
-                             'Sample Delivered'}
-                          </span>
-                        </div>
-                        {request.tracking_info && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-orange-700">Tracking:</span>
-                            <span className="text-sm text-orange-900 font-mono">{request.tracking_info}</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="mt-4 flex space-x-2">
-                        <button
-                          onClick={() => handleContactParties(request)}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
-                        >
-                          📱 Contact via WhatsApp
-                        </button>
-                        {request.status === 'pending' && (
-                          <button
-                            onClick={() => updateSampleStatus(request.id, 'shipped')}
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
-                          >
-                            Mark as Shipped
-                          </button>
-                        )}
-                        {request.status === 'shipped' && (
-                          <button
-                            onClick={() => updateSampleStatus(request.id, 'delivered')}
-                            className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
-                          >
-                            Mark as Delivered
-                          </button>
-                        )}
-                        {request.status === 'pending' && (
-                          <button
-                            onClick={() => {
-                              const trackingInfo = prompt('Enter tracking information (Courier + Tracking ID):');
-                              if (trackingInfo) {
-                                const sampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-                                const updatedRequests = sampleRequests.map((req: any) =>
-                                  req.id === request.id ? { ...req, tracking_info: trackingInfo, status: 'shipped', updated_at: new Date().toISOString() } : req
-                                );
-                                localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
-                                setSampleRequests(updatedRequests);
-                                alert('✅ Tracking information added and status updated to shipped!');
-                              }
-                            }}
-                            className="bg-purple-600 text-white px-3 py-1 rounded text-xs hover:bg-purple-700"
-                          >
-                            Add Tracking Info
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Sample Requests</h3>
-                  <p className="text-gray-600">
-                    Sample requests will appear here when buyers request samples from suppliers
-                  </p>
                 </div>
               )}
             </div>
