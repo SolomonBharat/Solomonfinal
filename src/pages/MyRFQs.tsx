@@ -319,22 +319,6 @@ const MyRFQs = () => {
               )}
             </div>
 
-            {/* Q&A Section in Modal */}
-            <div className="mt-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h4>
-              <QASystem 
-                rfqId={selectedRfq.id} 
-                mode="buyer_answer"
-              />
-            </div>
-
-            <div className="mt-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Published Q&A</h4>
-              <QASystem 
-                rfqId={selectedRfq.id} 
-                mode="public_view"
-              />
-            </div>
           )}
         </div>
       </div>
@@ -471,6 +455,23 @@ const MyRFQs = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            
+            {/* Q&A Section in Modal */}
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h4>
+              <QASystem 
+                rfqId={selectedRfq.id} 
+                mode="buyer_answer"
+              />
+            </div>
+
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Published Q&A</h4>
+              <QASystem 
+                rfqId={selectedRfq.id} 
+                mode="public_view"
+              />
             </div>
             
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
