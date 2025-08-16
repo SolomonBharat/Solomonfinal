@@ -24,7 +24,6 @@ import SupplierPerformance from './pages/SupplierPerformance';
 import AdminAnalytics from './pages/AdminAnalytics';
 import WorkflowDocumentation from './pages/WorkflowDocumentation';
 import OnboardSupplier from './pages/OnboardSupplier';
-import ProjectStatus from './pages/ProjectStatus';
 import BuyerOrders from './pages/BuyerOrders';
 import SupplierOrders from './pages/SupplierOrders';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
