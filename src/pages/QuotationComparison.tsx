@@ -227,7 +227,7 @@ const QuotationComparison = () => {
                         <div className="flex items-start">
                           <div>
                             <div className="flex items-center space-x-2">
-                              <p className="text-sm font-medium text-gray-900">{quote.supplier.name}</p>
+                              <p className="text-sm font-medium text-gray-900">{quote.supplier.company}</p>
                               {quote.supplier.verified && (
                                 <CheckCircle className="h-4 w-4 text-green-500" />
                               )}
@@ -251,7 +251,6 @@ const QuotationComparison = () => {
                             <span className="text-xs text-green-600 font-medium">Best Price</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">Contact: {quote.supplier.contact_person}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         ${quote.total_price.toLocaleString()}
