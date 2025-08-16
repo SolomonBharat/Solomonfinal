@@ -519,7 +519,7 @@ const OnboardSupplier: React.FC = () => {
         employee_count: formData.employeeCount,
         product_categories: formData.productCategories,
         certifications: formData.certifications,
-        export_countries: ['Worldwide'], // Default to all countries
+        export_countries: formData.exportCountries.length > 0 ? formData.exportCountries : ['All Countries'], // Default to all countries
         production_capacity: formData.productionCapacity,
         minimum_order_quantity: formData.minimumOrderQuantity,
         quality_standards: formData.qualityStandards,
@@ -911,14 +911,19 @@ const OnboardSupplier: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Export Countries (Select all that apply)
+                    Export Countries (Default: All Countries)
                   </label>
+                  <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800 font-medium">
+                      ✅ Default: Your products will be available to buyers from all countries worldwide
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-40 overflow-y-auto">
                     {countries.map(country => (
                       <label key={country} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={formData.exportCountries.includes(country)}
+                          checked={formData.exportCountries.includes(country) || formData.exportCountries.length === 0}
                           onChange={(e) => handleArrayChange('exportCountries', country, e.target.checked)}
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />

@@ -86,7 +86,7 @@ const AdminRFQs = () => {
         if (rfq.buyer_id) {
           const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
           const updatedBuyers = registeredBuyers.map((buyer: any) => 
-            buyer.id === rfq.buyer_id ? { ...buyer, verification_status: 'verified' } : buyer
+            buyer.id === rfq.buyer_id || buyer.email === rfq.buyer_email ? { ...buyer, verification_status: 'verified' } : buyer
           );
           localStorage.setItem('registered_buyers', JSON.stringify(updatedBuyers));
         }
@@ -560,19 +560,19 @@ const AdminRFQs = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="text-blue-700 font-medium">Company:</span>
-                        <p className="text-blue-900">{editFormData.buyer_company}</p>
+                        <p className="text-blue-900">{editFormData.buyer_company || 'Company Name'}</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Contact:</span>
-                        <p className="text-blue-900">{editFormData.buyer_name}</p>
+                        <p className="text-blue-900">{editFormData.buyer_name || 'Contact Person'}</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Email:</span>
-                        <p className="text-blue-900">{editFormData.buyer_email}</p>
+                        <p className="text-blue-900">{editFormData.buyer_email || 'email@example.com'}</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Phone:</span>
-                        <p className="text-blue-900">{editFormData.buyer_phone}</p>
+                        <p className="text-blue-900">{editFormData.buyer_phone || 'Phone Number'}</p>
                       </div>
                     </div>
                   </div>

@@ -85,8 +85,8 @@ const SupplierQuote = () => {
     setLoading(true);
     
     // Validation
-    if (!formData.price_per_unit || !formData.lead_time || !formData.payment_terms || !formData.shipping_terms || !formData.validity_days) {
-      alert('Please fill in all required fields (Price, Lead Time, Payment Terms, Shipping Terms, and Quote Validity)');
+    if (!formData.price_per_unit || !formData.lead_time || !formData.payment_terms || !formData.shipping_terms || !formData.validity_days || !formData.courier_service || !formData.tracking_id) {
+      alert('Please fill in all required fields including courier service and tracking ID for sample shipments');
       setLoading(false);
       return;
     }

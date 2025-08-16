@@ -313,7 +313,7 @@ const AdminSuppliers = () => {
                   <div className="flex items-center space-x-4 mb-4 text-sm">
                     <div className="flex items-center text-gray-600">
                       <Mail className="h-3 w-3 mr-1" />
-                      <span>{supplier.email}</span>
+                      <span className="truncate">{supplier.email}</span>
                     </div>
                     <div className="flex items-center text-gray-600">
                       <Phone className="h-3 w-3 mr-1" />

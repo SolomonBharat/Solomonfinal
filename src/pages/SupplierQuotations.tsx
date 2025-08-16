@@ -310,7 +310,7 @@ const SupplierQuotations = () => {
                       <label className="block text-sm font-medium text-blue-700 mb-1">Buyer Company</label>
                       <p className="text-sm text-blue-900 flex items-center">
                         <Building className="h-4 w-4 mr-1" />
-                        {selectedQuotation.buyer_company}, {selectedQuotation.buyer_country}
+                        📦 Sample Requested - Tracking details provided in quotation
                       </p>
                     </div>
                   </div>

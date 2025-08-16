@@ -42,7 +42,7 @@ const AdminSettings = () => {
     
     setTimeout(() => {
       setLoading(false);
-      alert('✅ Platform settings saved successfully! All system parameters have been updated.');
+      alert('✅ Platform settings saved successfully!\n\n📊 Updated Parameters:\n• Platform Name: ' + settings.platform_name + '\n• Commission: ' + settings.platform_commission + '%\n• Min Order: $' + settings.minimum_order_value + '\n• Support: ' + settings.support_email + '\n\nAll system parameters have been updated.');
     }, 1000);
   };
 

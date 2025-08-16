@@ -76,6 +76,12 @@ const CreateRFQ = () => {
       return;
     }
     
+    if (formData.product_images.length === 0) {
+      alert('Please upload at least one product image');
+      setLoading(false);
+      return;
+    }
+    
     // Create new RFQ with pending status
     const newRFQ = {
       id: `rfq-${Date.now()}`,
@@ -201,13 +207,14 @@ const CreateRFQ = () => {
                 {/* Product Images */}
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Images
+                    Product Images *
                   </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6">
                     <input
                       type="file"
                       multiple
                       accept="image/*"
+                      required
                       onChange={handleFileChange}
                       className="hidden"
                       id="product-images"
@@ -217,7 +224,7 @@ const CreateRFQ = () => {
                       className="cursor-pointer flex flex-col items-center"
                     >
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-600">Click to upload product images</span>
+                      <span className="text-sm text-gray-600">Click to upload product images (Required)</span>
                       <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each</span>
                     </label>
                   </div>
