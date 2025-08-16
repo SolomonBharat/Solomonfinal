@@ -39,7 +39,7 @@ const RegisterPage = () => {
     setError('');
 
     // Validation
-    if (!formData.name || !formData.email || !formData.password || !formData.company || !formData.country) {
+    if (!formData.name || !formData.email || !formData.password || !formData.company || !formData.country || !formData.phone) {
       setError('Please fill in all required fields');
       setLoading(false);
       return;
@@ -74,6 +74,7 @@ const RegisterPage = () => {
       company: formData.company,
       country: formData.country,
       phone: formData.phone,
+      website: formData.website,
       user_type: 'buyer',
       created_at: new Date().toISOString(),
       profile_completed: true,
@@ -232,6 +233,7 @@ const RegisterPage = () => {
                 required
                 value={formData.country}
                 onChange={handleChange}
+                placeholder="Enter your country"
                 className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Select your country</option>
