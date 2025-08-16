@@ -20,7 +20,7 @@ const CreateRFQ = () => {
     quality_standards: '',
     certifications_needed: '',
     additional_requirements: '',
-    product_images: [],
+    product_images: [] as File[],
     delivery_country: ''
   });
 
@@ -47,6 +47,22 @@ const CreateRFQ = () => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFormData(prev => ({
+        ...prev,
+        product_images: Array.from(e.target.files || [])
+      }));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      product_images: prev.product_images.filter((_, i) => i !== index)
     }));
   };
 
@@ -81,7 +97,7 @@ const CreateRFQ = () => {
       verification_status: user?.verification_status || 'unverified'
     };
     
-    // Add to localStorage for demo (in production, this would be Supabase)
+    // Add to localStorage
     const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     existingRFQs.push(newRFQ);
     localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
@@ -97,38 +113,39 @@ const CreateRFQ = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link 
               to="/dashboard" 
               className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Dashboard</span>
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Link>
             <span className="text-gray-300">|</span>
-            <span className="text-gray-900 font-medium">Create New RFQ</span>
+            <span className="text-gray-900 font-medium text-sm sm:text-base">Create New RFQ</span>
           </div>
         </div>
       </header>
 
-      <div className="px-6 py-8">
-        <div className="max-w-3xl mx-auto">
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto">
           {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New RFQ</h1>
-            <p className="text-gray-600">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Create New RFQ</h1>
+            <p className="text-gray-600 text-sm sm:text-base">
               Provide detailed information about the product you want to source from India
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Product Information */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Information</h3>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                       Product Title *
@@ -141,7 +158,7 @@ const CreateRFQ = () => {
                       value={formData.title}
                       onChange={handleChange}
                       placeholder="e.g., Organic Cotton T-Shirts"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     />
                   </div>
 
@@ -155,7 +172,7 @@ const CreateRFQ = () => {
                       required
                       value={formData.category}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     >
                       <option value="">Select Category</option>
                       {categories.map(category => (
@@ -177,15 +194,59 @@ const CreateRFQ = () => {
                     value={formData.description}
                     onChange={handleChange}
                     placeholder="Provide detailed specifications, materials, colors, sizes, etc."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
+                </div>
+
+                {/* Product Images */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Product Images
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="product-images"
+                    />
+                    <label
+                      htmlFor="product-images"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">Click to upload product images</span>
+                      <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each</span>
+                    </label>
+                  </div>
+                  
+                  {formData.product_images.length > 0 && (
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {formData.product_images.map((file, index) => (
+                        <div key={index} className="relative bg-gray-100 rounded-lg p-2">
+                          <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-600 text-center">{file.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Quantity & Pricing */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Quantity & Pricing</h3>
-                <div className="grid md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                   <div>
                     <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-2">
                       Quantity *
@@ -198,7 +259,7 @@ const CreateRFQ = () => {
                       value={formData.quantity}
                       onChange={handleChange}
                       placeholder="5000"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     />
                   </div>
 
@@ -212,7 +273,7 @@ const CreateRFQ = () => {
                       required
                       value={formData.unit}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     >
                       <option value="">Select Unit</option>
                       {units.map(unit => (
@@ -234,12 +295,12 @@ const CreateRFQ = () => {
                       value={formData.target_price}
                       onChange={handleChange}
                       placeholder="8.50"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-4">
                   <div>
                     <label htmlFor="max_price" className="block text-sm font-medium text-gray-700 mb-2">
                       Maximum Price (USD)
@@ -252,7 +313,7 @@ const CreateRFQ = () => {
                       value={formData.max_price}
                       onChange={handleChange}
                       placeholder="10.00"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     />
                   </div>
 
@@ -266,7 +327,7 @@ const CreateRFQ = () => {
                       required
                       value={formData.delivery_timeline}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     >
                       <option value="">Select Timeline</option>
                       <option value="30-days">30 days</option>
@@ -282,7 +343,23 @@ const CreateRFQ = () => {
               {/* Shipping & Quality */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Shipping & Quality Requirements</h3>
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <label htmlFor="delivery_country" className="block text-sm font-medium text-gray-700 mb-2">
+                      Delivery Country *
+                    </label>
+                    <input
+                      type="text"
+                      id="delivery_country"
+                      name="delivery_country"
+                      required
+                      value={formData.delivery_country}
+                      onChange={handleChange}
+                      placeholder="e.g., United States"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    />
+                  </div>
+
                   <div>
                     <label htmlFor="shipping_terms" className="block text-sm font-medium text-gray-700 mb-2">
                       Shipping Terms *
@@ -293,7 +370,7 @@ const CreateRFQ = () => {
                       required
                       value={formData.shipping_terms}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     >
                       <option value="FOB">FOB (Free on Board)</option>
                       <option value="CIF">CIF (Cost, Insurance & Freight)</option>
@@ -313,24 +390,24 @@ const CreateRFQ = () => {
                       value={formData.quality_standards}
                       onChange={handleChange}
                       placeholder="e.g., ISO 9001, GOTS, BIS"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                     />
                   </div>
-                </div>
 
-                <div className="mt-4">
-                  <label htmlFor="certifications_needed" className="block text-sm font-medium text-gray-700 mb-2">
-                    Required Certifications
-                  </label>
-                  <input
-                    type="text"
-                    id="certifications_needed"
-                    name="certifications_needed"
-                    value={formData.certifications_needed}
-                    onChange={handleChange}
-                    placeholder="e.g., CE, FDA, CPSIA"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <div>
+                    <label htmlFor="certifications_needed" className="block text-sm font-medium text-gray-700 mb-2">
+                      Required Certifications
+                    </label>
+                    <input
+                      type="text"
+                      id="certifications_needed"
+                      name="certifications_needed"
+                      value={formData.certifications_needed}
+                      onChange={handleChange}
+                      placeholder="e.g., CE, FDA, CPSIA"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -346,23 +423,23 @@ const CreateRFQ = () => {
                   value={formData.additional_requirements}
                   onChange={handleChange}
                   placeholder="Any other specific requirements, packaging details, special instructions..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 />
               </div>
             </div>
 
             {/* Form Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
               <Link 
                 to="/dashboard"
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 {loading ? 'Submitting...' : 'Submit RFQ'}
               </button>

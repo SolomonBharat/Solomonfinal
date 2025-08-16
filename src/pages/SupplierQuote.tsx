@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Upload, FileText, DollarSign } from 'lucide-react';
 import FileUpload from '../components/FileUpload';
 import QASystem from '../components/QASystem';
+import { useAuth } from '../contexts/AuthContext';
 
 const SupplierQuote = () => {
   const { rfqId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isEdit = searchParams.get('edit') === 'true';
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     price_per_unit: '',
@@ -19,23 +23,46 @@ const SupplierQuote = () => {
     sample_available: true,
     notes: '',
     product_images: [] as File[],
-    product_videos: [] as File[]
+    product_videos: [] as File[],
+    courier_service: '',
+    tracking_id: ''
   });
 
-  // Mock RFQ data
-  const rfqData = {
-    id: rfqId,
-    title: 'Organic Cotton T-Shirts',
-    category: 'Textiles & Apparel',
-    quantity: 5000,
-    unit: 'pieces',
-    target_price: 8.50,
-    buyer_company: 'Global Trade Corp',
-    buyer_country: 'United States',
-    delivery_timeline: '30 days',
-    description: 'High-quality organic cotton t-shirts for retail. GOTS certification required. Colors: White, Black, Navy. Sizes: S, M, L, XL. 100% organic cotton, 180 GSM.',
-    additional_requirements: 'GOTS certification mandatory. Custom labels required. Eco-friendly packaging preferred.'
-  };
+  // Load RFQ data
+  const [rfqData, setRfqData] = useState<any>(null);
+
+  useEffect(() => {
+    // Load RFQ details
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const rfq = userRFQs.find((r: any) => r.id === rfqId);
+    setRfqData(rfq);
+
+    // If editing, load existing quotation data
+    if (isEdit) {
+      const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+      const existingQuote = supplierQuotations.find((q: any) => 
+        q.rfq_id === rfqId && q.supplier_email === user?.email
+      );
+      
+      if (existingQuote) {
+        setFormData({
+          price_per_unit: existingQuote.quoted_price.toString(),
+          moq: existingQuote.moq.toString(),
+          lead_time: existingQuote.lead_time,
+          payment_terms: existingQuote.payment_terms,
+          shipping_terms: existingQuote.shipping_terms,
+          validity_days: existingQuote.validity_days.toString(),
+          quality_guarantee: existingQuote.quality_guarantee,
+          sample_available: existingQuote.sample_available,
+          notes: existingQuote.notes,
+          product_images: [],
+          product_videos: [],
+          courier_service: existingQuote.courier_service || '',
+          tracking_id: existingQuote.tracking_id || ''
+        });
+      }
+    }
+  }, [rfqId, isEdit, user?.email]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -57,53 +84,128 @@ const SupplierQuote = () => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulate API call to submit quotation
+    // Validation
+    if (!formData.price_per_unit || !formData.lead_time || !formData.payment_terms || !formData.shipping_terms || !formData.validity_days) {
+      alert('Please fill in all required fields (Price, Lead Time, Payment Terms, Shipping Terms, and Quote Validity)');
+      setLoading(false);
+      return;
+    }
+    
+    // Get current supplier info from onboarded suppliers
+    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
+    const currentSupplier = onboardedSuppliers.find((s: any) => s.email === user?.email);
+    
+    const quotationData = {
+      id: isEdit ? 
+        JSON.parse(localStorage.getItem('supplier_quotations') || '[]')
+          .find((q: any) => q.rfq_id === rfqId && q.supplier_email === user?.email)?.id || `q-${Date.now()}` 
+        : `q-${Date.now()}`,
+      rfq_id: rfqId,
+      rfq_title: rfqData?.title || 'Product RFQ',
+      supplier_id: user?.id,
+      supplier_name: currentSupplier?.contactPerson || user?.name || 'Supplier User',
+      supplier_company: currentSupplier?.companyName || user?.company || 'Supplier Company',
+      supplier_location: `${currentSupplier?.country || 'India'}`,
+      supplier_email: user?.email,
+      supplier_phone: currentSupplier?.phone || user?.phone || '+91 XXXXXXXXXX',
+      buyer_company: rfqData?.buyer_company || 'Buyer Company',
+      buyer_country: rfqData?.buyer_country || 'Country',
+      quoted_price: parseFloat(formData.price_per_unit),
+      moq: parseInt(formData.moq) || parseInt(rfqData?.quantity) || 0,
+      lead_time: formData.lead_time,
+      payment_terms: formData.payment_terms,
+      shipping_terms: formData.shipping_terms,
+      validity_days: parseInt(formData.validity_days),
+      quality_guarantee: formData.quality_guarantee,
+      sample_available: formData.sample_available,
+      status: 'pending_review',
+      submitted_at: new Date().toISOString(),
+      notes: formData.notes,
+      total_value: parseFloat(formData.price_per_unit) * (parseInt(formData.moq) || parseInt(rfqData?.quantity) || 0),
+      courier_service: formData.courier_service,
+      tracking_id: formData.tracking_id
+    };
+
+    // Update or create quotation
+    const quotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    
+    if (isEdit) {
+      // Update existing quotation
+      const updatedQuotations = quotations.map((q: any) => 
+        q.rfq_id === rfqId && q.supplier_email === user?.email ? quotationData : q
+      );
+      localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
+    } else {
+      // Create new quotation
+      quotations.push(quotationData);
+      localStorage.setItem('supplier_quotations', JSON.stringify(quotations));
+    }
+    
     setTimeout(() => {
       setLoading(false);
-      alert('Quotation submitted successfully! It will be reviewed by admin before being sent to the buyer.');
+      alert(isEdit ? 'Quotation updated successfully!' : 'Quotation submitted successfully! It will be reviewed by admin before being sent to the buyer.');
       navigate('/supplier/dashboard');
-    }, 1500);
+    }, 1000);
   };
 
   const calculateTotal = () => {
     const pricePerUnit = parseFloat(formData.price_per_unit) || 0;
-    const moq = parseInt(formData.moq) || rfqData.quantity;
+    const moq = parseInt(formData.moq) || (rfqData?.quantity || 0);
     return pricePerUnit * moq;
   };
+
+  if (!rfqData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">RFQ Not Found</h2>
+          <p className="text-gray-600 mb-4">The requested RFQ could not be found.</p>
+          <Link to="/supplier/dashboard" className="text-blue-600 hover:text-blue-800">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link 
               to="/supplier/dashboard" 
               className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
             >
               <ArrowLeft className="h-5 w-5" />
-              <span>Back to Dashboard</span>
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Link>
             <span className="text-gray-300">|</span>
-            <span className="text-gray-900 font-medium">Submit Quotation</span>
+            <span className="text-gray-900 font-medium text-sm sm:text-base">
+              {isEdit ? 'Edit Quotation' : 'Submit Quotation'}
+            </span>
           </div>
         </div>
       </header>
 
-      <div className="px-6 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Submit Quotation</h1>
-            <p className="text-gray-600">
-              Provide your best quote for this RFQ. Your quotation will be reviewed by admin before being sent to the buyer.
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {isEdit ? 'Edit Quotation' : 'Submit Quotation'}
+            </h1>
+            <p className="text-gray-600 text-sm sm:text-base">
+              {isEdit ? 'Update your quotation details' : 'Provide your best quote for this RFQ. Your quotation will be reviewed by admin before being sent to the buyer.'}
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* RFQ Details */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sticky top-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">RFQ Details</h3>
                 
                 <div className="space-y-4">
@@ -115,11 +217,11 @@ const SupplierQuote = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">Quantity:</span>
-                      <p className="font-medium">{rfqData.quantity.toLocaleString()} {rfqData.unit}</p>
+                      <p className="font-medium">{parseInt(rfqData.quantity).toLocaleString()} {rfqData.unit}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">Target Price:</span>
-                      <p className="font-medium">${rfqData.target_price.toFixed(2)}</p>
+                      <p className="font-medium">${parseFloat(rfqData.target_price).toFixed(2)}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">Timeline:</span>
@@ -143,48 +245,56 @@ const SupplierQuote = () => {
                     </div>
                   )}
                 </div>
-              </div>
-                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                    <h4 className="font-semibold text-orange-900 mb-3">📦 Sample Tracking (if sample requested)</h4>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-2">
-                          Courier Service Name
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g., DHL, FedEx, Blue Dart"
-                          className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-orange-700 mb-2">
-                          Tracking ID
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter tracking number"
-                          className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                      </div>
+
+                {/* Sample Tracking Section */}
+                <div className="mt-6 bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <h4 className="font-semibold text-orange-900 mb-3">📦 Sample Tracking (if sample requested)</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-orange-700 mb-2">
+                        Courier Service Name
+                      </label>
+                      <input
+                        type="text"
+                        name="courier_service"
+                        value={formData.courier_service}
+                        onChange={handleChange}
+                        placeholder="e.g., DHL, FedEx, Blue Dart"
+                        className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                      />
                     </div>
-                    <p className="text-xs text-orange-600 mt-2">
-                      Fill this section only if buyer has requested samples for this quotation
-                    </p>
+                    <div>
+                      <label className="block text-sm font-medium text-orange-700 mb-2">
+                        Tracking ID
+                      </label>
+                      <input
+                        type="text"
+                        name="tracking_id"
+                        value={formData.tracking_id}
+                        onChange={handleChange}
+                        placeholder="Enter tracking number"
+                        className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
+                      />
+                    </div>
                   </div>
+                  <p className="text-xs text-orange-600 mt-2">
+                    Fill this section only if buyer has requested samples for this quotation
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Quotation Form */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6 space-y-6">
+                <div className="p-4 sm:p-6 space-y-6">
                   {/* Pricing Section */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                       <DollarSign className="h-5 w-5 mr-2 text-green-600" />
                       Pricing Details
                     </h3>
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <label htmlFor="price_per_unit" className="block text-sm font-medium text-gray-700 mb-2">
                           Price per Unit (USD) *
@@ -198,7 +308,7 @@ const SupplierQuote = () => {
                           value={formData.price_per_unit}
                           onChange={handleChange}
                           placeholder="8.50"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         />
                       </div>
 
@@ -213,8 +323,8 @@ const SupplierQuote = () => {
                           required
                           value={formData.moq}
                           onChange={handleChange}
-                          placeholder="5000"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder={rfqData?.quantity || "5000"}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         />
                       </div>
                     </div>
@@ -235,7 +345,7 @@ const SupplierQuote = () => {
                       <FileText className="h-5 w-5 mr-2 text-blue-600" />
                       Terms & Conditions
                     </h3>
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       <div>
                         <label htmlFor="lead_time" className="block text-sm font-medium text-gray-700 mb-2">
                           Lead Time *
@@ -246,7 +356,7 @@ const SupplierQuote = () => {
                           required
                           value={formData.lead_time}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         >
                           <option value="">Select Lead Time</option>
                           <option value="15-20 days">15-20 days</option>
@@ -268,7 +378,7 @@ const SupplierQuote = () => {
                           required
                           value={formData.validity_days}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         >
                           <option value="7">7 days</option>
                           <option value="15">15 days</option>
@@ -287,7 +397,7 @@ const SupplierQuote = () => {
                           required
                           value={formData.payment_terms}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         >
                           <option value="30% advance, 70% on shipment">30% advance, 70% on shipment</option>
                           <option value="40% advance, 60% on shipment">40% advance, 60% on shipment</option>
@@ -307,7 +417,7 @@ const SupplierQuote = () => {
                           required
                           value={formData.shipping_terms}
                           onChange={handleChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                         >
                           <option value="FOB">FOB (Free on Board)</option>
                           <option value="CIF">CIF (Cost, Insurance & Freight)</option>
@@ -364,7 +474,7 @@ const SupplierQuote = () => {
                       value={formData.notes}
                       onChange={handleChange}
                       placeholder="Any additional information, bulk discounts, special offers, or clarifications..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                     />
                   </div>
 
@@ -394,10 +504,10 @@ const SupplierQuote = () => {
                 </div>
 
                 {/* Form Actions */}
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+                <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
                   <Link 
                     to="/supplier/dashboard"
-                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
                   >
                     Cancel
                   </Link>
@@ -414,8 +524,8 @@ const SupplierQuote = () => {
           </div>
 
           {/* Q&A Section */}
-          <div className="mt-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="mt-6 sm:mt-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h3>
               <QASystem 
                 rfqId={rfqId} 
@@ -427,7 +537,7 @@ const SupplierQuote = () => {
 
           {/* Public Q&A */}
           <div className="mt-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Public Q&A</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Previous questions and answers that might help with your quotation:
@@ -440,7 +550,7 @@ const SupplierQuote = () => {
           </div>
 
           {/* Help Section */}
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="mt-6 sm:mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
             <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Better Quotations</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• Be competitive with your pricing while maintaining quality standards</li>
