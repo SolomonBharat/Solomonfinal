@@ -7,7 +7,6 @@ const CreateRFQ = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     category: '',
@@ -20,7 +19,8 @@ const CreateRFQ = () => {
     shipping_terms: 'FOB',
     quality_standards: '',
     certifications_needed: '',
-    additional_requirements: ''
+    additional_requirements: '',
+    product_images: []
   });
 
   const categories = [
@@ -51,15 +51,13 @@ const CreateRFQ = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // Validation
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
-      setError('Please fill in all required fields');
-      setLoading(false);
+    
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
+      alert('Please fill in all required fields');
       return;
     }
+    
+    setLoading(true);
     
     // Create new RFQ with pending status
     const newRFQ = {
@@ -124,13 +122,6 @@ const CreateRFQ = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
-            {error && (
-              <div className="p-6 border-b border-gray-200">
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              </div>
-            )}
             <div className="p-6 space-y-6">
               {/* Product Information */}
               <div>
