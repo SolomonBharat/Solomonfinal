@@ -284,6 +284,46 @@ const SupplierQuote = () => {
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Quotation Form */}
+            <div className="lg:col-span-2">
+              <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+                  {/* Pricing Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                      Pricing Details
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                      <div>
+                        <label htmlFor="price_per_unit" className="block text-sm font-medium text-gray-700 mb-2">
+                          Price per Unit (USD) *
+                        </label>
+                        <input
+                          type="number"
+                          id="price_per_unit"
+                          name="price_per_unit"
+                          required
+                          step="0.01"
+                          min="0"
+                          value={formData.price_per_unit}
+                          onChange={handleChange}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="moq" className="block text-sm font-medium text-gray-700 mb-2">
+                          Minimum Order Quantity (MOQ)
+                        </label>
+                        <input
+                          type="number"
+                          id="moq"
+                          name="moq"
+                          min="1"
                           value={formData.moq}
                           onChange={handleChange}
                           placeholder={rfqData?.quantity || "5000"}
@@ -458,6 +498,14 @@ const SupplierQuote = () => {
                     <FileUpload
                       label="Product Videos"
                       description="Upload videos showcasing your products and quality"
+                      acceptedTypes="video/*"
+                      maxFiles={3}
+                      maxSize={50}
+                      onFileSelect={(files) => setFormData(prev => ({ ...prev, product_videos: files }))}
+                    />
+                  </div>
+                </div>
+
                 {/* Form Actions */}
                 <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
                   <Link 
