@@ -142,6 +142,10 @@ function AppContent() {
         path="/admin/onboard-supplier" 
         element={user && userType === 'admin' ? <OnboardSupplier /> : <Navigate to="/login" replace />} 
       />
+      <Route 
+        path="/admin/settings" 
+        element={user && userType === 'admin' ? <AdminSettings /> : <Navigate to="/login" replace />} 
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" />} />

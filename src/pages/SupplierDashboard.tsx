@@ -114,17 +114,18 @@ const SupplierDashboard = () => {
       
       // Get current supplier info
       const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
+      const currentAuthUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       
       const newQuotation = {
         id: `q-${Date.now()}`,
         rfq_id: selectedRfq.id,
         rfq_title: selectedRfq.title,
-        supplier_id: currentUser.id,
-        supplier_name: currentUser.name || 'Supplier User',
-        supplier_company: currentUser.company || 'Supplier Company',
+        supplier_id: currentAuthUser.id,
+        supplier_name: currentAuthUser.name || 'Supplier User',
+        supplier_company: currentAuthUser.company || 'Supplier Company',
         supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
-        supplier_email: currentUser.email,
-        supplier_phone: currentUser.phone || '+91 XXXXXXXXXX',
+        supplier_email: currentAuthUser.email,
+        supplier_phone: currentAuthUser.phone || '+91 XXXXXXXXXX',
         buyer_company: selectedRfq.buyer_company,
         buyer_country: selectedRfq.buyer_country,
         quoted_price: parseFloat(quoteForm.price_per_unit),
@@ -355,17 +356,22 @@ const SupplierDashboard = () => {
                   {/* Actions */}
                   <div className="flex space-x-3">
                     {rfq.status === 'new' && (
-                      <button
-                        onClick={() => handleQuoteSubmit(rfq.id)}
+                      <Link
+                        to={`/supplier/quote/${rfq.id}`}
                         className="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-700 flex items-center justify-center space-x-1"
                       >
                         <Send className="h-4 w-4" />
                         <span>Submit Quote</span>
-                      </button>
+                      </Link>
                     )}
                     {rfq.status === 'quoted' && (
-                      <div className="flex-1 bg-green-50 text-green-700 py-2 px-3 rounded-md text-sm font-medium text-center">
-                        Quote Submitted
+                      <div className="flex space-x-2">
+                        <div className="bg-green-50 text-green-700 py-2 px-3 rounded-md text-sm font-medium">
+                          Quote Submitted
+                        </div>
+                        <button className="bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100">
+                          Edit Quote
+                        </button>
                       </div>
                     )}
                     <button 

@@ -115,8 +115,17 @@ const AdminDashboard = () => {
     ));
     
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
+    const updatedUserRFQs = userRFQs.map((rfq: any) => {
+      if (rfq.id === rfqId) {
+        // Mark buyer as verified after first approval
+        if (rfq.buyer_id) {
+          const { updateUserVerification } = useAuth();
+          updateUserVerification(rfq.buyer_id);
+        }
+        return { ...rfq, status: 'approved' };
+      }
+      return rfq;
+    }
     );
     localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
     alert('RFQ approved successfully!');
@@ -506,25 +515,18 @@ const AdminDashboard = () => {
             </div>
           </Link>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <Link 
+            to="/admin/settings"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-purple-300 transition-colors"
+          >
             <div className="flex items-center space-x-3">
-              <CheckCircle className="h-8 w-8 text-orange-500" />
-              <div>
-                <h3 className="font-semibold text-gray-900">Review Quotations</h3>
-                <p className="text-sm text-gray-600">{pendingQuotations.length} awaiting review</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center space-x-3">
-              <Settings className="h-8 w-8 text-gray-500" />
+              <Settings className="h-8 w-8 text-purple-500" />
               <div>
                 <h3 className="font-semibold text-gray-900">Platform Settings</h3>
                 <p className="text-sm text-gray-600">Configure system parameters</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Q&A Management Section */}

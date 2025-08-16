@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users } from 'lucide-react';
+import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users, Edit } from 'lucide-react';
 
 interface RFQ {
   id: string;
@@ -174,6 +174,38 @@ const AdminRFQs = () => {
       rfq.id === rfqId ? { ...rfq, status: 'matched' } : rfq
     );
     localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+  };
+
+  const handleViewRFQDetails = (rfq: RFQ) => {
+    // Load full RFQ details
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const fullRFQ = userRFQs.find((r: any) => r.id === rfq.id);
+    
+    setSelectedRFQ(rfq);
+    setEditFormData(fullRFQ || rfq);
+    setShowRFQModal(true);
+    setEditMode(false);
+  };
+
+  const handleEditRFQ = () => {
+    setEditMode(true);
+  };
+
+  const handleSaveEdit = () => {
+    // Update RFQ in localStorage
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const updatedUserRFQs = userRFQs.map((rfq: any) => 
+      rfq.id === selectedRFQ?.id ? { ...rfq, ...editFormData } : rfq
+    );
+    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    
+    // Update local state
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === selectedRFQ?.id ? { ...rfq, ...editFormData } : rfq
+    ));
+    
+    setEditMode(false);
+    alert('RFQ updated successfully!');
   };
 
   const getStatusBadge = (status: string) => {
@@ -392,7 +424,7 @@ const AdminRFQs = () => {
                           )}
                           <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
                             <Eye className="h-3 w-3" />
-                            <span>View Details</span>
+                            <span onClick={() => handleViewRFQDetails(rfq)}>View Details</span>
                           </button>
                         </div>
                       </td>
@@ -451,6 +483,158 @@ const AdminRFQs = () => {
           </div>
         </div>
       </div>
+
+      {/* RFQ Details Modal */}
+      {showRFQModal && selectedRFQ && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {editMode ? 'Edit RFQ' : 'RFQ Details'}
+              </h3>
+              <button
+                onClick={() => setShowRFQModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {editMode ? (
+                <div className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                      <input
+                        type="text"
+                        value={editFormData.title || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                      <input
+                        type="text"
+                        value={editFormData.category || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                      <input
+                        type="number"
+                        value={editFormData.quantity || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Target Price</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editFormData.target_price || ''}
+                        onChange={(e) => setEditFormData(prev => ({ ...prev, target_price: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                      rows={4}
+                      value={editFormData.description || ''}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Buyer Information */}
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">Buyer Information</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-blue-700 font-medium">Company:</span>
+                        <p className="text-blue-900">{editFormData.buyer_company}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Contact:</span>
+                        <p className="text-blue-900">{editFormData.buyer_name}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Email:</span>
+                        <p className="text-blue-900">{editFormData.buyer_email}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Phone:</span>
+                        <p className="text-blue-900">{editFormData.buyer_phone}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RFQ Details */}
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-4">RFQ Details</h4>
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Title</label>
+                        <p className="mt-1 text-sm text-gray-900">{editFormData.title}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Category</label>
+                        <p className="mt-1 text-sm text-gray-900">{editFormData.category}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Quantity</label>
+                        <p className="mt-1 text-sm text-gray-900">{editFormData.quantity} {editFormData.unit}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Target Price</label>
+                        <p className="mt-1 text-sm text-gray-900">${editFormData.target_price}</p>
+                      </div>
+                    </div>
+                    {editFormData.description && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700">Description</label>
+                        <p className="mt-1 text-sm text-gray-900">{editFormData.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowRFQModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Close
+              </button>
+              {editMode ? (
+                <button
+                  onClick={handleSaveEdit}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              ) : (
+                <button
+                  onClick={handleEditRFQ}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Edit RFQ
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
