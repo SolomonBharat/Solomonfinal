@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import FileUpload from '../components/FileUpload';
-import AIInsights from '../components/AIInsights';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -21,9 +19,7 @@ const CreateRFQ = () => {
     shipping_terms: 'FOB',
     quality_standards: '',
     certifications_needed: '',
-    additional_requirements: '',
-    product_images: [] as File[],
-    delivery_country: ''
+    additional_requirements: ''
   });
 
   const categories = [
@@ -56,7 +52,7 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.shipping_terms) {
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
       alert('Please fill in all required fields');
       setLoading(false);
       return;
@@ -69,8 +65,7 @@ const CreateRFQ = () => {
       quantity: parseInt(formData.quantity),
       target_price: parseFloat(formData.target_price),
       max_price: formData.max_price ? parseFloat(formData.max_price) : null,
-      status: user?.verification_status === 'verified' ? 'pending_approval' : 'pending_approval',
-      buyer_verified: user?.verification_status === 'verified' || false,
+      status: 'pending_approval',
       created_at: new Date().toISOString().split('T')[0],
       quotations_count: 0,
       buyer_id: user?.id,
@@ -78,11 +73,10 @@ const CreateRFQ = () => {
       buyer_company: user?.company,
       buyer_country: user?.country,
       buyer_email: user?.email,
-      buyer_phone: user?.phone,
-      product_images: formData.product_images.map((f: File) => f.name)
+      buyer_phone: user?.phone
     };
     
-    // Add to localStorage for demo (in production, this would be Supabase)
+    // Add to localStorage for demo
     const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     existingRFQs.push(newRFQ);
     localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
@@ -270,10 +264,10 @@ const CreateRFQ = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Timeline</option>
-                      <option value="30-days">30 days</option>
-                      <option value="45-days">45 days</option>
-                      <option value="60-days">60 days</option>
-                      <option value="90-days">90 days</option>
+                      <option value="30 days">30 days</option>
+                      <option value="45 days">45 days</option>
+                      <option value="60 days">60 days</option>
+                      <option value="90 days">90 days</option>
                       <option value="negotiable">Negotiable</option>
                     </select>
                   </div>
@@ -335,18 +329,6 @@ const CreateRFQ = () => {
                 </div>
               </div>
 
-              {/* Product Images Upload */}
-              <div>
-                <FileUpload
-                  label="Product Images"
-                  description="Upload reference images of the product you want to source"
-                  acceptedTypes="image/*"
-                  maxFiles={5}
-                  maxSize={10}
-                  onFileSelect={(files) => setFormData(prev => ({ ...prev, product_images: files }))}
-                />
-              </div>
-
               {/* Additional Requirements */}
               <div>
                 <label htmlFor="additional_requirements" className="block text-sm font-medium text-gray-700 mb-2">
@@ -362,17 +344,6 @@ const CreateRFQ = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-
-              {/* AI Insights */}
-              {(formData.title || formData.description || formData.category) && (
-                <div>
-                  <AIInsights 
-                    type="rfq" 
-                    data={formData}
-                    onInsightUpdate={(insights) => console.log('AI Insights:', insights)}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Form Actions */}
