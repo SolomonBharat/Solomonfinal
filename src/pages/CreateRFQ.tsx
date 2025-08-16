@@ -56,7 +56,7 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.shipping_terms) {
       alert('Please fill in all required fields');
       setLoading(false);
       return;
