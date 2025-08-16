@@ -435,8 +435,8 @@ const SupplierDashboard = () => {
               <div className="bg-gray-50 p-4 rounded-md mb-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">Buyer:</span>
-                    <p className="font-medium">{selectedRfq.buyer_company}</p>
+                    <span className="text-gray-500">Buyer Location:</span>
+                    <p className="font-medium">{selectedRfq.buyer_country}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Quantity:</span>

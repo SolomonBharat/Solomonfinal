@@ -387,10 +387,18 @@ const AdminDashboard = () => {
                         <div>
                           <h4 className="font-semibold text-gray-900">{quotation.rfq_title}</h4>
                           <div className="flex items-center text-sm text-gray-600 mt-1">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span>{quotation.supplier_company} ({quotation.supplier_name})</span>
+                            <Building className="h-3 w-3 mr-1" />
+                            <span>{quotation.supplier_company}</span>
                           </div>
-                          <p className="text-xs text-gray-500">{quotation.supplier_location} • For: {quotation.buyer_company}</p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <span>Contact: {quotation.supplier_name}</span> • 
+                            <span> {quotation.supplier_location}</span> • 
+                            <span> For: {quotation.buyer_company}</span>
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            <span>📧 {quotation.supplier_email}</span> • 
+                            <span>📞 {quotation.supplier_phone}</span>
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-green-600">${quotation.quoted_price.toFixed(2)}</p>

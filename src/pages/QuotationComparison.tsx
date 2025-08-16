@@ -39,9 +39,11 @@ const QuotationComparison = () => {
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        company: q.supplier_company || 'Supplier Company',
-        name: q.supplier_name || 'Contact Person',
+        name: q.supplier_company || 'Supplier Company',
+        contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
+        email: q.supplier_email || 'supplier@example.com',
+        phone: q.supplier_phone || '+91 XXXXXXXXXX',
         rating: 4.5,
         verified: true
       },
