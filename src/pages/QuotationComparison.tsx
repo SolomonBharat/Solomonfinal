@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Mail, Phone, MapPin, DollarSign, FileText, Building } from 'lucide-react';
 
 interface Quotation {
   id: string;
@@ -39,8 +39,11 @@ const QuotationComparison = () => {
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        name: q.supplier_name || 'Supplier',
+        name: q.supplier_company || 'Supplier Company',
+        contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
+        email: q.supplier_email || 'supplier@example.com',
+        phone: q.supplier_phone || '+91 XXXXXXXXXX',
         rating: 4.5,
         verified: true
       },
@@ -248,6 +251,7 @@ const QuotationComparison = () => {
                             <span className="text-xs text-green-600 font-medium">Best Price</span>
                           )}
                         </div>
+                        <p className="text-sm text-gray-600">Contact: {quote.supplier.contact_person}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         ${quote.total_price.toLocaleString()}
@@ -291,6 +295,20 @@ const QuotationComparison = () => {
                     <div className="flex items-center space-x-1">
                       {quote.supplier.verified && <CheckCircle className="h-4 w-4 text-green-500" />}
                       <Award className="h-4 w-4 text-blue-500" />
+                    </div>
+                  </div>
+
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 className="text-sm font-semibold text-blue-900 mb-2">📞 Contact Information</h5>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center text-blue-800">
+                        <Mail className="h-3 w-3 mr-2" />
+                        <span>{quote.supplier.email}</span>
+                      </div>
+                      <div className="flex items-center text-blue-800">
+                        <Phone className="h-3 w-3 mr-2" />
+                        <span>{quote.supplier.phone}</span>
+                      </div>
                     </div>
                   </div>
 

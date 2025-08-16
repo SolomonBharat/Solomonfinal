@@ -388,9 +388,9 @@ const AdminDashboard = () => {
                           <h4 className="font-semibold text-gray-900">{quotation.rfq_title}</h4>
                           <div className="flex items-center text-sm text-gray-600 mt-1">
                             <MapPin className="h-3 w-3 mr-1" />
-                            <span>{quotation.supplier_name}, {quotation.supplier_location}</span>
+                            <span>{quotation.supplier_company} ({quotation.supplier_name})</span>
                           </div>
-                          <p className="text-xs text-gray-500">For: {quotation.buyer_company}</p>
+                          <p className="text-xs text-gray-500">{quotation.supplier_location} • For: {quotation.buyer_company}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-green-600">${quotation.quoted_price.toFixed(2)}</p>
@@ -482,6 +482,19 @@ const AdminDashboard = () => {
               </div>
             </div>
           </Link>
+          
+          <Link 
+            to="/admin/onboard-supplier"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-green-300 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <Plus className="h-8 w-8 text-green-500" />
+              <div>
+                <h3 className="font-semibold text-gray-900">Onboard Supplier</h3>
+                <p className="text-sm text-gray-600">Add new verified supplier</p>
+              </div>
+            </div>
+          </Link>
 
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center space-x-3">
@@ -549,11 +562,38 @@ const AdminDashboard = () => {
               {/* Supplier Details */}
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-2">Supplier Information</h4>
-                <div className="flex items-center space-x-2 mb-2">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{selectedQuotation.supplier_name}</span>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-green-700">Company Name</label>
+                      <p className="mt-1 text-sm text-green-900 font-medium">{selectedQuotation.supplier_company}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-green-700">Contact Person</label>
+                      <p className="mt-1 text-sm text-green-900">{selectedQuotation.supplier_name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-green-700">Location</label>
+                      <p className="mt-1 text-sm text-green-900 flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {selectedQuotation.supplier_location}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-green-700">Contact</label>
+                      <div className="mt-1 space-y-1">
+                        <p className="text-xs text-green-800 flex items-center">
+                          <Mail className="h-3 w-3 mr-1" />
+                          {selectedQuotation.supplier_email}
+                        </p>
+                        <p className="text-xs text-green-800 flex items-center">
+                          <Phone className="h-3 w-3 mr-1" />
+                          {selectedQuotation.supplier_phone}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600">{selectedQuotation.supplier_location}</p>
               </div>
 
               {/* Quote Details */}

@@ -21,6 +21,9 @@ import SupplierProfile from './pages/SupplierProfile';
 import BuyerAnalytics from './pages/BuyerAnalytics';
 import SupplierPerformance from './pages/SupplierPerformance';
 import AdminAnalytics from './pages/AdminAnalytics';
+import OnboardSupplier from './pages/OnboardSupplier';
+import BuyerOrders from './pages/BuyerOrders';
+import SupplierOrders from './pages/SupplierOrders';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -79,6 +82,10 @@ function AppContent() {
         path="/analytics" 
         element={user && userType === 'buyer' ? <BuyerAnalytics /> : <Navigate to="/login" />} 
       />
+      <Route 
+        path="/orders" 
+        element={user && userType === 'buyer' ? <BuyerOrders /> : <Navigate to="/login" />} 
+      />
 
       {/* Protected Supplier Routes */}
       <Route 
@@ -109,6 +116,10 @@ function AppContent() {
         path="/supplier/performance" 
         element={user && userType === 'supplier' ? <SupplierPerformance /> : <Navigate to="/supplier/login" />} 
       />
+      <Route 
+        path="/supplier/orders" 
+        element={user && userType === 'supplier' ? <SupplierOrders /> : <Navigate to="/supplier/login" />} 
+      />
 
       {/* Protected Admin Routes */}
       <Route 
@@ -126,6 +137,10 @@ function AppContent() {
       <Route 
         path="/admin/analytics" 
         element={user && userType === 'admin' ? <AdminAnalytics /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/onboard-supplier" 
+        element={user && userType === 'admin' ? <OnboardSupplier /> : <Navigate to="/login" replace />} 
       />
 
       {/* Catch all */}

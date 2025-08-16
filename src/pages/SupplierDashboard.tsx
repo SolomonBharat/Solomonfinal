@@ -111,10 +111,20 @@ const SupplierDashboard = () => {
       
       // Store quotation in localStorage for demo
       const quotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+      
+      // Get current supplier info
+      const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
+      
       const newQuotation = {
         id: `q-${Date.now()}`,
         rfq_id: selectedRfq.id,
         rfq_title: selectedRfq.title,
+        supplier_id: currentUser.id,
+        supplier_name: currentUser.name || 'Supplier User',
+        supplier_company: currentUser.company || 'Supplier Company',
+        supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
+        supplier_email: currentUser.email,
+        supplier_phone: currentUser.phone || '+91 XXXXXXXXXX',
         buyer_company: selectedRfq.buyer_company,
         buyer_country: selectedRfq.buyer_country,
         quoted_price: parseFloat(quoteForm.price_per_unit),
@@ -333,6 +343,13 @@ const SupplierDashboard = () => {
                   {/* Description */}
                   <div className="mb-4">
                     <p className="text-sm text-gray-700 line-clamp-2">{rfq.description}</p>
+                    {rfq.additional_requirements && (
+                      <div className="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
+                        <p className="text-xs text-yellow-800">
+                          <strong>Special Requirements:</strong> {rfq.additional_requirements.substring(0, 100)}...
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}

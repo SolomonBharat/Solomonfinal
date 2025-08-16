@@ -254,11 +254,17 @@ const BuyerDashboard = () => {
                           >
                             View Quotes ({rfq.quotations_count})
                           </Link>
+                          <p className="text-xs text-gray-500">
+                            Compare prices & suppliers
+                          </p>
                         </div>
                       )}
                       {rfq.status === 'matched' && (
                         <div className="text-green-600 font-medium">
                           ✅ Quote Accepted - Order Matched!
+                          <p className="text-xs text-gray-500">
+                            Proceed to order management
+                          </p>
                         </div>
                       )}
                     </td>

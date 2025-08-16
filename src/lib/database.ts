@@ -40,6 +40,11 @@ export interface Quotation {
   id: string;
   rfq_id: string;
   supplier_id: string;
+  supplier_name: string;
+  supplier_company: string;
+  supplier_location: string;
+  supplier_email: string;
+  supplier_phone: string;
   quoted_price: number;
   moq: number;
   lead_time: string;
