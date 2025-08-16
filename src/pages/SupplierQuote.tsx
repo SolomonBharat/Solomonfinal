@@ -291,8 +291,6 @@ const SupplierQuote = () => {
             {/* Quotation Form */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-4 sm:p-6 space-y-6">
                   {/* Pricing Section */}
                   <div>
@@ -507,6 +505,8 @@ const SupplierQuote = () => {
                       onFileSelect={(files) => setFormData(prev => ({ ...prev, product_videos: files }))}
                     />
                   </div>
+                </div>
+
                 {/* Form Actions */}
                 <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
                   <Link 
