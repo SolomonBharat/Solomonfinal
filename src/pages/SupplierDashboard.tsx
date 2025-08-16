@@ -291,7 +291,7 @@ const SupplierDashboard = () => {
                       </h3>
                       <div className="flex items-center text-gray-600 text-sm">
                         <MapPin className="h-4 w-4 mr-1" />
-                        {rfq.buyer_company}, {rfq.buyer_country}
+                        Buyer from {rfq.buyer_country}
                       </div>
                     </div>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(rfq.status)}`}>
@@ -436,7 +436,7 @@ const SupplierDashboard = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Buyer Location:</span>
-                    <p className="font-medium">{selectedRfq.buyer_country}</p>
+                    <p className="font-medium">Buyer from {selectedRfq.buyer_country}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Quantity:</span>
@@ -678,8 +678,8 @@ const SupplierDashboard = () => {
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-blue-700">Company</label>
-                      <p className="mt-1 text-sm text-blue-900 font-medium">{selectedRfq.buyer_company}</p>
+                      <label className="block text-sm font-medium text-blue-700">Buyer</label>
+                      <p className="mt-1 text-sm text-blue-900 font-medium">{selectedRfq.buyer_name || 'International Buyer'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-blue-700">Country</label>

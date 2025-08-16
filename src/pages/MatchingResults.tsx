@@ -206,7 +206,7 @@ const MatchingResults = () => {
                   {/* Actions */}
                   <div className="flex space-x-3">
                     <button 
-                      onClick={() => alert(`📋 SUPPLIER DETAILS\n\n🏢 Company: ${supplier.company}\n👤 Contact: ${supplier.name}\n📍 Location: ${supplier.location}\n📧 Email: ${supplier.email}\n📞 Phone: ${supplier.phone}\n⭐ Rating: ${supplier.rating}/5\n🏆 Experience: ${supplier.years_experience} years\n📦 MOQ: ${supplier.moq}\n⏰ Lead Time: ${supplier.lead_time}\n\n🎯 Specializations:\n${supplier.specialization.join(', ')}\n\n🏅 Certifications:\n${supplier.certifications.join(', ')}`)}
+                      onClick={() => alert(`📋 SUPPLIER DETAILS\n\n👤 Supplier: ${supplier.name}\n📍 Location: ${supplier.location}\n⭐ Rating: ${supplier.rating}/5\n🏆 Experience: ${supplier.years_experience} years\n📦 MOQ: ${supplier.moq}\n⏰ Lead Time: ${supplier.lead_time}\n\n🎯 Specializations:\n${supplier.specialization.join(', ')}\n\n🏅 Certifications:\n${supplier.certifications.join(', ')}\n\n💬 Contact through platform messaging only`)}
                       className="flex-1 bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100"
                     >
                       View Details

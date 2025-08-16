@@ -45,12 +45,12 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
             )}
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-semibold text-gray-900">{supplier.company}</h3>
+                <h3 className="text-lg font-semibold text-gray-900">{supplier.name}</h3>
                 {supplier.verified && (
                   <CheckCircle className="h-4 w-4 text-green-500" />
                 )}
               </div>
-              <p className="text-sm text-gray-600">Contact: {supplier.name}</p>
+              <p className="text-sm text-gray-600">Verified Supplier</p>
               <div className="flex items-center text-gray-500 text-sm mt-1">
                 <MapPin className="h-3 w-3 mr-1" />
                 <span>{supplier.location}</span>

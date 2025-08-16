@@ -90,8 +90,8 @@ const SupplierOrders = () => {
       sortable: true,
       render: (value: string, row: Order) => (
         <div>
-          <p className="font-medium text-gray-900">{value}</p>
-          <p className="text-sm text-gray-500">Contact: {row.buyer_contact}</p>
+          <p className="font-medium text-gray-900">{row.buyer_contact}</p>
+          <p className="text-sm text-gray-500">International Buyer</p>
           <div className="flex items-center text-xs text-gray-400 mt-1">
             <MapPin className="h-3 w-3 mr-1" />
             <span>{row.buyer_country}</span>

@@ -227,7 +227,7 @@ const QuotationComparison = () => {
                         <div className="flex items-start">
                           <div>
                             <div className="flex items-center space-x-2">
-                              <p className="text-sm font-medium text-gray-900">{quote.supplier.name}</p>
+                              <p className="text-sm font-medium text-gray-900">{quote.supplier.contact_person}</p>
                               {quote.supplier.verified && (
                                 <CheckCircle className="h-4 w-4 text-green-500" />
                               )}
@@ -251,7 +251,6 @@ const QuotationComparison = () => {
                             <span className="text-xs text-green-600 font-medium">Best Price</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">Contact: {quote.supplier.contact_person}</p>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         ${quote.total_price.toLocaleString()}
@@ -291,7 +290,7 @@ const QuotationComparison = () => {
               <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-semibold text-gray-900">{quote.supplier.name}</h4>
+                    <h4 className="font-semibold text-gray-900">{quote.supplier.contact_person}</h4>
                     <div className="flex items-center space-x-1">
                       {quote.supplier.verified && <CheckCircle className="h-4 w-4 text-green-500" />}
                       <Award className="h-4 w-4 text-blue-500" />
@@ -372,7 +371,7 @@ const QuotationComparison = () => {
                 <div className="bg-white p-4 rounded-lg border">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.name}</h5>
+                      <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.contact_person}</h5>
                       {selectedQuotation.supplier.verified && (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       )}
@@ -494,7 +493,7 @@ const QuotationComparison = () => {
             
             <div className="px-6 py-4 bg-gray-100 border-t border-gray-200 flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                Quote from {selectedQuotation.supplier.name} • Total: ${selectedQuotation.total_price.toLocaleString()}
+                Quote from {selectedQuotation.supplier.contact_person} • Total: ${selectedQuotation.total_price.toLocaleString()}
               </div>
               <div className="flex space-x-3">
               <button
