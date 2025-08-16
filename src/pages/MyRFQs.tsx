@@ -29,6 +29,8 @@ const MyRFQs = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showRfqModal, setShowRfqModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
 
   useEffect(() => {
     // Load user's RFQs from localStorage
@@ -286,7 +288,9 @@ const MyRFQs = () => {
                           View Quotes ({rfq.quotations_count})
                         </Link>
                       )}
-                      <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
+                      <button 
+                        onClick={() => handleViewRfqDetails(rfq)}
+                        className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
                         <Eye className="h-3 w-3" />
                         <span>Quick View</span>
                       </button>
@@ -318,7 +322,6 @@ const MyRFQs = () => {
                 </Link>
               )}
             </div>
-
           )}
         </div>
       </div>
@@ -330,7 +333,7 @@ const MyRFQs = () => {
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-xl font-semibold text-gray-900">RFQ Details</h3>
               <button
-                        value={editFormData?.category || ''}
+                onClick={() => setShowRfqModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="h-6 w-6" />
@@ -339,17 +342,17 @@ const MyRFQs = () => {
             
             <div className="p-6">
               {/* Basic Information */}
-                        value={editFormData?.quantity || ''}
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Product Title</label>
                     <p className="mt-1 text-sm text-gray-900 font-medium">{selectedRfq.title}</p>
-                        value={editFormData?.title || ''}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Category</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRfq.category}</p>
-                        value={editFormData?.target_price || ''}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Quantity</label>
                     <p className="mt-1 text-sm text-gray-900 font-medium">{selectedRfq.quantity.toLocaleString()} {selectedRfq.unit}</p>
@@ -359,7 +362,7 @@ const MyRFQs = () => {
                     <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(selectedRfq.status)} mt-1`}>
                       {getStatusIcon(selectedRfq.status)}
                       <span className="capitalize">{selectedRfq.status.replace('_', ' ')}</span>
-                      value={editFormData?.description || ''}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -426,19 +429,19 @@ const MyRFQs = () => {
                       <p className="mt-1 text-sm text-gray-900">{selectedRfq.certifications_needed}</p>
                     </div>
                   )}
-                        <p className="text-blue-900">{editFormData?.buyer_company}</p>
+                </div>
               </div>
 
               {/* Additional Requirements */}
-                        <p className="text-blue-900">{editFormData?.buyer_name}</p>
+              {selectedRfq.additional_requirements && (
                 <div className="mb-8">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Additional Requirements</h4>
                   <div className="bg-yellow-50 p-4 rounded-lg">
-                        <p className="text-blue-900">{editFormData?.buyer_email}</p>
+                    <p className="text-sm text-gray-700">{selectedRfq.additional_requirements}</p>
                   </div>
                 </div>
               )}
-                        <p className="text-blue-900">{editFormData?.buyer_phone}</p>
+
               {/* Timeline */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h4>
@@ -449,25 +452,23 @@ const MyRFQs = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Quotations Received</label>
-                        <p className="mt-1 text-sm text-gray-900">{editFormData?.title}</p>
+                    <p className="mt-1 text-sm text-gray-900">
                       {selectedRfq.quotations_count > 0 ? `${selectedRfq.quotations_count} quotations` : 'No quotations yet'}
                     </p>
                   </div>
-                        <p className="mt-1 text-sm text-gray-900">{editFormData?.category}</p>
+                </div>
               </div>
             </div>
             
-                        <p className="mt-1 text-sm text-gray-900">{editFormData?.quantity} {editFormData?.unit}</p>
             <div className="mt-6">
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h4>
               <QASystem 
-                        <p className="mt-1 text-sm text-gray-900">${editFormData?.target_price}</p>
+                rfqId={selectedRfq.id} 
                 mode="buyer_answer"
               />
-                    {editFormData?.description && (
+            </div>
 
             <div className="mt-6">
-                        <p className="mt-1 text-sm text-gray-900">{editFormData?.description}</p>
               <QASystem 
                 rfqId={selectedRfq.id} 
                 mode="public_view"
@@ -482,51 +483,14 @@ const MyRFQs = () => {
                 >
                   Close
                 </button>
-              {editMode ? (
-                <button
-                  onClick={() => {
-                    // Save changes
-                    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-                    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-                      rfq.id === selectedRfq?.id ? { ...rfq, ...editFormData } : rfq
-                    );
-                    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
-                    setEditMode(false);
-                    alert('RFQ updated successfully!');
-                    window.location.reload();
-                  }}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  Save Changes
-                </button>
-              ) : (
-                {editMode ? (
+                {(selectedRfq?.status === 'pending_approval' || selectedRfq?.status === 'rejected') && (
                   <button
-                    onClick={() => {
-                      // Save changes
-                      const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-                      const updatedUserRFQs = userRFQs.map((rfq: any) => 
-                        rfq.id === selectedRfq?.id ? { ...rfq, ...editFormData } : rfq
-                      );
-                      localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
-                      setEditMode(false);
-                      alert('RFQ updated successfully!');
-                      window.location.reload();
-                    }}
+                    onClick={() => setEditMode(true)}
                     className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    Save Changes
+                    Edit RFQ
                   </button>
-                ) : (
-                  (selectedRfq?.status === 'pending_approval' || selectedRfq?.status === 'rejected') && (
-                      onClick={() => setEditMode(true)}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Edit RFQ
-                    </button>
-                  )
                 )}
-              )}
               </div>
             </div>
           </div>
