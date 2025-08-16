@@ -70,6 +70,7 @@ const SupplierDashboard = () => {
           q.supplier_name === user?.name ||
           q.supplier_id === user?.id
         );
+      });
       
       return {
         ...rfq,
