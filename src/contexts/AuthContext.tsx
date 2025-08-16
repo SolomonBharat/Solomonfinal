@@ -523,7 +523,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profile_completed: true,
-      verification_status: 'verified'
+      verification_status: 'unverified'
     };
 
     // Save to registered buyers with password

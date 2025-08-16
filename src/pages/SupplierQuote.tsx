@@ -144,6 +144,34 @@ const SupplierQuote = () => {
                   )}
                 </div>
               </div>
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <h4 className="font-semibold text-orange-900 mb-3">📦 Sample Tracking (if sample requested)</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-orange-700 mb-2">
+                          Courier Service Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g., DHL, FedEx, Blue Dart"
+                          className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-orange-700 mb-2">
+                          Tracking ID
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter tracking number"
+                          className="w-full px-3 py-2 border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-orange-600 mt-2">
+                      Fill this section only if buyer has requested samples for this quotation
+                    </p>
+                  </div>
             </div>
 
             {/* Quotation Form */}
@@ -378,7 +406,7 @@ const SupplierQuote = () => {
                     disabled={loading}
                     className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                   >
-                    {loading ? 'Submitting...' : 'Submit Quotation'}
+                    {loading ? (isEdit ? 'Updating...' : 'Submitting...') : (isEdit ? 'Update Quotation' : 'Submit Quotation')}
                   </button>
                 </div>
               </form>

@@ -44,7 +44,7 @@ const QuotationComparison = () => {
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        name: q.supplier_name || 'Supplier Name',
+        name: q.supplier_company || q.supplier_name || 'Supplier Company',
         contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
         email: q.supplier_email || 'supplier@example.com',
@@ -281,7 +281,7 @@ const QuotationComparison = () => {
                         {quote.moq.toLocaleString()} pcs
                       </td>
                       <td className="px-6 py-4">
-                        <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.name}</h5>
+                        <span className="text-sm text-gray-900">{quote.lead_time}</span>
                         {quote.lead_time.includes(getFastestDelivery().toString()) && (
                           <span className="block text-xs text-blue-600 font-medium">Fastest</span>
                         )}
@@ -292,6 +292,15 @@ const QuotationComparison = () => {
                       <td className="px-6 py-4">
                         <div className="flex flex-col space-y-2">
                           <button className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700">
+                            onClick={() => {
+                              // Handle sample request
+                              const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+                              const updatedQuotations = supplierQuotations.map((q: any) => 
+                                q.id === quote.id ? { ...q, sample_status: 'sample_requested' } : q
+                              );
+                              localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
+                              alert(`Sample requested from ${quote.supplier.name}! Supplier will provide tracking details.`);
+                            }}
                             Request Sample
                           </button>
                           <button

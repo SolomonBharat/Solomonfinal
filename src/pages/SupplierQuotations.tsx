@@ -236,12 +236,12 @@ const SupplierQuotations = () => {
                       {quotation.status === 'pending_review' && (
                         <button className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm">
                           <Edit className="h-3 w-3" />
-                          <span>Edit Quote</span>
+                          <span onClick={() => window.location.href = `/supplier/quote/${quotation.rfq_id}?edit=true`}>Edit Quote</span>
                         </button>
                       )}
                       <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
                         <Eye className="h-3 w-3" />
-                        <span>Quick View</span>
+                        <span onClick={() => handleViewQuotationDetails(quotation)}>Quick View</span>
                       </button>
                     </div>
                     <p className="text-xs text-gray-400">

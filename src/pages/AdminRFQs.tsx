@@ -19,11 +19,16 @@ interface RFQ {
   created_at: string;
   urgency: 'low' | 'medium' | 'high';
   matched_suppliers: number;
+  fullDetails?: any;
 }
 
 const AdminRFQs = () => {
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
+  const [showRFQModal, setShowRFQModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>({});
 
   useEffect(() => {
     // Load all RFQs including user submitted ones
@@ -46,6 +51,7 @@ const AdminRFQs = () => {
       created_at: rfq.created_at,
       urgency: 'medium',
       matched_suppliers: 0
+      fullDetails: rfq
     }));
     
     setRfqs(convertedUserRFQs);

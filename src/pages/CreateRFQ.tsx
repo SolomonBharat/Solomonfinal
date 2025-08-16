@@ -67,7 +67,7 @@ const CreateRFQ = () => {
       quantity: parseInt(formData.quantity),
       target_price: parseFloat(formData.target_price),
       max_price: formData.max_price ? parseFloat(formData.max_price) : null,
-      status: user?.verification_status === 'verified' ? 'pending_approval' : 'pending_approval',
+      status: 'pending_approval',
       buyer_verified: user?.verification_status === 'verified' || false,
       created_at: new Date().toISOString().split('T')[0],
       quotations_count: 0,
@@ -77,7 +77,8 @@ const CreateRFQ = () => {
       buyer_country: user?.country,
       buyer_email: user?.email,
       buyer_phone: user?.phone,
-      product_images: formData.product_images.map(f => f.name)
+      product_images: formData.product_images.map(f => f.name),
+      verification_status: user?.verification_status || 'unverified'
     };
     
     // Add to localStorage for demo (in production, this would be Supabase)

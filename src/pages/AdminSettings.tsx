@@ -42,7 +42,7 @@ const AdminSettings = () => {
     
     setTimeout(() => {
       setLoading(false);
-      alert('Settings saved successfully!');
+      alert('✅ Platform settings saved successfully! All system parameters have been updated.');
     }, 1000);
   };
 

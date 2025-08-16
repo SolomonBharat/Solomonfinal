@@ -144,8 +144,12 @@ const AdminDashboard = () => {
       if (rfq.id === rfqId) {
         // Mark buyer as verified after first approval
         if (rfq.buyer_id) {
-          const { updateUserVerification } = useAuth();
-          updateUserVerification(rfq.buyer_id);
+          // Update buyer verification status
+          const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
+          const updatedBuyers = registeredBuyers.map((buyer: any) => 
+            buyer.id === rfq.buyer_id ? { ...buyer, verification_status: 'verified' } : buyer
+          );
+          localStorage.setItem('registered_buyers', JSON.stringify(updatedBuyers));
         }
         return { ...rfq, status: 'approved' };
       }
@@ -612,17 +616,17 @@ const AdminDashboard = () => {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-green-700">Company Name</label>
-                      <p className="mt-1 text-sm text-green-900 font-medium">{selectedQuotation.supplier_company}</p>
+                      <p className="mt-1 text-sm text-green-900 font-medium">{selectedQuotation.supplier_company || 'Supplier Company'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-green-700">Contact Person</label>
-                      <p className="mt-1 text-sm text-green-900">{selectedQuotation.supplier_name}</p>
+                      <p className="mt-1 text-sm text-green-900">{selectedQuotation.supplier_name || 'Contact Person'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-green-700">Location</label>
                       <p className="mt-1 text-sm text-green-900 flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
-                        {selectedQuotation.supplier_location}
+                        {selectedQuotation.supplier_location || 'Location'}
                       </p>
                     </div>
                     <div>
@@ -630,11 +634,11 @@ const AdminDashboard = () => {
                       <div className="mt-1 space-y-1">
                         <p className="text-xs text-green-800 flex items-center">
                           <Mail className="h-3 w-3 mr-1" />
-                          {selectedQuotation.supplier_email}
+                          {selectedQuotation.supplier_email || 'Email'}
                         </p>
                         <p className="text-xs text-green-800 flex items-center">
                           <Phone className="h-3 w-3 mr-1" />
-                          {selectedQuotation.supplier_phone}
+                          {selectedQuotation.supplier_phone || 'Phone'}
                         </p>
                       </div>
                     </div>

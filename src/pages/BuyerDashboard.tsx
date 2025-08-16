@@ -267,6 +267,21 @@ const BuyerDashboard = () => {
                           </p>
                         </div>
                       )}
+                      {rfq.status === 'pending_approval' && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-yellow-600 text-sm">⏳ Awaiting Approval</span>
+                          {rfq.verification_status === 'unverified' && (
+                            <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+                              Unverified Buyer
+                            </span>
+                          )}
+                          {rfq.verification_status === 'verified' && (
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                              ✅ Verified Buyer
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -496,13 +511,13 @@ const BuyerDashboard = () => {
             href="https://wa.me/918595135554" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="bg-blue-50 p-6 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
+            className="bg-green-50 p-6 rounded-lg border border-green-200 hover:bg-green-100 transition-colors cursor-pointer"
           >
             <div className="flex items-center space-x-3">
-              <Bell className="h-8 w-8 text-blue-500" />
+              <Bell className="h-8 w-8 text-green-500" />
               <div>
-                <h3 className="font-semibold text-gray-900">Need Help?</h3>
-                <p className="text-sm text-gray-600">Contact our sourcing experts</p>
+                <h3 className="font-semibold text-green-900">Need Help?</h3>
+                <p className="text-sm text-green-700">Contact our sourcing experts on WhatsApp</p>
               </div>
             </div>
           </a>

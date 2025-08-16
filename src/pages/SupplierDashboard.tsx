@@ -134,6 +134,8 @@ const SupplierDashboard = () => {
       // Get current supplier info
       const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
       const currentAuthUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
+      const supplierData = onboardedSuppliers.find((s: any) => s.email === currentAuthUser.email);
       
       const newQuotation = {
         id: `q-${Date.now()}`,
@@ -141,7 +143,7 @@ const SupplierDashboard = () => {
         rfq_title: selectedRfq.title,
         supplier_id: currentAuthUser.id,
         supplier_name: currentAuthUser.name || 'Supplier User',
-        supplier_company: currentAuthUser.company || 'Supplier Company',
+        supplier_company: supplierData?.companyName || currentAuthUser.company || 'Supplier Company',
         supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
         supplier_email: currentAuthUser.email,
         supplier_phone: currentAuthUser.phone || '+91 XXXXXXXXXX',
