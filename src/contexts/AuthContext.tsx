@@ -541,7 +541,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Mark user as verified after first approved RFQ
     const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
     const updatedBuyers = registeredBuyers.map((buyer: any) => 
-      buyer.id === userId || buyer.email === user?.email ? { ...buyer, verification_status: 'verified' } : buyer
+      buyer.id === userId ? { ...buyer, verification_status: 'verified' } : buyer
     );
     localStorage.setItem('registered_buyers', JSON.stringify(updatedBuyers));
     

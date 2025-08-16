@@ -367,14 +367,14 @@ const QuotationComparison = () => {
                         <div className="flex flex-col space-y-1 sm:space-y-2">
                           {quote.sample_status === 'sample_requested' ? (
                             <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-medium text-center">
-                              📦 Sample Requested
+                              Sample Requested
                             </span>
                           ) : (
                             <button
                               onClick={() => handleRequestSample(quote.id)}
                               className="bg-orange-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-orange-700"
                             >
-                              📦 Request Sample
+                              Request Sample
                             </button>
                           )}
                           <button
@@ -494,10 +494,9 @@ const QuotationComparison = () => {
               href="https://wa.me/918595135554" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 inline-flex items-center space-x-2"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 inline-block"
             >
-              <Phone className="h-4 w-4" />
-              <span>Schedule Consultation</span>
+              Schedule Consultation
             </a>
           </div>
         </div>

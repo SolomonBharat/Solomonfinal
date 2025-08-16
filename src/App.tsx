@@ -152,10 +152,6 @@ function AppContent() {
         path="/admin/workflow" 
         element={user && userType === 'admin' ? <WorkflowDocumentation /> : <Navigate to="/login" replace />} 
       />
-      <Route 
-        path="/admin/project-status" 
-        element={user && userType === 'admin' ? <ProjectStatus /> : <Navigate to="/login" replace />} 
-      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" />} />
