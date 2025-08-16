@@ -90,7 +90,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI RFQ Analysis error:', error);
       return {
@@ -158,7 +163,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      const result = JSON.parse(response || '{"matches": []}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{"matches": []}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      const result = JSON.parse(cleanResponse);
       return result.matches || [];
     } catch (error) {
       console.error('AI Supplier Matching error:', error);
@@ -219,7 +229,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI Quotation Analysis error:', error);
       return {
@@ -267,7 +282,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      const result = JSON.parse(response || '{"suggestions": []}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{"suggestions": []}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      const result = JSON.parse(cleanResponse);
       return result.suggestions || [];
     } catch (error) {
       console.error('AI RFQ Suggestions error:', error);
@@ -320,7 +340,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI Market Insights error:', error);
       return {
@@ -376,7 +401,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI Quotation Optimization error:', error);
       return {
@@ -429,7 +459,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI Negotiation Strategy error:', error);
       return {
@@ -481,7 +516,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      return JSON.parse(response || '{}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      return JSON.parse(cleanResponse);
     } catch (error) {
       console.error('AI Market Trends error:', error);
       return {
@@ -525,7 +565,12 @@ class AIService {
       });
 
       const response = completion.choices[0].message.content;
-      const result = JSON.parse(response || '{"recommendations": []}');
+      // Clean the response to remove markdown code blocks
+      const cleanResponse = (response || '{"recommendations": []}')
+        .replace(/```json\s*/g, '')
+        .replace(/```\s*/g, '')
+        .trim();
+      const result = JSON.parse(cleanResponse);
       return result.recommendations || [];
     } catch (error) {
       console.error('AI Recommendations error:', error);
