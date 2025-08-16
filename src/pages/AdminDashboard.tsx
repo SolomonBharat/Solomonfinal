@@ -133,6 +133,44 @@ const AdminDashboard = () => {
     });
   }, [rfqs, pendingRFQs, pendingQuotations]);
 
+  const loadSampleRequests = () => {
+    // Load all sample requests from localStorage
+    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    setSampleRequests(allSampleRequests);
+  };
+
+  const updateSampleStatus = (requestId: string, newStatus: string) => {
+    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    const updatedRequests = allSampleRequests.map((request: any) =>
+      request.id === requestId ? { ...request, status: newStatus, updated_at: new Date().toISOString() } : request
+    );
+    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
+    setSampleRequests(updatedRequests);
+  };
+
+  const handleContactParties = (request: any) => {
+    const whatsappMessage = encodeURIComponent(
+      `🚨 SAMPLE REQUEST COORDINATION\n\n` +
+      `Product: ${request.rfq_title}\n` +
+      `Sample Request ID: ${request.id}\n\n` +
+      `BUYER DETAILS:\n` +
+      `Company: ${request.buyer_company}\n` +
+      `Email: ${request.buyer_email}\n` +
+      `Phone: ${request.buyer_phone}\n` +
+      `Country: ${request.buyer_country}\n\n` +
+      `SUPPLIER DETAILS:\n` +
+      `Company: ${request.supplier_company}\n` +
+      `Email: ${request.supplier_email}\n` +
+      `Phone: ${request.supplier_phone}\n` +
+      `Location: ${request.supplier_location}\n\n` +
+      `SAMPLE INFO:\n` +
+      `Quoted Price: $${request.quoted_price}\n` +
+      `Quantity: ${request.quantity} units\n\n` +
+      `ACTION REQUIRED: Coordinate sample shipment immediately!`
+    );
+    window.open(`https://wa.me/918595135554?text=${whatsappMessage}`, '_blank');
+  };
+
   const handleApproveRFQ = (rfqId: string) => {
     setRFQs(prev => prev.map(rfq => 
       rfq.id === rfqId ? { ...rfq, status: 'approved' as const } : rfq

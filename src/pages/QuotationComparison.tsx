@@ -146,6 +146,32 @@ const QuotationComparison = () => {
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const rfq = userRFQs.find((r: any) => r.id === rfqId);
 
+    // Create sample request record
+    const sampleRequest = {
+      id: `sample_${Date.now()}`,
+      rfq_id: rfqId,
+      rfq_title: rfq?.title || 'Product RFQ',
+      quotation_id: quotationId,
+      buyer_company: rfq?.buyer_company || 'Buyer Company',
+      buyer_email: rfq?.buyer_email || 'buyer@example.com',
+      buyer_phone: rfq?.buyer_phone || 'Phone',
+      buyer_country: rfq?.buyer_country || 'Country',
+      supplier_company: quotation.supplier.company,
+      supplier_email: quotation.supplier.email,
+      supplier_phone: quotation.supplier.phone,
+      supplier_location: quotation.supplier.location,
+      quoted_price: quotation.price_per_unit,
+      quantity: quotation.moq || 1,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      tracking_info: null
+    };
+
+    // Save sample request
+    const sampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    sampleRequests.push(sampleRequest);
+    localStorage.setItem('sample_requests', JSON.stringify(sampleRequests));
+
     // Notify admin immediately
     import('../lib/notificationService').then(({ notificationService }) => {
       notificationService.notifySampleRequest({
