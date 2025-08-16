@@ -284,11 +284,6 @@ const SupplierQuote = () => {
                   </p>
                 </div>
               </div>
-                        <input
-            </div>
-                          id="moq"
-                          name="moq"
-                          required
                           value={formData.moq}
                           onChange={handleChange}
                           placeholder={rfqData?.quantity || "5000"}
