@@ -26,25 +26,10 @@ const SupplierOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Load supplier's orders
-    const mockOrders: Order[] = [
-      {
-        id: 'ORD-001',
-        rfq_title: 'Organic Cotton T-Shirts',
-        buyer_company: 'Global Trade Corp',
-        buyer_contact: 'John Smith',
-        buyer_country: 'United States',
-        quantity: 5000,
-        unit_price: 8.25,
-        total_value: 41250,
-        status: 'in_production',
-        order_date: '2025-01-15',
-        expected_delivery: '2025-02-15',
-        payment_received: 12375, // 30% advance
-        payment_pending: 28875
-      }
-    ];
-    setOrders(mockOrders);
+    // Load supplier's orders from localStorage
+    const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const supplierOrders = allOrders.filter((order: any) => order.supplier_id === user?.id);
+    setOrders(supplierOrders);
   }, []);
 
   const getStatusBadge = (status: string) => {

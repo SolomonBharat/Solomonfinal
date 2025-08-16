@@ -25,39 +25,10 @@ const BuyerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Load buyer's orders
-    const mockOrders: Order[] = [
-      {
-        id: 'ORD-001',
-        rfq_title: 'Organic Cotton T-Shirts',
-        supplier_company: 'Global Textiles Pvt Ltd',
-        supplier_contact: 'Rajesh Kumar',
-        supplier_location: 'Tirupur, Tamil Nadu',
-        quantity: 5000,
-        unit_price: 8.25,
-        total_value: 41250,
-        status: 'in_production',
-        order_date: '2025-01-15',
-        expected_delivery: '2025-02-15',
-        payment_status: 'partial'
-      },
-      {
-        id: 'ORD-002',
-        rfq_title: 'Turmeric Powder Premium',
-        supplier_company: 'Spice Masters Ltd',
-        supplier_contact: 'Priya Sharma',
-        supplier_location: 'Cochin, Kerala',
-        quantity: 10,
-        unit_price: 2800,
-        total_value: 28000,
-        status: 'shipped',
-        order_date: '2025-01-10',
-        expected_delivery: '2025-02-10',
-        tracking_number: 'TRK123456789',
-        payment_status: 'completed'
-      }
-    ];
-    setOrders(mockOrders);
+    // Load buyer's orders from localStorage
+    const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const buyerOrders = allOrders.filter((order: any) => order.buyer_id === user?.id);
+    setOrders(buyerOrders);
   }, []);
 
   const getStatusBadge = (status: string) => {

@@ -37,92 +37,34 @@ interface Supplier {
 }
 
 const AdminSuppliers = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    {
-      id: '1',
-      name: 'Supplier 1',
-      contact_person: 'Rajesh Kumar',
-      email: 'supplier1@example.com',
-      phone: '+91 98765 43210',
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    // Load only onboarded suppliers
+    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
+    const convertedSuppliers = onboardedSuppliers.map((supplier: any) => ({
+      id: supplier.id,
+      name: supplier.companyName || supplier.company_name,
+      contact_person: supplier.contactPerson || supplier.contact_person,
+      email: supplier.email,
+      phone: supplier.phone,
       location: {
-        city: 'Tirupur',
-        state: 'Tamil Nadu',
-        country: 'India'
+        city: supplier.address?.split(',')[0] || 'City',
+        state: supplier.address?.split(',')[1] || 'State',
+        country: supplier.country || 'India'
       },
-      categories: ['Textiles & Apparel', 'Organic Cotton'],
-      rating: 4.8,
-      total_orders: 156,
-      years_experience: 15,
-      certifications: ['GOTS', 'OEKO-TEX', 'ISO 9001'],
-      verified: true,
-      status: 'active',
-      joined_date: '2020-03-15',
-      last_active: '2025-01-20'
-    },
-    {
-      id: '2',
-      name: 'Supplier 2',
-      contact_person: 'Priya Sharma',
-      email: 'supplier2@example.com',
-      phone: '+91 98876 54321',
-      location: {
-        city: 'Cochin',
-        state: 'Kerala',
-        country: 'India'
-      },
-      categories: ['Spices & Food Products', 'Organic Products'],
-      rating: 4.6,
-      total_orders: 203,
-      years_experience: 12,
-      certifications: ['FSSAI', 'Organic India', 'ISO 22000'],
-      verified: true,
-      status: 'active',
-      joined_date: '2019-08-20',
-      last_active: '2025-01-19'
-    },
-    {
-      id: '3',
-      name: 'Supplier 3',
-      contact_person: 'Amit Patel',
-      email: 'supplier3@example.com',
-      phone: '+91 97654 32109',
-      location: {
-        city: 'Jaipur',
-        state: 'Rajasthan',
-        country: 'India'
-      },
-      categories: ['Handicrafts & Home Decor', 'Traditional Arts'],
-      rating: 4.4,
-      total_orders: 89,
-      years_experience: 8,
-      certifications: ['Handicrafts Export Corporation', 'GI Tagged'],
-      verified: false,
-      status: 'pending',
-      joined_date: '2025-01-10',
-      last_active: '2025-01-18'
-    },
-    {
-      id: '4',
-      name: 'Supplier 4',
-      contact_person: 'Suresh Reddy',
-      email: 'supplier4@example.com',
-      phone: '+91 96543 21098',
-      location: {
-        city: 'Bangalore',
-        state: 'Karnataka',
-        country: 'India'
-      },
-      categories: ['Electronics & Components', 'IoT Devices'],
-      rating: 4.2,
-      total_orders: 67,
-      years_experience: 6,
-      certifications: ['CE', 'FCC', 'ISO 14001'],
-      verified: true,
-      status: 'inactive',
-      joined_date: '2021-11-05',
-      last_active: '2024-12-15'
-    }
-  ]);
+      categories: supplier.productCategories || supplier.product_categories || [],
+      rating: 4.5, // Default rating for new suppliers
+      total_orders: 0, // New suppliers start with 0 orders
+      years_experience: parseInt(supplier.yearsInBusiness || supplier.years_in_business) || 0,
+      certifications: supplier.certifications || [],
+      verified: supplier.verified || false,
+      status: supplier.verified ? 'active' : 'pending',
+      joined_date: supplier.created_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+      last_active: new Date().toISOString().split('T')[0]
+    }));
+    setSuppliers(convertedSuppliers);
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');

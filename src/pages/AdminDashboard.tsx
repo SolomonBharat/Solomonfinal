@@ -25,8 +25,6 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import QASystem from '../components/QASystem';
 
-const demoRFQs: RFQ[] = [];
-
 interface RFQ {
   id: string;
   title: string;
@@ -93,21 +91,43 @@ const AdminDashboard = () => {
       matched_suppliers: 0
     }));
     
-    setRFQs([...demoRFQs, ...convertedUserRFQs]);
+    setRFQs(convertedUserRFQs);
+    setRFQs(convertedUserRFQs);
     // Load Quotations
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     
     setQuotations(supplierQuotations);
   }, []);
 
-  const [stats] = useState({
-    total_rfqs: 156,
-    pending_rfqs: 12,
-    active_suppliers: 847,
-    monthly_gmv: 2450000,
-    quotations_pending: 23,
-    monthly_growth: 18.5
+  const [stats, setStats] = useState({
+    total_rfqs: 0,
+    pending_rfqs: 0,
+    active_suppliers: 0,
+    monthly_gmv: 0,
+    quotations_pending: 0,
+    monthly_growth: 0
   });
+
+  useEffect(() => {
+    // Calculate real stats
+    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const monthlyOrders = orders.filter((order: any) => {
+      const orderDate = new Date(order.created_at);
+      const currentMonth = new Date().getMonth();
+      return orderDate.getMonth() === currentMonth;
+    });
+    const monthlyGMV = monthlyOrders.reduce((sum: number, order: any) => sum + (order.order_value || 0), 0);
+
+    setStats({
+      total_rfqs: rfqs.length,
+      pending_rfqs: pendingRFQs.length,
+      active_suppliers: onboardedSuppliers.length,
+      monthly_gmv: monthlyGMV,
+      quotations_pending: pendingQuotations.length,
+      monthly_growth: 18.5 // This would be calculated based on historical data
+    });
+  }, [rfqs, pendingRFQs, pendingQuotations]);
 
   const handleApproveRFQ = (rfqId: string) => {
     setRFQs(prev => prev.map(rfq => 
