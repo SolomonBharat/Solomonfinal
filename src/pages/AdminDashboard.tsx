@@ -171,6 +171,18 @@ const AdminDashboard = () => {
     window.open(`https://wa.me/918595135554?text=${whatsappMessage}`, '_blank');
   };
 
+  const updateSampleStatus = (requestId: string, newStatus: string) => {
+    const sampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    const updatedRequests = sampleRequests.map((request: any) =>
+      request.id === requestId ? { ...request, status: newStatus, updated_at: new Date().toISOString() } : request
+    );
+    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
+    setSampleRequests(updatedRequests);
+    
+    const statusText = newStatus === 'shipped' ? 'shipped' : 'delivered';
+    alert(`✅ Sample status updated to "${statusText}" successfully!`);
+  };
+
   const handleApproveRFQ = (rfqId: string) => {
     setRFQs(prev => prev.map(rfq => 
       rfq.id === rfqId ? { ...rfq, status: 'approved' as const } : rfq
