@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock, CheckCircle, X, Eye, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import QASystem from '../components/QASystem';
 
 interface RFQ {
   id: string;
@@ -316,6 +317,23 @@ const MyRFQs = () => {
                   <span>Create Your First RFQ</span>
                 </Link>
               )}
+            </div>
+
+            {/* Q&A Section in Modal */}
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h4>
+              <QASystem 
+                rfqId={selectedRfq.id} 
+                mode="buyer_answer"
+              />
+            </div>
+
+            <div className="mt-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Published Q&A</h4>
+              <QASystem 
+                rfqId={selectedRfq.id} 
+                mode="public_view"
+              />
             </div>
           )}
         </div>
