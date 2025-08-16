@@ -329,11 +329,7 @@ const QuotationComparison = () => {
                             </div>
                             <p className="text-xs text-gray-500">{quote.supplier.company}</p>
                             <p className="text-xs text-gray-500">{quote.supplier.location}</p>
-                            <div className="flex items-center mt-1">
-                              <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                              <span className="text-xs text-gray-600 ml-1">{quote.supplier.rating}</span>
-                            </div>
-                          </div>
+                            <p className="text-sm font-medium text-gray-900">{quote.supplier.name.split(' ')[0]}</p>
                         </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4">
@@ -530,14 +526,10 @@ const QuotationComparison = () => {
                 <div className="bg-white p-4 rounded-lg border">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.contact_person}</h5>
+                      <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.contact_person.split(' ')[0]}</h5>
                       {selectedQuotation.supplier.verified && (
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       )}
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="font-bold text-yellow-600">{selectedQuotation.supplier.rating}</span>
                     </div>
                   </div>
                   <p className="text-gray-600 flex items-center mb-2">
@@ -548,16 +540,6 @@ const QuotationComparison = () => {
                     <MapPin className="h-4 w-4 mr-1" />
                     {selectedQuotation.supplier.location}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                    <p className="text-gray-600 flex items-center">
-                      <span className="mr-1">📧</span>
-                      {selectedQuotation.supplier.email}
-                    </p>
-                    <p className="text-gray-600 flex items-center">
-                      <span className="mr-1">📞</span>
-                      {selectedQuotation.supplier.phone}
-                    </p>
-                  </div>
                 </div>
               </div>
 
