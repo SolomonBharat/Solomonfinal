@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Mail, Phone, MapPin, DollarSign, FileText, Building } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText } from 'lucide-react';
 
 interface Quotation {
   id: string;
@@ -298,20 +298,6 @@ const QuotationComparison = () => {
                     </div>
                   </div>
 
-                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <h5 className="text-sm font-semibold text-blue-900 mb-2">📞 Contact Information</h5>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center text-blue-800">
-                        <Mail className="h-3 w-3 mr-2" />
-                        <span>{quote.supplier.email}</span>
-                      </div>
-                      <div className="flex items-center text-blue-800">
-                        <Phone className="h-3 w-3 mr-2" />
-                        <span>{quote.supplier.phone}</span>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Shipping Terms:</span>
@@ -358,6 +344,7 @@ const QuotationComparison = () => {
             </button>
           </div>
         </div>
+      </div>
       {/* Quotation Details Modal */}
       {showQuotationModal && selectedQuotation && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
@@ -530,7 +517,6 @@ const QuotationComparison = () => {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 };
