@@ -246,6 +246,10 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center justify-between sm:justify-end space-x-4">
               <Bell className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              <AdminNotificationCenter onNotificationUpdate={() => {
+                setUrgentAlerts(notificationService.getUrgentAlerts());
+                setAdminNotifications(notificationService.getAdminNotifications());
+              }} />
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-gray-400" />
                 <span className="text-sm text-gray-700 truncate max-w-32 sm:max-w-none">{user?.name}</span>
@@ -549,6 +553,19 @@ const AdminDashboard = () => {
               <div>
                 <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Platform Settings</h3>
                 <p className="text-xs sm:text-sm text-gray-600">Configure system parameters</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link 
+            to="/admin/workflow"
+            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-indigo-300 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-500" />
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Workflow Guide</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Process documentation</p>
               </div>
             </div>
           </Link>

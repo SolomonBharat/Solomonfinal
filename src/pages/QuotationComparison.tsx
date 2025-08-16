@@ -79,6 +79,9 @@ const QuotationComparison = () => {
   }, [rfqId]);
 
   const handleAcceptQuote = (quotationId: string) => {
+    const quotation = quotations.find(q => q.id === quotationId);
+    if (!quotation) return;
+
     // Check if any quote is already accepted for this RFQ
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const alreadyAccepted = supplierQuotations.some((quote: any) => 
@@ -90,6 +93,30 @@ const QuotationComparison = () => {
       return;
     }
     
+    // Get RFQ details for notification
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const rfq = userRFQs.find((r: any) => r.id === rfqId);
+
+    // Notify admin immediately about quote acceptance
+    import('../lib/notificationService').then(({ notificationService }) => {
+      notificationService.notifyQuoteAcceptance({
+        rfq_id: rfqId!,
+        rfq_title: rfq?.title || 'Product RFQ',
+        quotation_id: quotationId,
+        buyer_company: rfq?.buyer_company || 'Buyer Company',
+        buyer_email: rfq?.buyer_email || 'buyer@example.com',
+        buyer_phone: rfq?.buyer_phone || 'Phone',
+        supplier_company: quotation.supplier.company,
+        supplier_email: quotation.supplier.email,
+        supplier_phone: quotation.supplier.phone,
+        total_value: quotation.total_price,
+        quantity: quotation.moq || 1,
+        unit_price: quotation.price_per_unit,
+        payment_terms: quotation.payment_terms,
+        delivery_timeline: quotation.lead_time
+      });
+    });
+
     const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
     
     // Update RFQ status to closed in localStorage
@@ -114,6 +141,29 @@ const QuotationComparison = () => {
   };
 
   const handleRequestSample = (quotationId: string) => {
+    const quotation = quotations.find(q => q.id === quotationId);
+    if (!quotation) return;
+
+    // Get RFQ details
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const rfq = userRFQs.find((r: any) => r.id === rfqId);
+
+    // Notify admin immediately
+    import('../lib/notificationService').then(({ notificationService }) => {
+      notificationService.notifySampleRequest({
+        rfq_id: rfqId!,
+        rfq_title: rfq?.title || 'Product RFQ',
+        buyer_company: rfq?.buyer_company || 'Buyer Company',
+        buyer_email: rfq?.buyer_email || 'buyer@example.com',
+        buyer_phone: rfq?.buyer_phone || 'Phone',
+        supplier_company: quotation.supplier.company,
+        supplier_email: quotation.supplier.email,
+        supplier_phone: quotation.supplier.phone,
+        quoted_price: quotation.price_per_unit,
+        quantity: quotation.moq || 1
+      });
+    });
+
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const updatedQuotations = supplierQuotations.map((quote: any) => 
       quote.id === quotationId ? { ...quote, sample_status: 'sample_requested' } : quote

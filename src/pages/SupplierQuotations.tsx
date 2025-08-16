@@ -34,9 +34,11 @@ const SupplierQuotations = () => {
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     
     // Filter to show only current supplier's quotations
-    const myQuotations = supplierQuotations.filter((q: any) => 
-      q.supplier_email === user?.email || q.supplier_name === user?.name
-    );
+    const myQuotations = supplierQuotations.filter((q: any) => {
+      return q.supplier_email === user?.email || 
+             q.supplier_name === user?.name ||
+             q.supplier_id === user?.id;
+    });
     
     setQuotations(myQuotations);
   }, []);

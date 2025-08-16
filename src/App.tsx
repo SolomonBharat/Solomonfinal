@@ -22,6 +22,7 @@ import SupplierProfile from './pages/SupplierProfile';
 import BuyerAnalytics from './pages/BuyerAnalytics';
 import SupplierPerformance from './pages/SupplierPerformance';
 import AdminAnalytics from './pages/AdminAnalytics';
+import WorkflowDocumentation from './pages/WorkflowDocumentation';
 import OnboardSupplier from './pages/OnboardSupplier';
 import BuyerOrders from './pages/BuyerOrders';
 import SupplierOrders from './pages/SupplierOrders';
@@ -146,6 +147,10 @@ function AppContent() {
       <Route 
         path="/admin/settings" 
         element={user && userType === 'admin' ? <AdminSettings /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/workflow" 
+        element={user && userType === 'admin' ? <WorkflowDocumentation /> : <Navigate to="/login" replace />} 
       />
 
       {/* Catch all */}

@@ -38,6 +38,9 @@ interface Supplier {
 
 const AdminSuppliers = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
 
   useEffect(() => {
     // Load only onboarded suppliers
