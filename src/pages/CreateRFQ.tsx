@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const CreateRFQ = () => {
@@ -19,7 +19,9 @@ const CreateRFQ = () => {
     shipping_terms: 'FOB',
     quality_standards: '',
     certifications_needed: '',
-    additional_requirements: ''
+    additional_requirements: '',
+    product_images: [],
+    delivery_country: ''
   });
 
   const categories = [
@@ -52,7 +54,7 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
       alert('Please fill in all required fields');
       setLoading(false);
       return;
@@ -65,7 +67,8 @@ const CreateRFQ = () => {
       quantity: parseInt(formData.quantity),
       target_price: parseFloat(formData.target_price),
       max_price: formData.max_price ? parseFloat(formData.max_price) : null,
-      status: 'pending_approval',
+      status: user?.verification_status === 'verified' ? 'pending_approval' : 'pending_approval',
+      buyer_verified: user?.verification_status === 'verified' || false,
       created_at: new Date().toISOString().split('T')[0],
       quotations_count: 0,
       buyer_id: user?.id,
@@ -73,10 +76,11 @@ const CreateRFQ = () => {
       buyer_company: user?.company,
       buyer_country: user?.country,
       buyer_email: user?.email,
-      buyer_phone: user?.phone
+      buyer_phone: user?.phone,
+      product_images: formData.product_images.map(f => f.name)
     };
     
-    // Add to localStorage for demo
+    // Add to localStorage for demo (in production, this would be Supabase)
     const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     existingRFQs.push(newRFQ);
     localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
@@ -264,10 +268,10 @@ const CreateRFQ = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Timeline</option>
-                      <option value="30 days">30 days</option>
-                      <option value="45 days">45 days</option>
-                      <option value="60 days">60 days</option>
-                      <option value="90 days">90 days</option>
+                      <option value="30-days">30 days</option>
+                      <option value="45-days">45 days</option>
+                      <option value="60-days">60 days</option>
+                      <option value="90-days">90 days</option>
                       <option value="negotiable">Negotiable</option>
                     </select>
                   </div>
