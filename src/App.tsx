@@ -13,6 +13,7 @@ import MyRFQs from './pages/MyRFQs';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminSuppliers from './pages/AdminSuppliers';
 import AdminRFQs from './pages/AdminRFQs';
+import AdminSettings from './pages/AdminSettings';
 import SupplierLogin from './pages/SupplierLogin';
 import SupplierDashboard from './pages/SupplierDashboard';
 import SupplierQuote from './pages/SupplierQuote';
