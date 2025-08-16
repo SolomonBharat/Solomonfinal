@@ -20,7 +20,8 @@ const CreateRFQ = () => {
     quality_standards: '',
     certifications_needed: '',
     additional_requirements: '',
-    product_images: []
+    product_images: [],
+    delivery_country: ''
   });
 
   const categories = [
@@ -51,13 +52,13 @@ const CreateRFQ = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
       alert('Please fill in all required fields');
+      setLoading(false);
       return;
     }
-    
-    setLoading(true);
     
     // Create new RFQ with pending status
     const newRFQ = {
