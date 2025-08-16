@@ -458,14 +458,6 @@ const SupplierQuote = () => {
                     <FileUpload
                       label="Product Videos"
                       description="Upload videos showcasing your products and quality"
-                      acceptedTypes="video/*"
-                      maxFiles={3}
-                      maxSize={50}
-                      onFileSelect={(files) => setFormData(prev => ({ ...prev, product_videos: files }))}
-                    />
-                  </div>
-                </div>
-
                 {/* Form Actions */}
                 <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0">
                   <Link 
