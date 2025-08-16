@@ -50,7 +50,7 @@ const AdminRFQs = () => {
       status: rfq.status || 'pending_approval',
       created_at: rfq.created_at,
       urgency: 'medium',
-      matched_suppliers: 0
+      matched_suppliers: 0,
       fullDetails: rfq
     }));
     
