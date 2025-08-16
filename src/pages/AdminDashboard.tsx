@@ -64,6 +64,11 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  
+  // Derived state - must be after rfqs and quotations
+  const pendingRFQs = rfqs.filter(rfq => rfq.status === 'pending_approval');
+  const pendingQuotations = quotations.filter(q => q.status === 'pending_review');
+  
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
@@ -91,7 +96,6 @@ const AdminDashboard = () => {
       matched_suppliers: 0
     }));
     
-    setRFQs(convertedUserRFQs);
     setRFQs(convertedUserRFQs);
     // Load Quotations
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
@@ -137,16 +141,10 @@ const AdminDashboard = () => {
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const updatedUserRFQs = userRFQs.map((rfq: any) => {
       if (rfq.id === rfqId) {
-        // Mark buyer as verified after first approval
-        if (rfq.buyer_id) {
-          const { updateUserVerification } = useAuth();
-          updateUserVerification(rfq.buyer_id);
-        }
         return { ...rfq, status: 'approved' };
       }
       return rfq;
-    }
-    );
+    });
     localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
     alert('RFQ approved successfully!');
   };
@@ -213,8 +211,6 @@ const AdminDashboard = () => {
     return badges[urgency as keyof typeof badges];
   };
 
-  const pendingRFQs = rfqs.filter(rfq => rfq.status === 'pending_approval');
-  const pendingQuotations = quotations.filter(q => q.status === 'pending_review');
 
   const handleViewRFQDetails = (rfq: RFQ) => {
     // Load full RFQ details from localStorage
