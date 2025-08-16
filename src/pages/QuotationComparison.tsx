@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText, Phone } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText } from 'lucide-react';
 import QASystem from '../components/QASystem';
 
 interface Quotation {
@@ -334,6 +334,7 @@ const QuotationComparison = () => {
                               <span className="text-xs text-gray-600 ml-1">{quote.supplier.rating}</span>
                             </div>
                           </div>
+                        </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4">
                         <div className="flex flex-col">
