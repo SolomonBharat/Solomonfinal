@@ -134,8 +134,6 @@ const SupplierDashboard = () => {
       // Get current supplier info
       const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
       const currentAuthUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-      const supplierData = onboardedSuppliers.find((s: any) => s.email === currentAuthUser.email);
       
       const newQuotation = {
         id: `q-${Date.now()}`,
@@ -143,7 +141,7 @@ const SupplierDashboard = () => {
         rfq_title: selectedRfq.title,
         supplier_id: currentAuthUser.id,
         supplier_name: currentAuthUser.name || 'Supplier User',
-        supplier_company: supplierData?.companyName || currentAuthUser.company || 'Supplier Company',
+        supplier_company: currentAuthUser.company || 'Supplier Company',
         supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
         supplier_email: currentAuthUser.email,
         supplier_phone: currentAuthUser.phone || '+91 XXXXXXXXXX',
@@ -354,7 +352,7 @@ const SupplierDashboard = () => {
                         <p className="text-blue-800">{rfq.quality_standards || 'Standard Quality'}</p>
                       </div>
                       {rfq.certifications_needed && (
-                        <div className="col-span-2">
+                        <div>
                           <span className="text-blue-700 font-medium">Required Certifications:</span>
                           <p className="text-blue-800">{rfq.certifications_needed}</p>
                         </div>
@@ -388,11 +386,14 @@ const SupplierDashboard = () => {
                     {rfq.status === 'quoted' && (
                       <div className="flex space-x-2">
                         <div className="bg-green-50 text-green-700 py-2 px-3 rounded-md text-sm font-medium">
-                          Quote Submitted
+                          ✅ Quote Submitted
                         </div>
-                        <button className="bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100">
+                        <Link
+                          to={`/supplier/quote/${rfq.id}?edit=true`}
+                          className="bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100"
+                        >
                           Edit Quote
-                        </button>
+                        </Link>
                       </div>
                     )}
                     <button 
