@@ -384,10 +384,11 @@ export const db = DatabaseService.getInstance();
 // Authentication Context
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  userType: 'buyer' | 'supplier' | 'admin' | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   register: (userData: Partial<User> & { password: string }) => Promise<User>;
-  isLoading: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -398,19 +399,22 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [userType, setUserType] = useState<'buyer' | 'supplier' | 'admin' | null>(null);
 
   useEffect(() => {
     // Check for existing session
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      setUserType(userData.user_type);
     }
-    setIsLoading(false);
+    setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    setLoading(true);
     
     try {
       // Check registered buyers first
@@ -433,9 +437,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         
         setUser(userAccount);
+        setUserType(userAccount.user_type);
         localStorage.setItem('currentUser', JSON.stringify(userAccount));
-        setIsLoading(false);
-        return true;
+        setLoading(false);
+        return { success: true };
       }
 
       // Check onboarded suppliers
@@ -458,9 +463,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         
         setUser(userAccount);
+        setUserType(userAccount.user_type);
         localStorage.setItem('currentUser', JSON.stringify(userAccount));
-        setIsLoading(false);
-        return true;
+        setLoading(false);
+        return { success: true };
       }
 
       // Check default accounts
@@ -487,17 +493,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         
         setUser(userAccount);
+        setUserType(userAccount.user_type);
         localStorage.setItem('currentUser', JSON.stringify(userAccount));
-        setIsLoading(false);
-        return true;
+        setLoading(false);
+        return { success: true };
       }
 
-      setIsLoading(false);
-      return false;
+      setLoading(false);
+      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
       console.error('Login error:', error);
-      setIsLoading(false);
-      return false;
+      setLoading(false);
+      return { success: false, error: 'Login failed' };
     }
   };
 
@@ -529,15 +536,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setUserType(null);
     localStorage.removeItem('currentUser');
   };
 
   const value: AuthContextType = {
     user,
+    userType,
     login,
     logout,
     register,
-    isLoading
+    loading
   };
 
   return (
