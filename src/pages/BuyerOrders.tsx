@@ -27,7 +27,9 @@ const BuyerOrders = () => {
   useEffect(() => {
     // Load buyer's orders from localStorage
     const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const buyerOrders = allOrders.filter((order: any) => order.buyer_id === user?.id);
+    const buyerOrders = allOrders.filter((order: any) => 
+      order.buyer_id === user?.id || order.buyer_email === user?.email
+    );
     setOrders(buyerOrders);
   }, []);
 

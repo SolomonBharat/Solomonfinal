@@ -23,14 +23,17 @@ const MatchingResults = () => {
   useEffect(() => {
     // Load onboarded suppliers that match the RFQ category
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const currentRFQ = userRFQs.find((rfq: any) => rfq.id === rfqId);
+    const currentRFQ = userRFQs.find((rfq: any) => 
+      rfq.id === rfqId
+    );
     
     if (currentRFQ) {
       const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
       const matchingSuppliers = onboardedSuppliers
-        .filter((supplier: any) => 
-          supplier.productCategories?.includes(currentRFQ.category) ||
-          supplier.product_categories?.includes(currentRFQ.category)
+        .filter((supplier: any) => {
+          const categories = supplier.productCategories || supplier.product_categories || [];
+          return categories.includes(currentRFQ.category);
+        }
         )
         .map((supplier: any) => ({
           id: supplier.id,

@@ -32,7 +32,13 @@ const SupplierQuotations = () => {
   useEffect(() => {
     // Load quotations from localStorage
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    setQuotations(supplierQuotations);
+    
+    // Filter to show only current supplier's quotations
+    const myQuotations = supplierQuotations.filter((q: any) => 
+      q.supplier_email === user?.email || q.supplier_name === user?.name
+    );
+    
+    setQuotations(myQuotations);
   }, []);
 
   const [filterStatus, setFilterStatus] = useState<string>('all');
