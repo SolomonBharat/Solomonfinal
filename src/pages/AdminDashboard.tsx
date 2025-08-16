@@ -18,7 +18,6 @@ import {
   MapPin,
   Building,
   Package
-  Building,
   Phone,
   Mail,
   Globe,
