@@ -4,16 +4,20 @@ import {
   Home, 
   FileText, 
   Users, 
-  Package, 
-  ShoppingCart,
+  MessageCircle, 
   Settings, 
   Bell, 
   User, 
   LogOut,
   ChevronDown,
+  Search,
   Menu,
   X,
   BarChart3,
+  ShoppingCart,
+  Package,
+  TrendingUp,
+  Award,
   Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,45 +37,88 @@ interface NavItem {
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subtitle }) => {
-  const { profile, signOut } = useAuth();
+  const { user, userType, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [notifications] = useState([
+    { id: 1, title: 'New RFQ Approved', message: 'Your RFQ for Cotton T-Shirts has been approved', time: '2 min ago', unread: true },
+    { id: 2, title: 'Quote Received', message: 'You received a new quotation', time: '1 hour ago', unread: true },
+    { id: 3, title: 'Order Shipped', message: 'Your order #12345 has been shipped', time: '2 hours ago', unread: false }
+  ]);
 
   const getNavItems = (): NavItem[] => {
-    const baseItems: NavItem[] = [];
+    const baseItems: NavItem[] = [
+      { name: 'Dashboard', href: `/${userType === 'admin' ? 'admin' : userType === 'supplier' ? 'supplier/dashboard' : 'dashboard'}`, icon: Home },
+    ];
 
-    if (profile?.user_type === 'admin') {
+    if (userType === 'buyer') {
       return [
-        { name: 'Dashboard', href: '/admin', icon: Home },
-        { name: 'RFQs', href: '/admin/rfqs', icon: FileText },
-        { name: 'Suppliers', href: '/admin/suppliers', icon: Users },
-        { name: 'Quotations', href: '/admin/quotations', icon: Package },
-        { name: 'Samples', href: '/admin/samples', icon: Package },
-        { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-        { name: 'Categories', href: '/admin/categories', icon: Settings },
-        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+        ...baseItems,
+        { 
+          name: 'RFQs', 
+          href: '/my-rfqs', 
+          icon: FileText,
+          children: [
+            { name: 'My RFQs', href: '/my-rfqs', icon: FileText },
+            { name: 'Create RFQ', href: '/create-rfq', icon: FileText },
+          ]
+        },
+        { name: 'Orders', href: '/orders', icon: ShoppingCart },
+        { name: 'Suppliers', href: '/suppliers', icon: Users },
+        { name: 'Messages', href: '/messages', icon: MessageCircle, badge: 3 },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Profile', href: '/profile', icon: User },
       ];
     }
 
-    if (profile?.user_type === 'buyer') {
+    if (userType === 'supplier') {
       return [
-        { name: 'Dashboard', href: '/buyer/dashboard', icon: Home },
-        { name: 'Create RFQ', href: '/buyer/create-rfq', icon: FileText },
-        { name: 'My RFQs', href: '/buyer/rfqs', icon: FileText },
-        { name: 'Samples', href: '/buyer/samples', icon: Package },
-        { name: 'Orders', href: '/buyer/orders', icon: ShoppingCart },
-        { name: 'Profile', href: '/buyer/profile', icon: User },
-      ];
-    }
-
-    if (profile?.user_type === 'supplier') {
-      return [
-        { name: 'Dashboard', href: '/supplier/dashboard', icon: Home },
-        { name: 'Quotations', href: '/supplier/quotations', icon: Package },
-        { name: 'Samples', href: '/supplier/samples', icon: Package },
+        ...baseItems,
+        { name: 'RFQs', href: '/supplier/dashboard', icon: FileText },
+        { 
+          name: 'Quotations', 
+          href: '/supplier/quotations', 
+          icon: Package,
+          children: [
+            { name: 'My Quotations', href: '/supplier/quotations', icon: Package },
+            { name: 'Draft Quotes', href: '/supplier/drafts', icon: Package },
+          ]
+        },
         { name: 'Orders', href: '/supplier/orders', icon: ShoppingCart },
+        { name: 'Performance', href: '/supplier/performance', icon: TrendingUp },
+        { name: 'Messages', href: '/messages', icon: MessageCircle, badge: 2 },
         { name: 'Profile', href: '/supplier/profile', icon: User },
+      ];
+    }
+
+    if (userType === 'admin') {
+      return [
+        ...baseItems,
+        { 
+          name: 'RFQs', 
+          href: '/admin/rfqs', 
+          icon: FileText,
+          children: [
+            { name: 'All RFQs', href: '/admin/rfqs', icon: FileText },
+            { name: 'Pending Approval', href: '/admin/rfqs?status=pending', icon: FileText },
+          ]
+        },
+        { 
+          name: 'Suppliers', 
+          href: '/admin/suppliers', 
+          icon: Users,
+          children: [
+            { name: 'All Suppliers', href: '/admin/suppliers', icon: Users },
+            { name: 'Verification Queue', href: '/admin/suppliers?status=pending', icon: Users },
+            { name: 'Sample Requests', href: '/admin/sample-requests', icon: Package },
+            { name: 'Category Management', href: '/admin/categories', icon: Settings },
+          ]
+        },
+        { name: 'Quotations', href: '/admin/quotations', icon: Package },
+        { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+        { name: 'Settings', href: '/admin/settings', icon: Settings },
       ];
     }
 
@@ -112,23 +159,42 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
         <nav className="mt-6 px-3">
           <div className="space-y-1">
             {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isActive(item.href)
-                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <item.icon className={`mr-3 h-5 w-5 ${isActive(item.href) ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                {item.name}
-                {item.badge && (
-                  <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
-                    {item.badge}
-                  </span>
+              <div key={item.name}>
+                <Link
+                  to={item.href}
+                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                    isActive(item.href)
+                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <item.icon className={`mr-3 h-5 w-5 ${isActive(item.href) ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                  {item.name}
+                  {item.badge && (
+                    <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+                {item.children && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.name}
+                        to={child.href}
+                        className={`group flex items-center px-3 py-1 text-sm rounded-md transition-colors ${
+                          isActive(child.href)
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <span className="w-2 h-2 bg-gray-300 rounded-full mr-3"></span>
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
                 )}
-              </Link>
+              </div>
             ))}
           </div>
         </nav>
@@ -138,12 +204,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">
-                {profile?.full_name?.charAt(0).toUpperCase()}
+                {user?.name?.charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{profile?.full_name}</p>
-              <p className="text-xs text-gray-500 truncate">{profile?.company_name}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.company}</p>
             </div>
           </div>
         </div>
@@ -169,10 +235,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
               </div>
 
               <div className="flex items-center space-x-4">
+                {/* Search */}
+                <div className="hidden md:block relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  />
+                </div>
+
                 {/* Notifications */}
-                <button className="text-gray-400 hover:text-gray-600 relative">
-                  <Bell className="h-6 w-6" />
-                </button>
+                <div className="relative">
+                  <button className="text-gray-400 hover:text-gray-600 relative">
+                    <Bell className="h-6 w-6" />
+                    {notifications.filter(n => n.unread).length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {notifications.filter(n => n.unread).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
 
                 {/* Profile dropdown */}
                 <div className="relative">
@@ -182,7 +265,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
                   >
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
-                        {profile?.full_name?.charAt(0).toUpperCase()}
+                        {user?.name?.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <ChevronDown className="h-4 w-4" />
@@ -191,17 +274,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
                   {profileDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{profile?.full_name}</p>
-                        <p className="text-xs text-gray-500">{profile?.user_type}</p>
+                        <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                        <p className="text-xs text-gray-500">{user?.email}</p>
                       </div>
                       <Link
-                        to={`/${profile?.user_type}/profile`}
+                        to={userType === 'supplier' ? '/supplier/profile' : '/profile'}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Profile Settings
                       </Link>
                       <button
-                        onClick={signOut}
+                        onClick={logout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         <LogOut className="inline h-4 w-4 mr-2" />
