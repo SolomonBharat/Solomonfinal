@@ -40,10 +40,10 @@ const SupplierRegisterPage = () => {
           description: error.message,
         });
       } else {
-        toast.success('Registration successful', {
-          description: 'Account created successfully! Your account is pending verification.',
+        toast.success('Welcome to Solomon Bharat!', {
+          description: 'Account created successfully! You are now logged in.',
         });
-        navigate('/login');
+        navigate('/supplier/dashboard');
       }
     } catch (error: any) {
       toast.error('Registration failed', {

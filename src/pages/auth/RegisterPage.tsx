@@ -35,10 +35,10 @@ const RegisterPage = () => {
           description: error.message,
         });
       } else {
-        toast.success('Registration successful', {
-          description: 'Account created successfully! You can now sign in.',
+        toast.success('Welcome to Solomon Bharat!', {
+          description: 'Account created successfully! You are now logged in.',
         });
-        navigate('/login');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast.error('Registration failed', {

@@ -108,6 +108,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: undefined,
+          data: {
+            email_confirm: false
+          }
+        }
       });
 
       if (authError) {
@@ -158,6 +164,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(false);
             return { error: supplierError };
           }
+        }
+
+        // Automatically sign in the user after successful registration
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setLoading(false);
+          return { error: signInError };
         }
       }
 
