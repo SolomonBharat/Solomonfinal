@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import { DashboardLayout } from '../components/DashboardLayout';
 import DataTable from '../components/DataTable';
 import { Package, Truck, CheckCircle, Clock, Eye, Download, MapPin, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
