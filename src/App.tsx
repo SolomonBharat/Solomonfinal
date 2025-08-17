@@ -14,8 +14,7 @@ import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
-import AdminSuppliers from './pages/admin/AdminSuppliers';
-import AdminQuotationModeration from './pages/admin/AdminQuotationModeration';
+import AdminSuppliers from './pages/AdminSuppliers';
 import AdminSampleRequests from './pages/admin/AdminSampleRequests';
 import AdminCategoryManagement from './pages/admin/AdminCategoryManagement';
 
@@ -62,7 +61,6 @@ function AppContent() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/rfqs" element={<AdminRFQs />} />
           <Route path="/admin/suppliers" element={<AdminSuppliers />} />
-          <Route path="/admin/quotations" element={<AdminQuotationModeration />} />
           <Route path="/admin/samples" element={<AdminSampleRequests />} />
           <Route path="/admin/categories" element={<AdminCategoryManagement />} />
         </Route>
