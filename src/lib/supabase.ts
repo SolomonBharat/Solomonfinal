@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Database types
+export interface UserProfile {
+  id: string
+  user_type: 'admin' | 'buyer' | 'supplier'
+  full_name: string | null
+  company_name: string | null
+  phone: string | null
+  country: string | null
+  website: string | null
+  created_at: string
+  updated_at: string
+}
 
 // Helper function to check if user is admin
 export const isAdmin = async (): Promise<boolean> => {

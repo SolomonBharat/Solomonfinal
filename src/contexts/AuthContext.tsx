@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase, UserProfile } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import type { UserProfile } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -31,7 +32,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if Supabase is properly configured
+  const isSupabaseConfigured = () => {
+    return import.meta.env.VITE_SUPABASE_URL && 
+           import.meta.env.VITE_SUPABASE_ANON_KEY &&
+           import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co';
+  };
+
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, using mock authentication');
+      setLoading(false);
+      return;
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -60,6 +74,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    if (!isSupabaseConfigured()) return;
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -80,6 +96,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured()) {
+      // Mock authentication for demo purposes
+      const mockUser = {
+        id: 'mock-user-id',
+        email,
+        name: email.split('@')[0],
+        company: 'Demo Company'
+      };
+      
+      const mockProfile = {
+        id: 'mock-user-id',
+        user_type: email.includes('admin') ? 'admin' as const : 
+                   email.includes('supplier') ? 'supplier' as const : 'buyer' as const,
+        full_name: email.split('@')[0],
+        company_name: 'Demo Company',
+        phone: null,
+        country: null,
+        website: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setUser(mockUser as any);
+      setProfile(mockProfile);
+      localStorage.setItem('mock_auth', JSON.stringify({ user: mockUser, profile: mockProfile }));
+      return { error: null };
+    }
+
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -101,6 +145,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
+    if (!isSupabaseConfigured()) {
+      // Mock registration for demo purposes
+      const mockUser = {
+        id: `mock-${Date.now()}`,
+        email,
+        name: userData.fullName,
+        company: userData.companyName
+      };
+      
+      const mockProfile = {
+        id: mockUser.id,
+        user_type: userData.userType,
+        full_name: userData.fullName,
+        company_name: userData.companyName,
+        phone: userData.phone || null,
+        country: userData.country || null,
+        website: userData.website || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setUser(mockUser as any);
+      setProfile(mockProfile);
+      localStorage.setItem('mock_auth', JSON.stringify({ user: mockUser, profile: mockProfile }));
+      return { error: null };
+    }
+
     setLoading(true);
     
     try {
@@ -187,10 +258,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured()) {
+      setUser(null);
+      setProfile(null);
+      localStorage.removeItem('mock_auth');
+      return;
+    }
+
     await supabase.auth.signOut();
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!isSupabaseConfigured()) {
+      if (profile) {
+        const updatedProfile = { ...profile, ...updates };
+        setProfile(updatedProfile);
+        const mockAuth = JSON.parse(localStorage.getItem('mock_auth') || '{}');
+        localStorage.setItem('mock_auth', JSON.stringify({ ...mockAuth, profile: updatedProfile }));
+      }
+      return { error: null };
+    }
+
     if (!user) return { error: 'No user logged in' };
 
     const { error } = await supabase
@@ -205,6 +293,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
+  // Initialize mock auth if Supabase not configured
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      const mockAuth = localStorage.getItem('mock_auth');
+      if (mockAuth) {
+        const { user: mockUser, profile: mockProfile } = JSON.parse(mockAuth);
+        setUser(mockUser);
+        setProfile(mockProfile);
+      }
+      setLoading(false);
+    }
+  }, []);
+
   // Legacy login function for compatibility
   const login = async (email: string, password: string) => {
     const result = await signIn(email, password);
@@ -218,6 +319,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     await signOut();
   };
+
   const value: AuthContextType = {
     user,
     profile,
