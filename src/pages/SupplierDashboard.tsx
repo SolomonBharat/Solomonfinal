@@ -45,17 +45,16 @@ const SupplierDashboard = () => {
              s.contact_person === user?.name;
     });
     
+    // Only show RFQs for supplier's onboarded categories
     let supplierCategories = [];
     if (currentSupplier && (currentSupplier.productCategories || currentSupplier.product_categories)) {
       supplierCategories = currentSupplier.productCategories || currentSupplier.product_categories;
-    } else {
-      // If no supplier found, show all categories for demo
-      supplierCategories = [
-        'Textiles & Apparel',
-        'Spices & Food Products', 
-        'Handicrafts & Home Decor',
-        'Electronics & Components'
-      ];
+    }
+    
+    // If no supplier found or no categories, show empty array (no RFQs)
+    if (supplierCategories.length === 0) {
+      setRfqs([]);
+      return;
     }
     
     // Load approved RFQs from localStorage that match supplier's categories
@@ -63,7 +62,7 @@ const SupplierDashboard = () => {
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
     
-    // Show only approved and matched RFQs that match supplier's categories
+    // Show only approved and matched RFQs that EXACTLY match supplier's onboarded categories
     const availableRFQs = userRFQs.filter((rfq: any) => 
       (rfq.status === 'approved' || rfq.status === 'matched') && 
       supplierCategories.includes(rfq.category)

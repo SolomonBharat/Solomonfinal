@@ -378,21 +378,28 @@ const SupplierProfile = () => {
             {/* Product Categories */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Product Categories</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Product Categories (Read Only)</h3>
+                <p className="text-sm text-gray-600 mt-1">Categories are set during onboarding and cannot be changed</p>
               </div>
               <div className="p-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3 opacity-60 pointer-events-none">
                   {categories.map(category => (
                     <label key={category} className="flex items-center">
                       <input
                         type="checkbox"
                         checked={formData.product_categories.includes(category)}
-                        onChange={() => handleCategoryChange(category)}
+                        disabled={true}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">{category}</span>
                     </label>
                   ))}
+                </div>
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> Product categories are assigned during the onboarding process and cannot be modified. 
+                    If you need to add or change categories, please contact our admin team.
+                  </p>
                 </div>
               </div>
             </div>
