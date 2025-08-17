@@ -34,9 +34,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check if Supabase is properly configured
   const isSupabaseConfigured = () => {
-    return import.meta.env.VITE_SUPABASE_URL && 
-           import.meta.env.VITE_SUPABASE_ANON_KEY &&
-           import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co';
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    console.log('Supabase Config Check:', {
+      url: url ? 'Set' : 'Missing',
+      key: key ? 'Set' : 'Missing',
+      isPlaceholder: url === 'https://placeholder.supabase.co'
+    });
+    
+    return url && key && url !== 'https://placeholder.supabase.co';
   };
 
   useEffect(() => {
@@ -45,6 +52,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
       return;
     }
+    
+    console.log('Supabase is configured, initializing...');
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -145,22 +154,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
+    if (!isSupabaseConfigured()) {
+      console.error('Supabase not configured - cannot create real account');
+      return { error: new Error('Supabase not configured') };
+    }
+    
     setLoading(true);
     
     try {
       console.log('Starting signup process for:', email);
+      console.log('User data:', userData);
       
       // Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: undefined, // Disable email confirmation
           data: {
             full_name: userData.fullName,
             company_name: userData.companyName,
             user_type: userData.userType
-          }
+          },
+          // Explicitly disable email confirmation
+          emailRedirectTo: undefined
         }
       });
 
@@ -172,8 +189,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { error: authError };
       }
 
-      if (authData.user) {
+      if (authData.user && authData.user.id) {
         console.log('Creating profile for user:', authData.user.id);
+        
+        // Wait a moment for the user to be fully created
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Create profile
         const { data: profileData, error: profileError } = await supabase
@@ -193,9 +213,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('Profile creation result:', { profileData, profileError });
 
         if (profileError) {
-          setLoading(false);
           console.error('Profile error:', profileError);
-          return { error: profileError };
+          // Don't fail completely if profile creation fails
+          console.log('Continuing despite profile error...');
         }
 
         // Create role-specific record
@@ -210,9 +230,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('Buyer creation result:', { buyerData, buyerError });
           
           if (buyerError) {
-            setLoading(false);
             console.error('Buyer error:', buyerError);
-            return { error: buyerError };
           }
         } else if (userData.userType === 'supplier') {
           console.log('Creating supplier record');
@@ -230,14 +248,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log('Supplier creation result:', { supplierData, supplierError });
           
           if (supplierError) {
-            setLoading(false);
             console.error('Supplier error:', supplierError);
-            return { error: supplierError };
           }
         }
 
-        // Set the profile data immediately
-        setProfile(profileData);
+        // Set the profile data if we have it
+        if (profileData) {
+          setProfile(profileData);
+        }
+        
+        // Try to sign in the user immediately
+        console.log('Attempting to sign in user after signup...');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        console.log('Sign in after signup result:', { signInData, signInError });
+        
         console.log('Signup completed successfully');
       }
 

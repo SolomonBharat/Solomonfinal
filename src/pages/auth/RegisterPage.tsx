@@ -22,6 +22,8 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
+      console.log('Starting registration with form data:', formData);
+      
       const { error } = await signUp(formData.email, formData.password, {
         userType: 'buyer',
         fullName: formData.fullName,
@@ -31,16 +33,19 @@ const RegisterPage = () => {
       });
 
       if (error) {
+        console.error('Registration error:', error);
         toast.error('Registration failed', {
           description: error.message,
         });
       } else {
+        console.log('Registration successful, redirecting...');
         toast.success('Welcome to Solomon Bharat!', {
           description: 'Account created successfully! You are now logged in.',
         });
         navigate('/dashboard');
       }
     } catch (error: any) {
+      console.error('Registration exception:', error);
       toast.error('Registration failed', {
         description: error.message,
       });
