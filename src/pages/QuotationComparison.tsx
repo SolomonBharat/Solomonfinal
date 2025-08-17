@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText, PlayCircle, Image } from 'lucide-react';
 import QASystem from '../components/QASystem';
 
 interface Quotation {
   id: string;
   supplier: {
     name: string;
-    company: string;
+    company_name: string;
     contact_person: string;
     location: string;
     email: string;
     phone: string;
     rating: number;
     verified: boolean;
+    factory_video?: string;
+    factory_images?: string[];
   };
   price_per_unit: number;
   total_price: number;
@@ -37,6 +39,7 @@ const QuotationComparison = () => {
   const { rfqId } = useParams();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rfqDetails, setRfqDetails] = useState<any>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
 
@@ -44,27 +47,37 @@ const QuotationComparison = () => {
     // Load quotations for this RFQ
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const rfqQuotations = supplierQuotations.filter((q: any) => 
-      q.rfq_id === rfqId && q.status === 'sent_to_buyer'
+      q.rfq_id === rfqId && (q.status === 'sent_to_buyer' || q.status === 'accepted')
     );
+
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const currentRFQ = userRFQs.find((r: any) => r.id === rfqId);
+    setRfqDetails(currentRFQ);
+
+    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
     
     // Convert supplier quotations to the format expected by this component
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        name: q.supplier_name || 'Contact Person',
-        company: q.supplier_company || 'Supplier Company',
+        name: q.supplier_company || 'Supplier Company', // Display company name prominently
+        company_name: q.supplier_company || 'Supplier Company',
         contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
         email: q.supplier_email || 'supplier@example.com',
         phone: q.supplier_phone || '+91 XXXXXXXXXX',
         rating: 4.5,
-        verified: true
+        verified: onboardedSuppliers.find((s: any) => s.id === q.supplier_id || s.email === q.supplier_email)?.verified || false,
+        factory_video: onboardedSuppliers.find((s: any) => s.id === q.supplier_id || s.email === q.supplier_email)?.factory_video,
+        factory_images: onboardedSuppliers.find((s: any) => s.id === q.supplier_id || s.email === q.supplier_email)?.factory_images,
       },
       price_per_unit: q.quoted_price,
       total_price: q.total_value,
       moq: q.moq,
       lead_time: q.lead_time,
       payment_terms: q.payment_terms || '30% advance, 70% on shipment',
+      // Ensure validity_days is a number
+      validity_days: parseInt(q.validity_days) || 15,
       validity_days: q.validity_days || 15,
       shipping_terms: q.shipping_terms || 'FOB',
       quality_guarantee: q.quality_guarantee || true,
@@ -83,7 +96,6 @@ const QuotationComparison = () => {
     if (!quotation) return;
 
     // Check if any quote is already accepted for this RFQ
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const alreadyAccepted = supplierQuotations.some((quote: any) => 
       quote.rfq_id === rfqId && quote.status === 'accepted'
     );
@@ -92,7 +104,7 @@ const QuotationComparison = () => {
       alert('A quote has already been accepted for this RFQ. Only one quote can be accepted per RFQ.');
       return;
     }
-    
+
     // Get RFQ details for notification
     const rfq = userRFQs.find((r: any) => r.id === rfqId);
 
@@ -117,7 +129,7 @@ const QuotationComparison = () => {
     });
 
     const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
-    
+
     // Update RFQ status to closed in localStorage
     const updatedRFQs = userRFQs.map((rfq: any) => 
       rfq.id === rfqId ? { ...rfq, status: 'closed' } : rfq
@@ -143,7 +155,6 @@ const QuotationComparison = () => {
     if (!quotation) return;
 
     // Get RFQ details
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const rfq = userRFQs.find((r: any) => r.id === rfqId);
 
     // Create sample request record
@@ -160,7 +171,7 @@ const QuotationComparison = () => {
       supplier_email: quotation.supplier.email,
       supplier_phone: quotation.supplier.phone,
       supplier_location: quotation.supplier.location,
-      quoted_price: quotation.price_per_unit,
+      quoted_price: quotation.price_per_unit, // Price from the quote for context
       quantity: quotation.moq || 1,
       status: 'pending',
       created_at: new Date().toISOString(),
@@ -169,7 +180,7 @@ const QuotationComparison = () => {
 
     // Save sample request
     const sampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-    sampleRequests.push(sampleRequest);
+    sampleRequests.push({ ...sampleRequest, status: 'pending_admin_review' }); // Set initial status
     localStorage.setItem('sample_requests', JSON.stringify(sampleRequests));
 
     // Notify admin immediately
@@ -252,7 +263,7 @@ const QuotationComparison = () => {
           <div className="mb-6 sm:mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Compare Quotations</h1>
             <p className="text-gray-600 text-sm sm:text-base">
-              You received {quotations.length} approved quotations for your RFQ
+              You received {quotations.length} approved quotations for your RFQ: <strong>{rfqDetails?.title}</strong>
             </p>
           </div>
 
@@ -403,7 +414,7 @@ const QuotationComparison = () => {
             {quotations.map((quote) => (
               <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-4 sm:p-6">
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start mb-3">
                     <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{quote.supplier.contact_person}</h4>
                     <div className="flex items-center space-x-1">
                       {quote.supplier.verified && <CheckCircle className="h-4 w-4 text-green-500" />}
@@ -413,8 +424,8 @@ const QuotationComparison = () => {
 
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Company:</span>
-                      <span className="font-medium">{quote.supplier.company}</span>
+                      <span className="text-gray-500">Company Name:</span>
+                      <span className="font-medium">{quote.supplier.company_name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Shipping Terms:</span>
@@ -445,6 +456,36 @@ const QuotationComparison = () => {
                       </p>
                     </div>
                   )}
+
+                  {/* Factory Media Display */}
+                  {(quote.supplier.factory_video || (quote.supplier.factory_images && quote.supplier.factory_images.length > 0)) && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+                      <h5 className="text-sm font-semibold text-gray-800 mb-2">Factory Details:</h5>
+                      {quote.supplier.factory_video && (
+                        <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 cursor-pointer mb-1">
+                          <PlayCircle className="h-4 w-4" />
+                          <a href="#" onClick={(e) => { e.preventDefault(); alert(`Playing video: ${quote.supplier.factory_video}`); }}>
+                            <span className="text-sm">View Factory Video</span>
+                          </a>
+                        </div>
+                      )}
+                      {quote.supplier.factory_images && quote.supplier.factory_images.length > 0 && (
+                        <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 cursor-pointer">
+                          <Image className="h-4 w-4" />
+                          <a href="#" onClick={(e) => { e.preventDefault(); alert(`Viewing images: ${quote.supplier.factory_images.join(', ')}`); }}>
+                            <span className="text-sm">View Factory Images ({quote.supplier.factory_images.length})</span>
+                          </a>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">
+                        (Note: In a real application, these would be playable/viewable media files. Here, they are placeholders.)
+                      </p>
+                    </div>
+                  )}
+
+
+
+
 
                   {/* Sample Status */}
                   {quote.sample_status === 'sample_requested' && (
@@ -511,7 +552,7 @@ const QuotationComparison = () => {
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Quotation Details</h3>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete supplier quotation information</p>
               </div>
-              <button
+              <button // Close button
                 onClick={() => setShowQuotationModal(false)}
                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
               >
@@ -530,7 +571,7 @@ const QuotationComparison = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
                       <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.contact_person}</h5>
-                      {selectedQuotation.supplier.verified && (
+                      {selectedQuotation.supplier.verified && selectedQuotation.supplier.company_name !== 'Supplier Company' && ( // Only show verified if not generic
                         <CheckCircle className="h-4 w-4 text-green-500" />
                       )}
                     </div>
@@ -541,7 +582,7 @@ const QuotationComparison = () => {
                   </div>
                   <p className="text-gray-600 flex items-center mb-2">
                     <Building className="h-4 w-4 mr-1" />
-                    {selectedQuotation.supplier.company}
+                    {selectedQuotation.supplier.company_name}
                   </p>
                   <p className="text-gray-600 flex items-center mb-2">
                     <MapPin className="h-4 w-4 mr-1" />
@@ -658,6 +699,37 @@ const QuotationComparison = () => {
                   </h4>
                   <div className="bg-white p-4 rounded-lg border">
                     <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{selectedQuotation.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Factory Media Display in Modal */}
+              {(selectedQuotation.supplier.factory_video || (selectedQuotation.supplier.factory_images && selectedQuotation.supplier.factory_images.length > 0)) && (
+                <div className="mb-6 sm:mb-8 bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Building className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    Factory & Production Details
+                  </h4>
+                  <div className="bg-white p-4 rounded-lg border">
+                    {selectedQuotation.supplier.factory_video && (
+                      <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 cursor-pointer mb-2">
+                        <PlayCircle className="h-5 w-5" />
+                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Playing factory video: ${selectedQuotation.supplier.factory_video}`); }}>
+                          <span className="text-base font-medium">View Factory Video</span>
+                        </a>
+                      </div>
+                    )}
+                    {selectedQuotation.supplier.factory_images && selectedQuotation.supplier.factory_images.length > 0 && (
+                      <div className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 cursor-pointer">
+                        <Image className="h-5 w-5" />
+                        <a href="#" onClick={(e) => { e.preventDefault(); alert(`Viewing factory images: ${selectedQuotation.supplier.factory_images.join(', ')}`); }}>
+                          <span className="text-base font-medium">View Factory Images ({selectedQuotation.supplier.factory_images.length})</span>
+                        </a>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-3">
+                      (Note: In a real application, these would be playable/viewable media files. Here, they are placeholders.)
+                    </p>
                   </div>
                 </div>
               )}

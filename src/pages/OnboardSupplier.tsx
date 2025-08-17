@@ -525,8 +525,6 @@ const OnboardSupplier: React.FC = () => {
         quality_standards: formData.qualityStandards,
         gst_number: formData.gstNumber,
         iec_code: formData.iecCode,
-        factory_video: formData.factoryVideo?.name || null,
-        factory_images: formData.factoryImages.map(f => f.name) || [],
         factory_description: formData.factoryDescription,
         factory_video: formData.factoryVideo?.name || null,
         factory_images: formData.factoryImages.map(f => f.name) || [],

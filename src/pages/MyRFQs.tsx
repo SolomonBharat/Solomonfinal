@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock, CheckCircle, X, Eye, Plus, Edit } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import QASystem from '../components/QASystem';
@@ -31,6 +31,7 @@ const MyRFQs = () => {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showRfqModal, setShowRfqModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [searchParams] = useSearchParams();
   const [editFormData, setEditFormData] = useState<any>(null);
 
   useEffect(() => {
