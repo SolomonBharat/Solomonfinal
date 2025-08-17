@@ -22,9 +22,10 @@ const RegisterPage = () => {
     setLoading(true);
 
     try {
-      const { error } = await signUp(formData.email, formData.password, 'buyer', {
-        full_name: formData.fullName,
-        company_name: formData.companyName,
+      const { error } = await signUp(formData.email, formData.password, {
+        userType: 'buyer',
+        fullName: formData.fullName,
+        companyName: formData.companyName,
         phone: formData.phone,
         country: formData.country,
       });
@@ -35,7 +36,7 @@ const RegisterPage = () => {
         });
       } else {
         toast.success('Registration successful', {
-          description: 'Please check your email to verify your account.',
+          description: 'Account created successfully! You can now sign in.',
         });
         navigate('/login');
       }
