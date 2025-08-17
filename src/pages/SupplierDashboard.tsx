@@ -61,6 +61,7 @@ const SupplierDashboard = () => {
     // Load approved RFQs from localStorage that match supplier's categories
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
     
     // Show only approved and matched RFQs that match supplier's categories
     const availableRFQs = userRFQs.filter((rfq: any) => 
