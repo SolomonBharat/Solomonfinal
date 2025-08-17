@@ -16,7 +16,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
 import AdminSuppliers from './pages/AdminSuppliers';
 import AdminSampleRequests from './pages/AdminSampleRequests';
-import AdminCategoryManagement from './pages/admin/AdminCategoryManagement';
+import AdminCategoryManagement from './pages/AdminCategoryManagement';
 
 // Buyer pages
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
