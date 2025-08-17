@@ -21,7 +21,8 @@ import {
   Phone,
   Mail,
   Globe,
-  Plus
+  Plus,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import QASystem from '../components/QASystem';
@@ -109,13 +110,15 @@ const AdminDashboard = () => {
     active_suppliers: 0,
     monthly_gmv: 0,
     quotations_pending: 0,
-    monthly_growth: 0
+    monthly_growth: 0,
+    total_sample_requests: 0
   });
 
   useEffect(() => {
     // Calculate real stats
     const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
     const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
     const monthlyOrders = orders.filter((order: any) => {
       const orderDate = new Date(order.created_at);
       const currentMonth = new Date().getMonth();
@@ -129,7 +132,8 @@ const AdminDashboard = () => {
       active_suppliers: onboardedSuppliers.length,
       monthly_gmv: monthlyGMV,
       quotations_pending: pendingQuotations.length,
-      monthly_growth: 18.5
+      monthly_growth: 18.5,
+      total_sample_requests: allSampleRequests.length
     });
   }, [rfqs, pendingRFQs, pendingQuotations]);
 
@@ -554,6 +558,21 @@ const AdminDashboard = () => {
                 <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Manage RFQs</h3>
                 <p className="text-xs sm:text-sm text-gray-600">{pendingRFQs.length} pending approval</p>
               </div>
+            </div>
+          </Link>
+
+          <Link 
+            to="/admin/sample-requests" 
+            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Sample Requests</p>
+                <p className="text-xl sm:text-2xl font-bold text-orange-600">
+                  {stats.total_sample_requests}
+                </p>
+              </div>
+              <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
             </div>
           </Link>
 
