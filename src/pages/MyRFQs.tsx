@@ -43,6 +43,12 @@ const MyRFQs = () => {
     const userRFQs = allRFQs.filter((rfq: any) => 
       rfq.buyer_id === user?.id || rfq.buyer_email === user?.email
     ).map((rfq: any) => {
+      // Get current buyer verification status from registered_buyers
+      const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
+      const currentBuyer = registeredBuyers.find((buyer: any) => 
+        buyer.id === rfq.buyer_id || buyer.email === rfq.buyer_email
+      );
+      
       // Check if this RFQ has quotations
       const rfqQuotations = supplierQuotations.filter((q: any) => q.rfq_id === rfq.id && q.status === 'sent_to_buyer');
       
@@ -51,7 +57,8 @@ const MyRFQs = () => {
         ...rfq,
         quantity: parseInt(rfq.quantity) || 0,
         target_price: parseFloat(rfq.target_price) || 0,
-        quotations_count: rfqQuotations.length
+        quotations_count: rfqQuotations.length,
+        verification_status: currentBuyer?.verification_status || 'unverified'
       };
       
       // Update status based on quotations
