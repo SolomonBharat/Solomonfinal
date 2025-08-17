@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Building2, User, Mail, Phone, MapPin, FileText, Award, Globe, Package, DollarSign, Users, Calendar, CheckCircle, ArrowRight } from 'lucide-react';
 import FileUpload from '../components/FileUpload';
+import { categoryService } from '../lib/categoryManagement';
+import { supplierValidation } from '../lib/supplierValidation';
+import { performanceService } from '../lib/performanceOptimization';
 
 // Enhanced Database Layer with proper data management
 export interface User {
@@ -388,6 +391,8 @@ const OnboardSupplier: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [supplierCredentials, setSupplierCredentials] = useState<{email: string, password: string} | null>(null);
+  const [validationResult, setValidationResult] = useState<any>({ isValid: true, errors: [], warnings: [], score: 0 });
+  const [configuredCategories, setConfiguredCategories] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -397,6 +402,7 @@ const OnboardSupplier: React.FC = () => {
     companyName: '',
     businessType: '',
     country: '',
+    website: '', // Only accept actual website, no mock data
     
     // Business Details
     yearsInBusiness: '',
@@ -419,6 +425,13 @@ const OnboardSupplier: React.FC = () => {
     factoryDescription: ''
   });
 
+  // Load configured categories on component mount
+  React.useEffect(() => {
+    // Initialize default categories if none exist
+    categoryService.initializeDefaultCategories('admin_system');
+    setConfiguredCategories(categoryService.getActiveCategories());
+  }, []);
+
   const businessTypes = [
     'Manufacturer',
     'Exporter',
@@ -428,26 +441,10 @@ const OnboardSupplier: React.FC = () => {
     'Wholesaler'
   ];
 
-  const countries = [
-    'India', 'China', 'USA', 'Germany', 'Japan', 'South Korea', 'Italy', 'France', 'UK', 'Canada',
-    'Australia', 'Brazil', 'Mexico', 'Turkey', 'Thailand', 'Vietnam', 'Indonesia', 'Malaysia',
-    'Singapore', 'UAE', 'Saudi Arabia', 'Egypt', 'South Africa', 'Nigeria', 'Kenya'
-  ];
+  const countries = ['India']; // Restrict to India only for suppliers
 
-  const productCategoryOptions = [
-    'Textiles & Apparel',
-    'Spices & Food Products',
-    'Handicrafts & Home Decor',
-    'Electronics & Components',
-    'Pharmaceuticals & Healthcare',
-    'Chemicals & Materials',
-    'Automotive Parts',
-    'Jewelry & Gems',
-    'Leather Goods',
-    'Agricultural Products',
-    'Industrial Equipment',
-    'Other'
-  ];
+  // Use only configured categories
+  const productCategoryOptions = configuredCategories.map(cat => cat.name);
 
   const certificationOptions = [
     'ISO 9001',
@@ -472,6 +469,19 @@ const OnboardSupplier: React.FC = () => {
   };
 
   const handleArrayChange = (field: string, value: string, checked: boolean) => {
+    // Validate category selection
+    if (field === 'productCategories') {
+      const newCategories = checked 
+        ? [...formData.productCategories, value]
+        : formData.productCategories.filter(item => item !== value);
+      
+      const categoryValidation = supplierValidation.validateCategorySelection(newCategories);
+      if (!categoryValidation.isValid) {
+        setValidationResult(categoryValidation);
+        return;
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [field]: checked 
@@ -480,21 +490,31 @@ const OnboardSupplier: React.FC = () => {
     }));
   };
 
-  const validateStep = (step: number): boolean => {
+  const validateCurrentStep = (step: number) => {
     switch (step) {
       case 1:
-        return !!(formData.contactPerson && formData.email && formData.phone && formData.companyName && formData.businessType && formData.country);
+        const basicValidation = supplierValidation.validateSupplier(formData);
+        return basicValidation;
       case 2:
-        return !!(formData.yearsInBusiness && formData.annualTurnover && formData.employeeCount);
+        const step2Valid = !!(formData.yearsInBusiness && formData.annualTurnover && formData.employeeCount);
+        return {
+          isValid: step2Valid,
+          errors: step2Valid ? [] : ['Please fill in all required business details'],
+          warnings: [],
+          score: step2Valid ? 100 : 0
+        };
       case 3:
-        return formData.productCategories.length > 0;
+        const categoryValidation = supplierValidation.validateCategorySelection(formData.productCategories);
+        return categoryValidation;
       default:
-        return true;
+        return { isValid: true, errors: [], warnings: [], score: 100 };
     }
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
+    const validation = validateCurrentStep(currentStep);
+    setValidationResult(validation);
+    if (validation.isValid) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -507,6 +527,22 @@ const OnboardSupplier: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      // Final comprehensive validation
+      const finalValidation = supplierValidation.validateSupplier(formData);
+      if (!finalValidation.isValid) {
+        setValidationResult(finalValidation);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Validate categories against configured categories
+      const categoryValidation = supplierValidation.validateCategorySelection(formData.productCategories);
+      if (!categoryValidation.isValid) {
+        setValidationResult(categoryValidation);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create supplier account
       const supplierData = {
         id: `supplier_${Date.now()}`,
@@ -529,6 +565,7 @@ const OnboardSupplier: React.FC = () => {
         factory_video: formData.factoryVideo?.name || null,
         factory_images: formData.factoryImages.map(f => f.name) || [],
         factory_description: formData.factoryDescription,
+        website: formData.website || null, // Only store if provided
         rating: 0,
         total_orders: 0,
         verified: false,
@@ -542,9 +579,27 @@ const OnboardSupplier: React.FC = () => {
         ...supplierData,
         email: formData.email,
         phone: formData.phone,
-        country: formData.country
+        country: formData.country,
+        validation_score: finalValidation.score
       });
       localStorage.setItem('onboarded_suppliers', JSON.stringify(onboardedSuppliers));
+
+      // Create category mappings for approved categories
+      const categoryMappings = JSON.parse(localStorage.getItem('supplier_category_mappings') || '[]');
+      formData.productCategories.forEach(categoryName => {
+        const category = configuredCategories.find(cat => cat.name === categoryName);
+        if (category) {
+          categoryMappings.push({
+            supplier_id: supplierData.id,
+            category_id: category.id,
+            approved_by: 'admin_system',
+            approved_at: new Date().toISOString(),
+            verification_documents: [],
+            status: 'approved'
+          });
+        }
+      });
+      localStorage.setItem('supplier_category_mappings', JSON.stringify(categoryMappings));
 
       // Create login account
       const loginAccount = {
@@ -590,6 +645,7 @@ const OnboardSupplier: React.FC = () => {
       companyName: '',
       businessType: '',
       country: '',
+      website: '',
       yearsInBusiness: '',
       annualTurnover: '',
       employeeCount: '',
@@ -756,20 +812,54 @@ const OnboardSupplier: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country *
+                    Country * (India Only)
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={formData.country}
                     onChange={(e) => handleInputChange('country', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Select country</option>
-                    {countries.map(country => (
-                      <option key={country} value={country}>{country}</option>
-                    ))}
-                  </select>
+                    placeholder="India"
+                    readOnly
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Website
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="https://www.company.com (optional)"
+                  />
                 </div>
               </div>
+
+              {/* Validation Results */}
+              {validationResult && !validationResult.isValid && (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h4 className="font-semibold text-red-900 mb-2">Validation Errors:</h4>
+                  <ul className="text-sm text-red-800 space-y-1">
+                    {validationResult.errors.map((error: string, index: number) => (
+                      <li key={index}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {validationResult && validationResult.warnings.length > 0 && (
+                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h4 className="font-semibold text-yellow-900 mb-2">Warnings:</h4>
+                  <ul className="text-sm text-yellow-800 space-y-1">
+                    {validationResult.warnings.map((warning: string, index: number) => (
+                      <li key={index}>• {warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -871,21 +961,52 @@ const OnboardSupplier: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Product Categories * (Select all that apply)
+                    Product Categories * (Select from configured categories only)
                   </label>
+                  {productCategoryOptions.length === 0 && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                      <p className="text-red-800 font-medium">No categories are currently configured for onboarding.</p>
+                      <p className="text-red-700 text-sm mt-1">Please contact the administrator to configure product categories first.</p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {productCategoryOptions.map(category => (
-                      <label key={category} className="flex items-center space-x-2 cursor-pointer">
+                    {configuredCategories.map(category => (
+                      <label key={category.id} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={formData.productCategories.includes(category)}
-                          onChange={(e) => handleArrayChange('productCategories', category, e.target.checked)}
+                          checked={formData.productCategories.includes(category.name)}
+                          onChange={(e) => handleArrayChange('productCategories', category.name, e.target.checked)}
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
-                        <span className="text-sm text-gray-700">{category}</span>
+                        <div>
+                          <span className="text-sm text-gray-700">{category.name}</span>
+                          <p className="text-xs text-gray-500">{category.description}</p>
+                        </div>
                       </label>
                     ))}
                   </div>
+                  
+                  {/* Category Requirements Display */}
+                  {formData.productCategories.length > 0 && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="font-semibold text-blue-900 mb-2">Category Requirements:</h4>
+                      {formData.productCategories.map(categoryName => {
+                        const category = configuredCategories.find(cat => cat.name === categoryName);
+                        return category ? (
+                          <div key={category.id} className="mb-3 last:mb-0">
+                            <p className="font-medium text-blue-800">{category.name}:</p>
+                            <ul className="text-sm text-blue-700 ml-4 space-y-1">
+                              <li>• Min. {category.requirements.min_experience_years} years experience</li>
+                              <li>• Min. turnover: {category.requirements.min_annual_turnover}</li>
+                              {category.requirements.min_certifications.length > 0 && (
+                                <li>• Required certifications: {category.requirements.min_certifications.join(', ')}</li>
+                              )}
+                            </ul>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -909,10 +1030,10 @@ const OnboardSupplier: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Export Countries (Select all that apply)
+                    Export Countries * (Select target markets)
                   </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-h-40 overflow-y-auto">
-                    {countries.map(country => (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France', 'Netherlands', 'UAE', 'Singapore', 'Japan'].map(country => (
                       <label key={country} className="flex items-center space-x-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -924,6 +1045,19 @@ const OnboardSupplier: React.FC = () => {
                       </label>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Website
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="https://www.company.com (optional)"
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1005,6 +1139,58 @@ const OnboardSupplier: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Real-time Validation Display */}
+              {currentStep === 3 && (
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const validation = supplierValidation.validateSupplier(formData);
+                      setValidationResult(validation);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    Validate Information
+                  </button>
+                  
+                  {validationResult && (
+                    <div className="mt-4">
+                      <div className={`p-4 rounded-lg border ${
+                        validationResult.isValid ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                      }`}>
+                        <h4 className={`font-semibold mb-2 ${
+                          validationResult.isValid ? 'text-green-900' : 'text-red-900'
+                        }`}>
+                          Validation Score: {validationResult.score}/100
+                        </h4>
+                        
+                        {validationResult.errors.length > 0 && (
+                          <div className="mb-3">
+                            <p className="font-medium text-red-800 mb-1">Errors:</p>
+                            <ul className="text-sm text-red-700 space-y-1">
+                              {validationResult.errors.map((error: string, index: number) => (
+                                <li key={index}>• {error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {validationResult.warnings.length > 0 && (
+                          <div>
+                            <p className="font-medium text-yellow-800 mb-1">Warnings:</p>
+                            <ul className="text-sm text-yellow-700 space-y-1">
+                              {validationResult.warnings.map((warning: string, index: number) => (
+                                <li key={index}>• {warning}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -1021,7 +1207,7 @@ const OnboardSupplier: React.FC = () => {
             {currentStep < 3 ? (
               <button
                 onClick={handleNext}
-                disabled={!validateStep(currentStep)}
+                disabled={!validateCurrentStep(currentStep).isValid}
                 className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
               >
                 Next
@@ -1030,7 +1216,7 @@ const OnboardSupplier: React.FC = () => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={!validateStep(currentStep) || isSubmitting}
+                disabled={!validateCurrentStep(currentStep).isValid || isSubmitting}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
               >
                 {isSubmitting ? 'Submitting...' : 'Complete Onboarding'}
