@@ -19,13 +19,13 @@ import AdminSampleRequests from './pages/AdminSampleRequests';
 import AdminCategoryManagement from './pages/AdminCategoryManagement';
 
 // Buyer pages
-import BuyerDashboard from './pages/buyer/BuyerDashboard';
-import CreateRFQ from './pages/buyer/CreateRFQ';
-import QuotationComparison from './pages/buyer/QuotationComparison';
+import BuyerDashboard from './pages/BuyerDashboard';
+import CreateRFQ from './pages/CreateRFQ';
+import QuotationComparison from './pages/QuotationComparison';
 
 // Supplier pages
-import SupplierDashboard from './pages/supplier/SupplierDashboard';
-import SupplierQuote from './pages/supplier/SupplierQuote';
+import SupplierDashboard from './pages/SupplierDashboard';
+import SupplierQuote from './pages/SupplierQuote';
 
 const queryClient = new QueryClient({
   defaultOptions: {
