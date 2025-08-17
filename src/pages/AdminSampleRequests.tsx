@@ -1,4 +1,3 @@
-```typescript
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Package, User, Building, MapPin, DollarSign, Truck, CheckCircle, Clock, X } from 'lucide-react';
@@ -329,4 +328,3 @@ const AdminSampleRequests = () => {
 };
 
 export default AdminSampleRequests;
-```
