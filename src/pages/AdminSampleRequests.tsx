@@ -287,7 +287,7 @@ const AdminSampleRequests = () => {
                             </button>
                           )}
                           <a 
-                            href={`https://wa.me/${req.buyer_phone}?text=${encodeURIComponent(`Hello ${req.buyer_name}, regarding your sample request for ${req.rfq_title} (RFQ ID: ${req.rfq_id})...`)}`}
+                            href={\`https://wa.me/${req.buyer_phone}?text=${encodeURIComponent(`Hello ${req.buyer_name}, regarding your sample request for ${req.rfq_title} (RFQ ID: ${req.rfq_id})...`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 text-xs flex items-center space-x-1"
@@ -296,7 +296,7 @@ const AdminSampleRequests = () => {
                             <span>Contact Buyer</span>
                           </a>
                           <a 
-                            href={`https://wa.me/${req.supplier_phone}?text=${encodeURIComponent(`Hello ${req.supplier_name}, regarding sample request for ${req.rfq_title} (RFQ ID: ${req.rfq_id})...`)}`}
+                            href={\`https://wa.me/${req.supplier_phone}?text=${encodeURIComponent(`Hello ${req.supplier_name}, regarding sample request for ${req.rfq_title} (RFQ ID: ${req.rfq_id})...`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-green-600 hover:text-green-800 text-xs flex items-center space-x-1"
