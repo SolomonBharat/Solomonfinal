@@ -4,7 +4,6 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from '../components/ui/toast';
 import { Save, Send, ArrowLeft } from 'lucide-react';
-import { db } from '../lib/database';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -58,20 +57,28 @@ const CreateRFQ = () => {
     setLoading(true);
 
     try {
-      // Create RFQ using database
-      const rfqData = {
+      // Create RFQ object
+      const rfq = {
+        id: 'rfq-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
         buyer_id: user?.id,
+        buyer_name: user?.name,
+        buyer_company: user?.company,
+        buyer_email: user?.email,
+        buyer_phone: '+1234567890',
+        buyer_country: 'USA',
         ...formData,
         quantity: parseInt(formData.quantity),
         target_price: formData.target_price ? parseFloat(formData.target_price) : null,
         max_price: formData.max_price ? parseFloat(formData.max_price) : null,
         status: isDraft ? 'draft' : 'pending_approval',
-        approved_at: null,
-        approved_by: null,
-        expires_at: null
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
-      db.createRFQ(rfqData);
+      // Save to localStorage
+      const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+      existingRFQs.push(rfq);
+      localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
 
       toast.success(isDraft ? 'RFQ saved as draft!' : 'RFQ submitted successfully!', {
         description: isDraft ? 'You can continue editing later' : 'Your RFQ is now pending admin approval'

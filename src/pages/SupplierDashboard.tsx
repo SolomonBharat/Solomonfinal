@@ -2,28 +2,26 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
-import { db } from '../lib/database';
 
 const SupplierDashboard = () => {
   const { profile } = useAuth();
-  const { user } = useAuth();
   
-  // Load real data from database
-  const rfqs = db.getRFQs();
-  const quotations = user?.id ? db.getQuotations().filter(q => q.supplier_id === user.id) : [];
-  const orders = user?.id ? db.getOrders().filter(order => order.supplier_id === user.id) : [];
+  // Mock data for now since we're fixing the database
+  const rfqs = [];
+  const quotations = [];
+  const orders = [];
   const rfqsLoading = false;
   const quotationsLoading = false;
   const ordersLoading = false;
 
   // Filter RFQs that match supplier's categories
-  const availableRFQs = rfqs.filter(rfq => rfq.status === 'approved');
+  const availableRFQs = [];
 
   const stats = {
     availableRFQs: availableRFQs.length,
     totalQuotations: quotations.length,
-    acceptedQuotations: quotations.filter(q => q.status === 'approved_for_buyer').length,
-    totalRevenue: orders.reduce((sum, order) => sum + (order.total_value || 0), 0),
+    acceptedQuotations: 0,
+    totalRevenue: 0,
   };
 
   if (rfqsLoading || quotationsLoading || ordersLoading) {

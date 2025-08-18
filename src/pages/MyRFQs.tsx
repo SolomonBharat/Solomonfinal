@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, Package } from 'lucide-react';
-import { db } from '../lib/database';
 
 const MyRFQs = () => {
   const { user } = useAuth();
@@ -17,8 +16,8 @@ const MyRFQs = () => {
 
   const loadRFQs = () => {
     try {
-      const allRFQs = db.getRFQs();
-      const myRFQs = allRFQs.filter(rfq => rfq.buyer_id === user?.id);
+      const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+      const myRFQs = userRFQs.filter((rfq: any) => rfq.buyer_id === user?.id);
       setRFQs(myRFQs);
     } catch (error) {
       console.error('Error loading RFQs:', error);
@@ -30,7 +29,9 @@ const MyRFQs = () => {
   const deleteRFQ = (rfqId: string) => {
     if (window.confirm('Are you sure you want to delete this RFQ?')) {
       try {
-        db.deleteRFQ(rfqId);
+        const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+        const updatedRFQs = userRFQs.filter((rfq: any) => rfq.id !== rfqId);
+        localStorage.setItem('user_rfqs', JSON.stringify(updatedRFQs));
         loadRFQs();
       } catch (error) {
         console.error('Error deleting RFQ:', error);

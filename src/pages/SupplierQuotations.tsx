@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Clock, CheckCircle, XCircle, Eye, Edit, Send } from 'lucide-react';
-import { db } from '../lib/database';
 
 const SupplierQuotations = () => {
   const { user } = useAuth();
@@ -11,10 +10,62 @@ const SupplierQuotations = () => {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    // Load quotations from database
-    const allQuotations = db.getQuotations();
-    const myQuotations = allQuotations.filter(q => q.supplier_id === user?.id);
-    setQuotations(myQuotations);
+    // Load mock quotations
+    const mockQuotations = [
+      {
+        id: 'quote-1',
+        rfq_id: 'rfq-1',
+        rfq_title: 'Cotton T-Shirts Export Quality',
+        buyer_company: 'Global Trade Corp',
+        price_per_unit: 12.50,
+        moq: 500,
+        lead_time_days: 21,
+        payment_terms: '30% advance, 70% on shipment',
+        shipping_terms: 'FOB Mumbai',
+        validity_days: 15,
+        quality_guarantee: true,
+        sample_available: true,
+        status: 'pending_admin_review',
+        submitted_at: '2024-01-15T10:00:00Z',
+        notes: 'Premium quality cotton with GOTS certification available'
+      },
+      {
+        id: 'quote-2',
+        rfq_id: 'rfq-2',
+        rfq_title: 'Organic Turmeric Powder',
+        buyer_company: 'Health Foods Inc',
+        price_per_unit: 8.75,
+        moq: 100,
+        lead_time_days: 14,
+        payment_terms: 'LC at sight',
+        shipping_terms: 'CIF destination port',
+        validity_days: 30,
+        quality_guarantee: true,
+        sample_available: true,
+        status: 'approved_for_buyer',
+        submitted_at: '2024-01-12T14:30:00Z',
+        notes: 'Organic certified with lab test reports'
+      },
+      {
+        id: 'quote-3',
+        rfq_id: 'rfq-3',
+        rfq_title: 'Handcrafted Wooden Furniture',
+        buyer_company: 'Home Decor Ltd',
+        price_per_unit: 245.00,
+        moq: 20,
+        lead_time_days: 45,
+        payment_terms: '50% advance, 50% before shipment',
+        shipping_terms: 'EXW factory',
+        validity_days: 20,
+        quality_guarantee: true,
+        sample_available: false,
+        status: 'rejected',
+        submitted_at: '2024-01-08T09:15:00Z',
+        notes: 'Traditional Rajasthani designs with FSC certified wood'
+      }
+    ];
+    
+    setQuotations(mockQuotations);
     setLoading(false);
   }, [user]);
 
@@ -125,32 +176,32 @@ const SupplierQuotations = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">Quotation #{quotation.id}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{quotation.rfq_title}</h3>
                         {getStatusBadge(quotation.status)}
                       </div>
                       <p className="text-gray-600 mb-3">
-                        RFQ: <span className="font-medium">{quotation.rfq_id}</span>
+                        Buyer: <span className="font-medium">{quotation.buyer_company}</span>
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 mb-3">
                         <div>
-                          <span className="font-medium">Price per unit:</span> ${quotation.price_per_unit || 0}
+                          <span className="font-medium">Price per unit:</span> ${quotation.price_per_unit}
                         </div>
                         <div>
-                          <span className="font-medium">MOQ:</span> {quotation.moq || 0} units
+                          <span className="font-medium">MOQ:</span> {quotation.moq} units
                         </div>
                         <div>
-                          <span className="font-medium">Lead time:</span> {quotation.lead_time_days || 0} days
+                          <span className="font-medium">Lead time:</span> {quotation.lead_time_days} days
                         </div>
                         <div>
-                          <span className="font-medium">Validity:</span> {quotation.validity_days || 0} days
+                          <span className="font-medium">Validity:</span> {quotation.validity_days} days
                         </div>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500 mb-3">
                         <div>
-                          <span className="font-medium">Payment terms:</span> {quotation.payment_terms || 'N/A'}
+                          <span className="font-medium">Payment terms:</span> {quotation.payment_terms}
                         </div>
                         <div>
-                          <span className="font-medium">Shipping terms:</span> {quotation.shipping_terms || 'N/A'}
+                          <span className="font-medium">Shipping terms:</span> {quotation.shipping_terms}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -168,7 +219,7 @@ const SupplierQuotations = () => {
                       </div>
                       {quotation.notes && (
                         <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm text-gray-700">{quotation.notes || ''}</p>
+                          <p className="text-sm text-gray-700">{quotation.notes}</p>
                         </div>
                       )}
                     </div>

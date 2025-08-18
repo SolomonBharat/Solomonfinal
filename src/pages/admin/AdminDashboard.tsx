@@ -3,23 +3,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Users, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { db } from '../../lib/database';
 
 const AdminDashboard = () => {
   const { profile } = useAuth();
   
-  // Load real data from database
-  const rfqs = db.getRFQs();
-  const suppliers = db.getSuppliers();
-  const quotations = db.getQuotations();
+  // Mock data for now since we're fixing the database
+  const rfqs = [];
+  const suppliers = [];
+  const quotations = [];
 
   const stats = {
     totalRFQs: rfqs.length,
-    pendingRFQs: rfqs.filter(rfq => rfq.status === 'pending_approval').length,
+    pendingRFQs: 0,
     totalSuppliers: suppliers.length,
-    pendingSuppliers: suppliers.filter(s => s.verification_status === 'pending').length,
+    pendingSuppliers: 0,
     totalQuotations: quotations.length,
-    pendingQuotations: quotations.filter(q => q.status === 'pending_admin_review').length,
+    pendingQuotations: 0,
   };
 
   return (

@@ -30,71 +30,69 @@ const SupplierPerformance = () => {
   });
 
   useEffect(() => {
-    if (user?.id) {
-      // Load supplier-specific performance data
-      const quotations = db.getQuotations().filter(q => q.supplier_id === user.id);
-      const orders = db.getOrders().filter(order => order.supplier_id === user.id);
-      
-      const acceptedQuotes = quotations.filter(q => q.status === 'approved_for_buyer');
-      const totalRevenue = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
-      const completedOrders = orders.filter(order => order.status === 'completed');
+    // Load supplier-specific performance data
+    const quotations = db.getQuotations().filter(q => q.supplier_id === user?.id);
+    const orders = db.getOrders().filter(order => order.supplier_id === user?.id);
+    
+    const acceptedQuotes = quotations.filter(q => q.status === 'accepted');
+    const totalRevenue = orders.reduce((sum, order) => sum + order.order_value, 0);
+    const completedOrders = orders.filter(order => order.status === 'completed');
 
-      // Calculate monthly quotes (last 6 months)
-      const monthlyQuotes = [];
-      for (let i = 5; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(date.getMonth() - i);
-        const monthQuotes = quotations.filter(quote => {
-          const quoteDate = new Date(quote.submitted_at);
-          return quoteDate.getMonth() === date.getMonth() && 
-                 quoteDate.getFullYear() === date.getFullYear();
-        });
-        monthlyQuotes.push({
-          month: date.toLocaleDateString('en-US', { month: 'short' }),
-          quotes: monthQuotes.length,
-          accepted: monthQuotes.filter(q => q.status === 'approved_for_buyer').length
-        });
-      }
-
-      // Category performance
-      const categoryStats: { [key: string]: { quotes: number; accepted: number } } = {};
-      quotations.forEach(quote => {
-        const rfq = db.getRFQById(quote.rfq_id);
-        if (rfq) {
-          if (!categoryStats[rfq.category]) {
-            categoryStats[rfq.category] = { quotes: 0, accepted: 0 };
-          }
-          categoryStats[rfq.category].quotes++;
-          if (quote.status === 'approved_for_buyer') {
-            categoryStats[rfq.category].accepted++;
-          }
-        }
+    // Calculate monthly quotes (last 6 months)
+    const monthlyQuotes = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      const monthQuotes = quotations.filter(quote => {
+        const quoteDate = new Date(quote.submitted_at);
+        return quoteDate.getMonth() === date.getMonth() && 
+               quoteDate.getFullYear() === date.getFullYear();
       });
-
-      const categoryPerformance = Object.entries(categoryStats).map(([category, stats]) => ({
-        category,
-        quotes: stats.quotes,
-        accepted: stats.accepted,
-        winRate: stats.quotes > 0 ? (stats.accepted / stats.quotes) * 100 : 0
-      }));
-
-      setPerformance({
-        totalQuotes: quotations.length,
-        acceptedQuotes: acceptedQuotes.length,
-        totalRevenue,
-        avgResponseTime: 1.2, // hours
-        rating: 4.8,
-        completedOrders: completedOrders.length,
-        winRate: quotations.length > 0 ? (acceptedQuotes.length / quotations.length) * 100 : 0,
-        monthlyQuotes,
-        categoryPerformance,
-        recentFeedback: [
-          { buyer: 'Global Trade Corp', rating: 5, comment: 'Excellent quality and on-time delivery!', date: '2 days ago' },
-          { buyer: 'Health Foods Ltd', rating: 4, comment: 'Good product, competitive pricing.', date: '1 week ago' },
-          { buyer: 'Home Decor Inc', rating: 5, comment: 'Outstanding craftsmanship and service.', date: '2 weeks ago' }
-        ]
+      monthlyQuotes.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        quotes: monthQuotes.length,
+        accepted: monthQuotes.filter(q => q.status === 'accepted').length
       });
     }
+
+    // Category performance
+    const categoryStats: { [key: string]: { quotes: number; accepted: number } } = {};
+    quotations.forEach(quote => {
+      const rfq = db.getRFQById(quote.rfq_id);
+      if (rfq) {
+        if (!categoryStats[rfq.category]) {
+          categoryStats[rfq.category] = { quotes: 0, accepted: 0 };
+        }
+        categoryStats[rfq.category].quotes++;
+        if (quote.status === 'accepted') {
+          categoryStats[rfq.category].accepted++;
+        }
+      }
+    });
+
+    const categoryPerformance = Object.entries(categoryStats).map(([category, stats]) => ({
+      category,
+      quotes: stats.quotes,
+      accepted: stats.accepted,
+      winRate: stats.quotes > 0 ? (stats.accepted / stats.quotes) * 100 : 0
+    }));
+
+    setPerformance({
+      totalQuotes: quotations.length,
+      acceptedQuotes: acceptedQuotes.length,
+      totalRevenue,
+      avgResponseTime: 1.2, // hours
+      rating: 4.8,
+      completedOrders: completedOrders.length,
+      winRate: quotations.length > 0 ? (acceptedQuotes.length / quotations.length) * 100 : 0,
+      monthlyQuotes,
+      categoryPerformance,
+      recentFeedback: [
+        { buyer: 'Global Trade Corp', rating: 5, comment: 'Excellent quality and on-time delivery!', date: '2 days ago' },
+        { buyer: 'Health Foods Ltd', rating: 4, comment: 'Good product, competitive pricing.', date: '1 week ago' },
+        { buyer: 'Home Decor Inc', rating: 5, comment: 'Outstanding craftsmanship and service.', date: '2 weeks ago' }
+      ]
+    });
   }, [user?.id]);
 
   return (
