@@ -2,22 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye } from 'lucide-react';
-import { useOrders } from '../lib/queries';
+import { db } from '../lib/database';
 
 const BuyerOrders = () => {
   const { user } = useAuth();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: allOrders = [], isLoading: loading } = useOrders();
-  
-  // Filter orders for current user
-  const orders = allOrders.filter(order => order.buyer_id === user?.id);
+  useEffect(() => {
+    // Load orders from database
+    const allOrders = db.getOrders();
+    const myOrders = allOrders.filter(order => order.buyer_id === user?.id);
+    setOrders(myOrders);
+    setLoading(false);
+  }, [user]);
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     const badges = {
-      confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800', icon: Clock },
-      in_production: { label: 'In Production', color: 'bg-yellow-100 text-yellow-800', icon: Package },
-      shipped: { label: 'Shipped', color: 'bg-purple-100 text-purple-800', icon: Truck },
-      completed: { label: 'Completed', color: 'bg-green-100 text-green-800', icon: CheckCircle }
+      confirmed: { color: 'bg-blue-100 text-blue-800', icon: Clock, label: 'Confirmed' },
+      in_production: { color: 'bg-yellow-100 text-yellow-800', icon: Package, label: 'In Production' },
+      shipped: { color: 'bg-purple-100 text-purple-800', icon: Truck, label: 'Shipped' },
+      delivered: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Delivered' },
+      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Completed' }
     };
     
     const badge = badges[status as keyof typeof badges] || badges.confirmed;

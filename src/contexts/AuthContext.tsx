@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
-import { mockDB } from '../lib/mockDatabase';
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  company?: string;
+}
 
 interface Profile {
   id: string;
@@ -35,105 +39,165 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Complete mock database with persistence
+class AuthDatabase {
+  private users: any[] = [];
+  private profiles: Profile[] = [];
+
+  constructor() {
+    this.loadFromStorage();
+    this.initializeTestAccounts();
+  }
+
+  private loadFromStorage() {
+    try {
+      const users = localStorage.getItem('auth_users');
+      const profiles = localStorage.getItem('auth_profiles');
+      if (users) this.users = JSON.parse(users);
+      if (profiles) this.profiles = JSON.parse(profiles);
+    } catch (error) {
+      console.error('Error loading auth data:', error);
+    }
+  }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem('auth_users', JSON.stringify(this.users));
+      localStorage.setItem('auth_profiles', JSON.stringify(this.profiles));
+    } catch (error) {
+      console.error('Error saving auth data:', error);
+    }
+  }
+
+  private initializeTestAccounts() {
+    const testAccounts = [
+      {
+        email: 'admin@example.com',
+        password: 'password',
+        userType: 'admin' as const,
+        fullName: 'Admin User',
+        companyName: 'Solomon Bharat'
+      },
+      {
+        email: 'buyer@example.com',
+        password: 'password',
+        userType: 'buyer' as const,
+        fullName: 'John Buyer',
+        companyName: 'Global Trade Corp'
+      },
+      {
+        email: 'supplier@example.com',
+        password: 'password',
+        userType: 'supplier' as const,
+        fullName: 'Sarah Supplier',
+        companyName: 'Indian Exports Ltd'
+      }
+    ];
+
+    testAccounts.forEach(account => {
+      if (!this.users.find(u => u.email === account.email)) {
+        this.createUser(account.email, account.password, account);
+      }
+    });
+  }
+
+  signIn(email: string, password: string): { user: User; profile: Profile } | null {
+    const user = this.users.find(u => u.email === email && u.password === password);
+    if (!user) return null;
+
+    const profile = this.profiles.find(p => p.id === user.id);
+    if (!profile) return null;
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: profile.full_name || undefined,
+        company: profile.company_name || undefined
+      },
+      profile
+    };
+  }
+
+  createUser(email: string, password: string, userData: any): { user: User; profile: Profile } {
+    if (this.users.find(u => u.email === email)) {
+      throw new Error('User already exists');
+    }
+
+    const userId = 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const now = new Date().toISOString();
+
+    const user = {
+      id: userId,
+      email,
+      password,
+      created_at: now
+    };
+
+    const profile: Profile = {
+      id: userId,
+      user_type: userData.userType,
+      full_name: userData.fullName,
+      company_name: userData.companyName,
+      phone: userData.phone || null,
+      country: userData.country || null,
+      website: userData.website || null,
+      created_at: now,
+      updated_at: now
+    };
+
+    this.users.push(user);
+    this.profiles.push(profile);
+    this.saveToStorage();
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: profile.full_name || undefined,
+        company: profile.company_name || undefined
+      },
+      profile
+    };
+  }
+}
+
+const authDB = new AuthDatabase();
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    // Check for existing session
+    const savedAuth = localStorage.getItem('current_auth');
+    if (savedAuth) {
       try {
-        if (isSupabaseConfigured) {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            setUser(session.user);
-            await loadUserProfile(session.user.id);
-          }
-        }
+        const { user: savedUser, profile: savedProfile } = JSON.parse(savedAuth);
+        setUser(savedUser);
+        setProfile(savedProfile);
       } catch (error) {
-        console.error('Error getting initial session:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error loading saved auth:', error);
+        localStorage.removeItem('current_auth');
       }
-    };
-
-    getInitialSession();
-
-    if (isSupabaseConfigured) {
-      // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log('Auth state changed:', event, session?.user?.email);
-          
-          if (session?.user) {
-            setUser(session.user);
-            await loadUserProfile(session.user.id);
-          } else {
-            setUser(null);
-            setProfile(null);
-          }
-          setLoading(false);
-        }
-      );
-
-      return () => subscription.unsubscribe();
-    } else {
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
-
-  const loadUserProfile = async (userId: string) => {
-    try {
-      if (isSupabaseConfigured) {
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) {
-          console.error('Error loading profile:', error);
-          return;
-        }
-
-        setProfile(profile);
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     try {
-      if (isSupabaseConfigured) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          console.error('Supabase sign in error:', error);
-          return { error };
-        }
-
-        return { error: null };
-      } else {
-        // Fallback to mock authentication
-        console.log('Using mock authentication');
-        const result = await mockDB.signIn(email, password);
-        
-        if (!result) {
-          return { error: { message: 'Invalid credentials' } };
-        }
-
-        setUser(result.user as any);
-        setProfile(result.profile as any);
-        return { error: null };
+      const result = authDB.signIn(email, password);
+      if (!result) {
+        return { error: { message: 'Invalid email or password' } };
       }
+
+      setUser(result.user);
+      setProfile(result.profile);
+      localStorage.setItem('current_auth', JSON.stringify(result));
+      return { error: null };
     } catch (error: any) {
-      console.error('Sign in exception:', error);
-      return { error: { message: error.message || 'Sign in failed' } };
+      return { error: { message: error.message || 'Login failed' } };
     }
   };
 
@@ -150,96 +214,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   ) => {
     try {
-      if (isSupabaseConfigured) {
-        // Sign up the user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (authError) {
-          console.error('Auth signup error:', authError);
-          return { error: authError };
-        }
-
-        if (!authData.user) {
-          return { error: { message: 'Failed to create user' } };
-        }
-
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            user_type: userData.userType,
-            full_name: userData.fullName,
-            company_name: userData.companyName,
-            phone: userData.phone || null,
-            country: userData.country || null,
-            website: userData.website || null,
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          return { error: profileError };
-        }
-
-        // Create role-specific record
-        if (userData.userType === 'buyer') {
-          const { error: buyerError } = await supabase
-            .from('buyers')
-            .insert({
-              id: authData.user.id,
-              business_type: null,
-              annual_volume: null,
-              preferred_categories: [],
-            });
-
-          if (buyerError) {
-            console.error('Buyer record creation error:', buyerError);
-          }
-        } else if (userData.userType === 'supplier') {
-          const { error: supplierError } = await supabase
-            .from('suppliers')
-            .insert({
-              id: authData.user.id,
-              product_categories: ['Textiles & Apparel'],
-              certifications: [],
-              years_in_business: null,
-              verification_status: 'pending',
-            });
-
-          if (supplierError) {
-            console.error('Supplier record creation error:', supplierError);
-          }
-        }
-
-        return { error: null };
-      } else {
-        // Fallback to mock authentication
-        console.log('Using mock authentication for signup');
-        const result = await mockDB.createUser(email, password, userData);
-        
-        setUser(result.user as any);
-        setProfile(result.profile as any);
-        return { error: null };
-      }
+      const result = authDB.createUser(email, password, userData);
+      setUser(result.user);
+      setProfile(result.profile);
+      localStorage.setItem('current_auth', JSON.stringify(result));
+      return { error: null };
     } catch (error: any) {
-      console.error('Sign up exception:', error);
       return { error: { message: error.message || 'Registration failed' } };
     }
   };
 
   const signOut = async () => {
-    try {
-      if (isSupabaseConfigured) {
-        await supabase.auth.signOut();
-      }
-      setUser(null);
-      setProfile(null);
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
+    setUser(null);
+    setProfile(null);
+    localStorage.removeItem('current_auth');
   };
 
   const logout = () => {

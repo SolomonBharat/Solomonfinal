@@ -2,25 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Clock, CheckCircle, XCircle, Eye, Edit, Send } from 'lucide-react';
-import { useQuotations } from '../lib/queries';
+import { db } from '../lib/database';
 
 const SupplierQuotations = () => {
   const { user } = useAuth();
+  const [quotations, setQuotations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  const { data: allQuotations = [], isLoading: loading } = useQuotations();
-  
-  // Filter quotations for current user
-  const quotations = allQuotations.filter(q => q.supplier_id === user?.id);
-
-  const badges = {
-    draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800', icon: Edit },
-    pending_admin_review: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    approved_for_buyer: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: XCircle },
-  };
+  useEffect(() => {
+    // Load quotations from database
+    const allQuotations = db.getQuotations();
+    const myQuotations = allQuotations.filter(q => q.supplier_id === user?.id);
+    setQuotations(myQuotations);
+    setLoading(false);
+  }, [user]);
 
   const getStatusBadge = (status: string) => {
+    const badges = {
+      draft: { color: 'bg-gray-100 text-gray-800', icon: Edit, label: 'Draft' },
+      pending_admin_review: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Under Review' },
+      approved_for_buyer: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Approved' },
+      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Rejected' }
+    };
+    
     const badge = badges[status as keyof typeof badges] || badges.draft;
     const Icon = badge.icon;
     

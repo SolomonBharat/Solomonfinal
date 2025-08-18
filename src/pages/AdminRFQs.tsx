@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users, Edit } from 'lucide-react';
-import { useRFQs, useSuppliers, useAdminApproveRFQ, useAdminAssignSuppliers, useUpdateRFQ } from '../lib/queries';
-import { toast } from 'sonner';
+import { db } from '../lib/database';
 
 const AdminRFQs = () => {
+  const [rfqs, setRFQs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRFQ, setSelectedRFQ] = useState<any | null>(null);
   const [showRFQModal, setShowRFQModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
+
+  useEffect(() => {
+    // Load all RFQs from database
+    const allRFQs = db.getRFQs();
+    setRFQs(allRFQs);
+    setLoading(false);
+  }, []);
+
   const [selectedRFQs, setSelectedRFQs] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-
-  const { data: rfqs = [], isLoading: loading } = useRFQs();
-  const { data: suppliers = [] } = useSuppliers();
-  const approveRFQMutation = useAdminApproveRFQ();
-  const assignSuppliersMutation = useAdminAssignSuppliers();
-  const updateRFQMutation = useUpdateRFQ();
-
-  const verifiedSuppliers = suppliers.filter(s => s.verification_status === 'verified');
 
   const handleRFQSelect = (rfqId: string) => {
     setSelectedRFQs(prev => 
@@ -30,53 +31,39 @@ const AdminRFQs = () => {
   };
 
   const handleApprove = (rfqId: string) => {
-    approveRFQMutation.mutate(rfqId, {
-      onSuccess: () => {
-        toast.success('RFQ approved successfully!');
-      },
-      onError: (error) => {
-        console.error('Error approving RFQ:', error);
-        toast.error('Failed to approve RFQ');
-      }
+    db.updateRFQ(rfqId, { 
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: 'admin-1'
     });
+    
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
+    ));
+    
+    alert('RFQ approved successfully!');
   };
 
   const handleReject = (rfqId: string) => {
-    updateRFQMutation.mutate({
-      id: rfqId,
-      updates: { status: 'closed' }
-    }, {
-      onSuccess: () => {
-        toast.success('RFQ rejected');
-      },
-      onError: (error) => {
-        console.error('Error rejecting RFQ:', error);
-        toast.error('Failed to reject RFQ');
-      }
-    });
+    db.updateRFQ(rfqId, { status: 'rejected' });
+    
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
+    ));
+    
+    alert('RFQ rejected.');
   };
 
   const handleAssignSuppliers = (rfqId: string) => {
-    // For demo, assign first 3 verified suppliers
-    const supplierIds = verifiedSuppliers.slice(0, 3).map(s => s.id);
+    db.updateRFQ(rfqId, { status: 'matched' });
     
-    if (supplierIds.length === 0) {
-      toast.error('No verified suppliers available');
-      return;
-    }
-
-    assignSuppliersMutation.mutate({
-      rfqId,
-      supplierIds
-    }, {
-      onSuccess: () => {
-        toast.success('Suppliers assigned successfully!');
-      },
-      onError: (error) => {
-        console.error('Error assigning suppliers:', error);
-        toast.error('Failed to assign suppliers');
-      }
-    });
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === rfqId 
+        ? { ...rfq, status: 'matched' } 
+        : rfq
+    ));
+    
+    alert('Suppliers assigned successfully!');
   };
 
   const handleViewRFQDetails = (rfq: any) => {
@@ -92,20 +79,16 @@ const AdminRFQs = () => {
 
   const handleSaveEdit = () => {
     if (selectedRFQ) {
-      updateRFQMutation.mutate({
-        id: selectedRFQ.id,
-        updates: editFormData
-      }, {
-        onSuccess: () => {
-          setEditMode(false);
-          toast.success('RFQ updated successfully!');
-        },
-        onError: (error) => {
-          console.error('Error updating RFQ:', error);
-          toast.error('Failed to update RFQ');
-        }
-      });
+      db.updateRFQ(selectedRFQ.id, editFormData);
     }
+    
+    // Update local state
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === selectedRFQ?.id ? { ...rfq, ...editFormData } : rfq
+    ));
+    
+    setEditMode(false);
+    alert('RFQ updated successfully!');
   };
 
   const getStatusBadge = (status: string) => {
@@ -113,10 +96,11 @@ const AdminRFQs = () => {
       pending_approval: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-blue-100 text-blue-800',
       matched: 'bg-purple-100 text-purple-800',
-      quoting: 'bg-green-100 text-green-800',
+      quoted: 'bg-green-100 text-green-800',
       closed: 'bg-gray-100 text-gray-800',
+      rejected: 'bg-red-100 text-red-800'
     };
-    return badges[status as keyof typeof badges] || 'bg-gray-100 text-gray-800';
+    return badges[status as keyof typeof badges] || badges.pending_approval;
   };
 
   const getUrgencyBadge = (urgency: string) => {
@@ -209,8 +193,9 @@ const AdminRFQs = () => {
                   <option value="pending_approval">Pending Approval</option>
                   <option value="approved">Approved</option>
                   <option value="matched">Matched</option>
-                  <option value="quoting">Quoting</option>
+                  <option value="quoted">Quoted</option>
                   <option value="closed">Closed</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
 
@@ -330,7 +315,7 @@ const AdminRFQs = () => {
                               Suppliers assigned
                             </div>
                           )}
-                          {rfq.status === 'quoting' && (
+                          {rfq.status === 'quoted' && (
                             <div className="text-xs sm:text-sm text-green-600">
                               Quotations received
                             </div>
@@ -391,9 +376,9 @@ const AdminRFQs = () => {
               </p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h4 className="font-semibold text-green-800 text-sm sm:text-base">Quoting</h4>
+              <h4 className="font-semibold text-green-800 text-sm sm:text-base">Quoted</h4>
               <p className="text-xl sm:text-2xl font-bold text-green-900">
-                {rfqs.filter(rfq => rfq.status === 'quoting').length}
+                {rfqs.filter(rfq => rfq.status === 'quoted').length}
               </p>
             </div>
           </div>

@@ -12,7 +12,7 @@ import {
   Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useRFQs, useOrders, useQuotations } from '../lib/queries';
+import { db } from '../lib/database';
 
 const BuyerAnalytics = () => {
   const { user } = useAuth();
@@ -28,18 +28,17 @@ const BuyerAnalytics = () => {
     rfqSuccessRate: 0
   });
 
-  const { data: allRFQs = [] } = useRFQs();
-  const { data: allOrders = [] } = useOrders();
-  const { data: quotations = [] } = useQuotations();
-
   useEffect(() => {
     if (user?.id) {
-      const rfqs = allRFQs.filter(rfq => rfq.buyer_id === user.id);
-      const orders = allOrders.filter(order => order.buyer_id === user.id);
+      // Load buyer-specific analytics
+      const rfqs = db.getRFQs().filter(rfq => rfq.buyer_id === user.id);
+      const orders = db.getOrders().filter(order => order.buyer_id === user.id);
+      const quotations = db.getQuotations();
+
       const totalSpent = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
-      const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoting'].includes(rfq.status));
+      const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status));
       const completedOrders = orders.filter(order => order.status === 'completed');
-      
+
       // Calculate category distribution
       const categoryCount: { [key: string]: number } = {};
       rfqs.forEach(rfq => {
@@ -82,7 +81,7 @@ const BuyerAnalytics = () => {
         rfqSuccessRate: rfqs.length > 0 ? (completedOrders.length / rfqs.length) * 100 : 0
       });
     }
-  }, [user?.id, allRFQs, allOrders, quotations]);
+  }, [user?.id]);
 
   return (
     <DashboardLayout title="Analytics" subtitle="Track your sourcing performance and insights">

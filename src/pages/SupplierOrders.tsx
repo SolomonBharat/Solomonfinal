@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye, Edit } from 'lucide-react';
-import { useOrders, useUpdateOrder } from '../lib/queries';
-import { toast } from 'sonner';
+import { db } from '../lib/database';
 
 const SupplierOrders = () => {
   const { user } = useAuth();
-  const updateOrderMutation = useUpdateOrder();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: orders = [], isLoading: loading } = useOrders({ 
-    supplier_id: user?.id 
-  });
+  useEffect(() => {
+    // Load orders from database
+    const allOrders = db.getOrders();
+    const myOrders = allOrders.filter(order => order.supplier_id === user?.id);
+    setOrders(myOrders);
+    setLoading(false);
+  }, [user]);
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -21,7 +25,7 @@ const SupplierOrders = () => {
       delivered: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Delivered' },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Completed' }
     };
-
+    
     const badge = badges[status as keyof typeof badges] || badges.confirmed;
     const Icon = badge.icon;
     
@@ -33,17 +37,12 @@ const SupplierOrders = () => {
     );
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    try {
-      await updateOrderMutation.mutateAsync({
-        id: orderId,
-        updates: { status: newStatus as any }
-      });
-      toast.success('Order status updated successfully');
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      toast.error('Failed to update order status');
-    }
+  const updateOrderStatus = (orderId: string, newStatus: string) => {
+    db.updateOrder(orderId, { status: newStatus as any });
+    
+    setOrders(prev => prev.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    ));
   };
 
   const stats = {
