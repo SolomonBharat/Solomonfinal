@@ -32,6 +32,7 @@ import SupplierOrders from './pages/SupplierOrders';
 import SupplierPerformance from './pages/SupplierPerformance';
 import SupplierProfile from './pages/SupplierProfile';
 import SupplierSampleRequests from './pages/supplier/SupplierSampleRequests';
+import SupplierSampleRequests from './pages/supplier/SupplierSampleRequests';
 
 const queryClient = new QueryClient({
   defaultOptions: {
