@@ -17,17 +17,27 @@ import AdminRFQs from './pages/admin/AdminRFQs';
 
 // Buyer pages
 import BuyerDashboard from './pages/BuyerDashboard';
+import CreateRFQ from './pages/CreateRFQ';
+import MyRFQs from './pages/MyRFQs';
+import BuyerOrders from './pages/BuyerOrders';
+import BuyerSuppliers from './pages/BuyerSuppliers';
+import BuyerAnalytics from './pages/BuyerAnalytics';
+import BuyerProfile from './pages/BuyerProfile';
 
 // Supplier pages
 import SupplierDashboard from './pages/SupplierDashboard';
+import SupplierQuotations from './pages/SupplierQuotations';
+import SupplierOrders from './pages/SupplierOrders';
+import SupplierPerformance from './pages/SupplierPerformance';
+import SupplierProfile from './pages/SupplierProfile';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
-      retry: false, // Disable retries to prevent endless loading
-      refetchOnWindowFocus: false, // Disable refetch on window focus
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: false,
+      refetchOnWindowFocus: false,
     },
   },
 });
@@ -64,23 +74,21 @@ function AppContent() {
         {/* Protected Buyer Routes */}
         <Route element={<RequireRole allowedRoles={['buyer']} />}>
           <Route path="/dashboard" element={<BuyerDashboard />} />
-          <Route path="/my-rfqs" element={<BuyerDashboard />} />
-          <Route path="/create-rfq" element={<BuyerDashboard />} />
-          <Route path="/orders" element={<BuyerDashboard />} />
-          <Route path="/suppliers" element={<BuyerDashboard />} />
-          <Route path="/messages" element={<BuyerDashboard />} />
-          <Route path="/analytics" element={<BuyerDashboard />} />
-          <Route path="/profile" element={<BuyerDashboard />} />
+          <Route path="/create-rfq" element={<CreateRFQ />} />
+          <Route path="/my-rfqs" element={<MyRFQs />} />
+          <Route path="/orders" element={<BuyerOrders />} />
+          <Route path="/suppliers" element={<BuyerSuppliers />} />
+          <Route path="/analytics" element={<BuyerAnalytics />} />
+          <Route path="/profile" element={<BuyerProfile />} />
         </Route>
 
         {/* Protected Supplier Routes */}
         <Route element={<RequireRole allowedRoles={['supplier']} />}>
           <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-          <Route path="/supplier/quotations" element={<SupplierDashboard />} />
-          <Route path="/supplier/drafts" element={<SupplierDashboard />} />
-          <Route path="/supplier/orders" element={<SupplierDashboard />} />
-          <Route path="/supplier/performance" element={<SupplierDashboard />} />
-          <Route path="/supplier/profile" element={<SupplierDashboard />} />
+          <Route path="/supplier/quotations" element={<SupplierQuotations />} />
+          <Route path="/supplier/orders" element={<SupplierOrders />} />
+          <Route path="/supplier/performance" element={<SupplierPerformance />} />
+          <Route path="/supplier/profile" element={<SupplierProfile />} />
         </Route>
 
         {/* Catch all */}
@@ -98,8 +106,6 @@ function AppContent() {
 }
 
 function App() {
-  console.log('App component rendering...');
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
