@@ -28,16 +28,14 @@ const BuyerAnalytics = () => {
     rfqSuccessRate: 0
   });
 
-  const { data: rfqs = [] } = useRFQs({ buyer_id: user?.id });
-  const { data: orders = [] } = useOrders({ buyer_id: user?.id });
+  const { data: allRFQs = [] } = useRFQs();
+  const { data: allOrders = [] } = useOrders();
   const { data: quotations = [] } = useQuotations();
 
-  useEffect(() => {
-    if (user?.id) {
       const totalSpent = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
-      const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status));
+      const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoting'].includes(rfq.status));
       const completedOrders = orders.filter(order => order.status === 'completed');
-
+      const orders = allOrders.filter(order => order.buyer_id === user.id);
       // Calculate category distribution
       const categoryCount: { [key: string]: number } = {};
       rfqs.forEach(rfq => {
@@ -80,7 +78,7 @@ const BuyerAnalytics = () => {
         rfqSuccessRate: rfqs.length > 0 ? (completedOrders.length / rfqs.length) * 100 : 0
       });
     }
-  }, [user?.id, rfqs, orders, quotations]);
+  }, [user?.id, allRFQs, allOrders, quotations]);
 
   return (
     <DashboardLayout title="Analytics" subtitle="Track your sourcing performance and insights">

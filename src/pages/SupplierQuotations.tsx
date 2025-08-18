@@ -8,17 +8,10 @@ const SupplierQuotations = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState('all');
 
-  const { data: quotations = [], isLoading: loading } = useQuotations({ 
-    supplier_id: user?.id 
-  });
-
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      draft: { color: 'bg-gray-100 text-gray-800', icon: Edit, label: 'Draft' },
-      pending_admin_review: { color: 'bg-yellow-100 text-yellow-800', icon: Clock, label: 'Under Review' },
-      approved_for_buyer: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Approved' },
-      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle, label: 'Rejected' }
-    };
+  const { data: allQuotations = [], isLoading: loading } = useQuotations();
+  
+  // Filter quotations for current user
+  const quotations = allQuotations.filter(q => q.supplier_id === user?.id);
     
     const badge = badges[status as keyof typeof badges] || badges.draft;
     const Icon = badge.icon;

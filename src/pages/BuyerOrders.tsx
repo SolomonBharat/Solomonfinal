@@ -7,17 +7,10 @@ import { useOrders } from '../lib/queries';
 const BuyerOrders = () => {
   const { user } = useAuth();
 
-  const { data: orders = [], isLoading: loading } = useOrders({ 
-    buyer_id: user?.id 
-  });
-
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      confirmed: { color: 'bg-blue-100 text-blue-800', icon: Clock, label: 'Confirmed' },
-      in_production: { color: 'bg-yellow-100 text-yellow-800', icon: Package, label: 'In Production' },
-      shipped: { color: 'bg-purple-100 text-purple-800', icon: Truck, label: 'Shipped' },
-      delivered: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Delivered' },
-      completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Completed' }
+  const { data: allOrders = [], isLoading: loading } = useOrders();
+  
+  // Filter orders for current user
+  const orders = allOrders.filter(order => order.buyer_id === user?.id);
     };
     
     const badge = badges[status as keyof typeof badges] || badges.confirmed;
