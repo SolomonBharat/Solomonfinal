@@ -12,7 +12,15 @@ const SupplierQuotations = () => {
   
   // Filter quotations for current user
   const quotations = allQuotations.filter(q => q.supplier_id === user?.id);
-    
+
+  const badges = {
+    draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800', icon: Edit },
+    pending_admin_review: { label: 'Under Review', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+    approved_for_buyer: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: CheckCircle },
+    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: XCircle },
+  };
+
+  const getStatusBadge = (status: string) => {
     const badge = badges[status as keyof typeof badges] || badges.draft;
     const Icon = badge.icon;
     
