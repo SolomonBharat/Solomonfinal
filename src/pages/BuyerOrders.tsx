@@ -11,6 +11,13 @@ const BuyerOrders = () => {
   
   // Filter orders for current user
   const orders = allOrders.filter(order => order.buyer_id === user?.id);
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      confirmed: { label: 'Confirmed', color: 'bg-blue-100 text-blue-800', icon: Clock },
+      in_production: { label: 'In Production', color: 'bg-yellow-100 text-yellow-800', icon: Package },
+      shipped: { label: 'Shipped', color: 'bg-purple-100 text-purple-800', icon: Truck },
+      completed: { label: 'Completed', color: 'bg-green-100 text-green-800', icon: CheckCircle }
     };
     
     const badge = badges[status as keyof typeof badges] || badges.confirmed;
