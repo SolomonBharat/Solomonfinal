@@ -1,31 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  company?: string;
-}
-
-interface Profile {
-  id: string;
-  user_type: 'admin' | 'buyer' | 'supplier';
-  full_name: string | null;
-  company_name: string | null;
-  phone: string | null;
-  country: string | null;
-  website: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import { User, Session } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { mockDB } from '../lib/mockDatabase';
+import type { UserProfile } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
-  profile: Profile | null;
+  profile: UserProfile | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: any }>;
   signUp: (email: string, password: string, userData: {
-    userType: 'buyer' | 'supplier' | 'admin';
+    userType: 'buyer' | 'supplier';
     fullName: string;
     companyName: string;
     phone?: string;
@@ -33,179 +19,188 @@ interface AuthContextType {
     website?: string;
   }) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
-  userType: string | null;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  userType: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Complete mock database with persistence
-class AuthDatabase {
-  private users: any[] = [];
-  private profiles: Profile[] = [];
-
-  constructor() {
-    this.loadFromStorage();
-    this.initializeTestAccounts();
-  }
-
-  private loadFromStorage() {
-    try {
-      const users = localStorage.getItem('auth_users');
-      const profiles = localStorage.getItem('auth_profiles');
-      if (users) this.users = JSON.parse(users);
-      if (profiles) this.profiles = JSON.parse(profiles);
-    } catch (error) {
-      console.error('Error loading auth data:', error);
-    }
-  }
-
-  private saveToStorage() {
-    try {
-      localStorage.setItem('auth_users', JSON.stringify(this.users));
-      localStorage.setItem('auth_profiles', JSON.stringify(this.profiles));
-    } catch (error) {
-      console.error('Error saving auth data:', error);
-    }
-  }
-
-  private initializeTestAccounts() {
-    const testAccounts = [
-      {
-        email: 'admin@example.com',
-        password: 'password',
-        userType: 'admin' as const,
-        fullName: 'Admin User',
-        companyName: 'Solomon Bharat'
-      },
-      {
-        email: 'buyer@example.com',
-        password: 'password',
-        userType: 'buyer' as const,
-        fullName: 'John Buyer',
-        companyName: 'Global Trade Corp'
-      },
-      {
-        email: 'supplier@example.com',
-        password: 'password',
-        userType: 'supplier' as const,
-        fullName: 'Sarah Supplier',
-        companyName: 'Indian Exports Ltd'
-      }
-    ];
-
-    testAccounts.forEach(account => {
-      if (!this.users.find(u => u.email === account.email)) {
-        this.createUser(account.email, account.password, account);
-      }
-    });
-  }
-
-  signIn(email: string, password: string): { user: User; profile: Profile } | null {
-    const user = this.users.find(u => u.email === email && u.password === password);
-    if (!user) return null;
-
-    const profile = this.profiles.find(p => p.id === user.id);
-    if (!profile) return null;
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: profile.full_name || undefined,
-        company: profile.company_name || undefined
-      },
-      profile
-    };
-  }
-
-  createUser(email: string, password: string, userData: any): { user: User; profile: Profile } {
-    if (this.users.find(u => u.email === email)) {
-      throw new Error('User already exists');
-    }
-
-    const userId = 'user-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    const now = new Date().toISOString();
-
-    const user = {
-      id: userId,
-      email,
-      password,
-      created_at: now
-    };
-
-    const profile: Profile = {
-      id: userId,
-      user_type: userData.userType,
-      full_name: userData.fullName,
-      company_name: userData.companyName,
-      phone: userData.phone || null,
-      country: userData.country || null,
-      website: userData.website || null,
-      created_at: now,
-      updated_at: now
-    };
-
-    this.users.push(user);
-    this.profiles.push(profile);
-    this.saveToStorage();
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: profile.full_name || undefined,
-        company: profile.company_name || undefined
-      },
-      profile
-    };
-  }
-}
-
-const authDB = new AuthDatabase();
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const savedAuth = localStorage.getItem('current_auth');
-    if (savedAuth) {
-      try {
-        const { user: savedUser, profile: savedProfile } = JSON.parse(savedAuth);
-        setUser(savedUser);
-        setProfile(savedProfile);
-      } catch (error) {
-        console.error('Error loading saved auth:', error);
-        localStorage.removeItem('current_auth');
+    console.log('AuthProvider initializing...');
+    
+    if (!isSupabaseConfigured) {
+      console.log('Supabase not configured, using mock authentication');
+      const mockAuth = localStorage.getItem('mock_auth');
+      if (mockAuth) {
+        try {
+          const { user: mockUser, profile: mockProfile } = JSON.parse(mockAuth);
+          setUser(mockUser);
+          setProfile(mockProfile);
+        } catch (error) {
+          console.error('Error parsing mock auth:', error);
+          localStorage.removeItem('mock_auth');
+        }
       }
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    // Initialize Supabase auth
+    initializeSupabaseAuth();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const initializeSupabaseAuth = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available');
+      setLoading(false);
+      return;
+    }
+
+    
     try {
-      const result = authDB.signIn(email, password);
-      if (!result) {
-        return { error: { message: 'Invalid email or password' } };
+      console.log('Initializing Supabase auth...');
+
+      // Get initial session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error);
+        setLoading(false);
+        return;
+      }
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
 
-      setUser(result.user);
-      setProfile(result.profile);
-      localStorage.setItem('current_auth', JSON.stringify(result));
-      return { error: null };
-    } catch (error: any) {
-      return { error: { message: error.message || 'Login failed' } };
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+
+      // Cleanup subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error initializing Supabase auth:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchProfile = async (userId: string) => {
+    if (!supabase) {
+      console.log('No Supabase client available for profile fetch');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.log('Fetching profile for user:', userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+      } else {
+        if (data) {
+          console.log('Profile fetched successfully:', data);
+          setProfile(data);
+        } else {
+          console.log('No profile found for user, this is normal for new users');
+          setProfile(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      // Use persistent mock authentication
+      try {
+        const result = await mockDB.signIn(email, password);
+        if (!result) {
+          return { error: { message: 'Invalid email or password' } };
+        }
+        
+        setUser(result.user as any);
+        setProfile(result.profile);
+        localStorage.setItem('mock_auth', JSON.stringify(result));
+        return { error: null };
+      } catch (error: any) {
+        return { error: { message: error.message || 'Login failed' } };
+      }
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      // If Supabase auth fails, fall back to mock auth
+      if (error && error.message.includes('Invalid login credentials')) {
+        console.log('Supabase auth failed, falling back to mock auth');
+        setLoading(false);
+        
+        try {
+          const result = await mockDB.signIn(email, password);
+          if (!result) {
+            return { error: { message: 'Invalid email or password' } };
+          }
+          
+          setUser(result.user as any);
+          setProfile(result.profile);
+          localStorage.setItem('mock_auth', JSON.stringify(result));
+          return { error: null };
+        } catch (mockError: any) {
+          return { error: { message: mockError.message || 'Login failed' } };
+        }
+      }
+      
+      setLoading(false);
+      return { error };
+    } catch (error) {
+      setLoading(false);
+      return { error };
     }
   };
 
   const signUp = async (
-    email: string,
-    password: string,
+    email: string, 
+    password: string, 
     userData: {
-      userType: 'buyer' | 'supplier' | 'admin';
+      userType: 'buyer' | 'supplier';
       fullName: string;
       companyName: string;
       phone?: string;
@@ -213,36 +208,182 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
+    if (!isSupabaseConfigured || !supabase) {
+      // Use persistent mock authentication
+      try {
+        const result = await mockDB.createUser(email, password, userData);
+        setUser(result.user as any);
+        setProfile(result.profile);
+        localStorage.setItem('mock_auth', JSON.stringify(result));
+        return { error: null };
+      } catch (error: any) {
+        return { error: { message: error.message || 'Registration failed' } };
+      }
+    }
+    
+    setLoading(true);
+    
     try {
-      const result = authDB.createUser(email, password, userData);
-      setUser(result.user);
-      setProfile(result.profile);
-      localStorage.setItem('current_auth', JSON.stringify(result));
+      console.log('Starting signup process for:', email);
+      
+      // Sign up user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: undefined,
+          data: {
+            full_name: userData.fullName,
+            company_name: userData.companyName,
+            user_type: userData.userType
+          }
+        }
+      });
+
+      if (authError) {
+        setLoading(false);
+        return { error: authError };
+      }
+
+      if (authData.user && authData.user.id) {
+        // Create profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: authData.user.id,
+            user_type: userData.userType,
+            full_name: userData.fullName,
+            company_name: userData.companyName,
+            phone: userData.phone,
+            country: userData.country,
+            website: userData.website,
+          })
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+
+        // Create role-specific record
+        if (userData.userType === 'buyer') {
+          const { data: buyerData, error: buyerError } = await supabase
+            .from('buyers')
+            .insert({ id: authData.user.id })
+            .select()
+            .single();
+          
+          if (buyerError) {
+            console.error('Buyer creation error:', buyerError);
+          }
+        } else if (userData.userType === 'supplier') {
+          const { data: supplierData, error: supplierError } = await supabase
+            .from('suppliers')
+            .insert({ 
+              id: authData.user.id,
+              product_categories: [],
+              certifications: []
+            })
+            .select()
+            .single();
+          
+          if (supplierError) {
+            console.error('Supplier creation error:', supplierError);
+          }
+        }
+
+        if (profileData) {
+          setProfile(profileData);
+        }
+      }
+
+      setLoading(false);
       return { error: null };
-    } catch (error: any) {
-      return { error: { message: error.message || 'Registration failed' } };
+    } catch (error) {
+      setLoading(false);
+      return { error };
     }
   };
 
   const signOut = async () => {
+    if (!supabase || !isSupabaseConfigured) {
+      setUser(null);
+      setProfile(null);
+      localStorage.removeItem('mock_auth');
+      return;
+    }
+
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
     setUser(null);
     setProfile(null);
-    localStorage.removeItem('current_auth');
   };
 
-  const logout = () => {
-    signOut();
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!supabase) {
+      if (user && profile) {
+        try {
+          const updatedProfile = await mockDB.updateProfile(user.id, updates);
+          if (updatedProfile) {
+            setProfile(updatedProfile);
+            const mockAuth = JSON.parse(localStorage.getItem('mock_auth') || '{}');
+            localStorage.setItem('mock_auth', JSON.stringify({ ...mockAuth, profile: updatedProfile }));
+          }
+          return { error: null };
+        } catch (error: any) {
+          return { error: { message: error.message || 'Update failed' } };
+        }
+      }
+      return { error: { message: 'No user logged in' } };
+    }
+
+    if (!user) return { error: 'No user logged in' };
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
+
+      if (!error) {
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  // Legacy login function for compatibility
+  const login = async (email: string, password: string) => {
+    const result = await signIn(email, password);
+    if (result.error) {
+      return { success: false, error: result.error.message };
+    }
+    return { success: true };
+  };
+
+  // Legacy logout function for compatibility
+  const logout = async () => {
+    await signOut();
   };
 
   const value: AuthContextType = {
     user,
     profile,
+    session,
     loading,
     signIn,
     signUp,
     signOut,
-    userType: profile?.user_type || null,
+    updateProfile,
+    login,
     logout,
+    userType: profile?.user_type || null,
   };
 
   return (
