@@ -4,11 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye, Edit } from 'lucide-react';
 import { useOrders, useUpdateOrder } from '../lib/queries';
 import { toast } from 'sonner';
-import { toast } from 'sonner';
 
 const SupplierOrders = () => {
   const { user } = useAuth();
-  const updateOrderMutation = useUpdateOrder();
   const updateOrderMutation = useUpdateOrder();
 
   const { data: orders = [], isLoading: loading } = useOrders({ 
@@ -23,10 +21,17 @@ const SupplierOrders = () => {
       delivered: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Delivered' },
       completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle, label: 'Completed' }
     };
-  const { data: allOrders = [], isLoading: loading } = useOrders();
-  
-  // Filter orders for current user
-  const orders = allOrders.filter(order => order.supplier_id === user?.id);
+
+    const badge = badges[status as keyof typeof badges] || badges.confirmed;
+    const Icon = badge.icon;
+    
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
+        <Icon className="h-3 w-3 mr-1" />
+        {badge.label}
+      </span>
+    );
+  };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
