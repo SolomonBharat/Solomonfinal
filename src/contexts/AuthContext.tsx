@@ -122,17 +122,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          console.log('No profile found for user, this is normal for new users');
-        } else {
-          console.error('Error fetching profile:', error);
-        }
+        console.error('Error fetching profile:', error);
       } else {
-        console.log('Profile fetched successfully:', data);
-        setProfile(data);
+        if (data) {
+          console.log('Profile fetched successfully:', data);
+          setProfile(data);
+        } else {
+          console.log('No profile found for user, this is normal for new users');
+          setProfile(null);
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
