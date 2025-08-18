@@ -120,13 +120,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default AdminDashboard;
