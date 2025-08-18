@@ -146,13 +146,13 @@ const LandingPage = () => {
               Find Suppliers Now
               <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link 
-              to="/supplier/login" 
+            <a 
+              href="mailto:partners@solomonbharat.com"
               className="group border-2 border-blue-600 text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:bg-blue-600 hover:text-white transition-all duration-300 flex items-center justify-center"
             >
               <Users className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Supplier Portal
-            </Link>
+              Partner with Us
+            </a>
           </div>
 
           {/* Video/Demo Placeholder */}

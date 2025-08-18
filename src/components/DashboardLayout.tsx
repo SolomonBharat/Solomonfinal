@@ -88,6 +88,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
         { name: 'Orders', href: '/supplier/orders', icon: ShoppingCart },
         { name: 'Performance', href: '/supplier/performance', icon: TrendingUp },
         { name: 'Messages', href: '/messages', icon: MessageCircle, badge: 2 },
+        { name: 'Sample Requests', href: '/supplier/sample-requests', icon: Package },
+        { name: 'Sample Requests', href: '/supplier/sample-requests', icon: Package },
         { name: 'Profile', href: '/supplier/profile', icon: User },
       ];
     }
@@ -112,6 +114,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
             { name: 'All Suppliers', href: '/admin/suppliers', icon: Users },
             { name: 'Verification Queue', href: '/admin/suppliers?status=pending', icon: Users },
             { name: 'Sample Requests', href: '/admin/sample-requests', icon: Package },
+            { name: 'Onboard Supplier', href: '/admin/onboard-supplier', icon: Users },
+            { name: 'Onboard Supplier', href: '/admin/onboard-supplier', icon: Users },
             { name: 'Category Management', href: '/admin/categories', icon: Settings },
           ]
         },

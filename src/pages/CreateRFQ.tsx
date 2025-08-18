@@ -1,330 +1,340 @@
 import React, { useState } from 'react';
-import { 
-  useRFQs, 
-  useAdminApproveRFQ, 
-  useUpdateRFQ
-} from '../lib/queries';
-import { useSuppliers, useAdminAssignSuppliers } from '../lib/queries';
-import { DashboardLayout } from "../components/DashboardLayout";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { 
-  CheckCircle, 
-  XCircle, 
-  Users, 
-  Calendar,
-  Package,
-  DollarSign,
-  Eye
-} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useCreateRFQ, useCategories } from '../lib/queries';
+import { DashboardLayout } from '../components/DashboardLayout';
 import { toast } from 'sonner';
+import { FileText, Package, DollarSign, Calendar, Truck, Award } from 'lucide-react';
 
-interface AssignSuppliersModalProps {
-  rfq: any;
-  isOpen: boolean;
-  onClose: () => void;
-}
+const CreateRFQ = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { data: categories = [] } = useCategories();
+  const createRFQMutation = useCreateRFQ();
+  
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    category: '',
+    description: '',
+    quantity: '',
+    unit: 'pieces',
+    target_price: '',
+    max_price: '',
+    delivery_timeline: '',
+    shipping_terms: '',
+    quality_standards: '',
+    certifications_needed: '',
+    additional_requirements: ''
+  });
 
-function AssignSuppliersModal({ rfq, isOpen, onClose }: AssignSuppliersModalProps) {
-  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
-  const { data: suppliers = [] } = useSuppliers();
-  const assignSuppliers = useAdminAssignSuppliers();
+  const units = [
+    'pieces', 'kg', 'tons', 'meters', 'liters', 'boxes', 'cartons', 'sets', 'pairs', 'dozens'
+  ];
 
-  const verifiedSuppliers = suppliers.filter(s => 
-    s.verification_status === 'verified' && 
-    s.product_categories.includes(rfq.category)
-  );
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
 
-  const handleAssign = async () => {
-    if (selectedSuppliers.length === 0) {
-      toast.error('Please select at least one supplier');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!user?.id) {
+      toast.error('You must be logged in to create an RFQ');
       return;
     }
 
+    if (!formData.title || !formData.category || !formData.quantity) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      await assignSuppliers.mutateAsync({
-        rfqId: rfq.id,
-        supplierIds: selectedSuppliers
+      await createRFQMutation.mutateAsync({
+        buyer_id: user.id,
+        title: formData.title,
+        category: formData.category,
+        description: formData.description || null,
+        quantity: parseInt(formData.quantity),
+        unit: formData.unit,
+        target_price: formData.target_price ? parseFloat(formData.target_price) : null,
+        max_price: formData.max_price ? parseFloat(formData.max_price) : null,
+        delivery_timeline: formData.delivery_timeline || null,
+        shipping_terms: formData.shipping_terms || null,
+        quality_standards: formData.quality_standards || null,
+        certifications_needed: formData.certifications_needed || null,
+        additional_requirements: formData.additional_requirements || null,
+        open_for_bidding: false,
+        status: 'pending_approval',
+        expires_at: null
       });
-      toast.success('Suppliers assigned successfully');
-      onClose();
-      setSelectedSuppliers([]);
-    } catch (error) {
-      toast.error('Failed to assign suppliers');
+
+      toast.success('RFQ created successfully! It will be reviewed by our admin team.');
+      navigate('/my-rfqs');
+    } catch (error: any) {
+      console.error('Error creating RFQ:', error);
+      toast.error('Failed to create RFQ: ' + error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Assign Suppliers to RFQ</h2>
-          <Button variant="ghost" onClick={onClose}>×</Button>
-        </div>
-        
-        <div className="mb-4">
-          <h3 className="font-medium text-gray-900">{rfq.title}</h3>
-          <p className="text-sm text-gray-600">Category: {rfq.category}</p>
-        </div>
+    <DashboardLayout title="Create RFQ" subtitle="Submit a new Request for Quotation">
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">New RFQ Details</h2>
+              <p className="text-sm text-gray-600 mt-1">Fill in the details for your sourcing request</p>
+            </div>
 
-        <div className="space-y-3">
-          <h4 className="font-medium">Available Suppliers ({verifiedSuppliers.length})</h4>
-          {verifiedSuppliers.length === 0 ? (
-            <p className="text-gray-500">No verified suppliers available for this category</p>
-          ) : (
-            verifiedSuppliers.map(supplier => (
-              <div key={supplier.id} className="flex items-center space-x-3 p-3 border rounded">
-                <input
-                  type="checkbox"
-                  checked={selectedSuppliers.includes(supplier.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedSuppliers([...selectedSuppliers, supplier.id]);
-                    } else {
-                      setSelectedSuppliers(selectedSuppliers.filter(id => id !== supplier.id));
-                    }
-                  }}
-                  className="rounded"
-                />
-                <div className="flex-1">
-                  <p className="font-medium">{supplier.profiles?.company_name || 'Unknown Company'}</p>
-                  <p className="text-sm text-gray-600">
-                    Categories: {supplier.product_categories.join(', ')}
-                  </p>
-                  {supplier.years_in_business && (
-                    <p className="text-sm text-gray-500">
-                      {supplier.years_in_business} years in business
-                    </p>
-                  )}
+            <form onSubmit={handleSubmit} className="p-6 space-y-8">
+              {/* Basic Information */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <FileText className="h-5 w-5 mr-2" />
+                  Basic Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      RFQ Title *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      required
+                      placeholder="e.g., Cotton T-Shirts for Export"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category *
+                    </label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.name}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={4}
+                    placeholder="Describe your requirements in detail..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
-            ))
-          )}
-        </div>
 
-        <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            onClick={handleAssign}
-            disabled={selectedSuppliers.length === 0 || assignSuppliers.isPending}
-          >
-            {assignSuppliers.isPending ? 'Assigning...' : `Assign ${selectedSuppliers.length} Supplier(s)`}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+              {/* Quantity & Pricing */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Package className="h-5 w-5 mr-2" />
+                  Quantity & Pricing
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Quantity *
+                    </label>
+                    <input
+                      type="number"
+                      name="quantity"
+                      value={formData.quantity}
+                      onChange={handleChange}
+                      required
+                      min="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-export default function AdminRFQs() {
-  const [selectedRFQ, setSelectedRFQ] = useState<any>(null);
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const { data: rfqs = [], isLoading } = useRFQs();
-  const approveRFQ = useAdminApproveRFQ();
-  const updateRFQ = useUpdateRFQ();
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Unit *
+                    </label>
+                    <select
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {units.map(unit => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </div>
 
-  const handleApprove = async (rfqId: string) => {
-    try {
-      await approveRFQ.mutateAsync(rfqId);
-      toast.success('RFQ approved successfully');
-    } catch (error) {
-      toast.error('Failed to approve RFQ');
-    }
-  };
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Target Price (USD per unit)
+                    </label>
+                    <input
+                      type="number"
+                      name="target_price"
+                      value={formData.target_price}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-  const handleReject = async (rfqId: string) => {
-    try {
-      await updateRFQ.mutateAsync({
-        id: rfqId,
-        updates: { status: 'closed' }
-      });
-      toast.success('RFQ rejected');
-    } catch (error) {
-      toast.error('Failed to reject RFQ');
-    }
-  };
-  
-  const handleAssignSuppliers = (rfq: any) => {
-    setSelectedRFQ(rfq);
-    setShowAssignModal(true);
-  };
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Maximum Price (USD per unit)
+                    </label>
+                    <input
+                      type="number"
+                      name="max_price"
+                      value={formData.max_price}
+                      onChange={handleChange}
+                      step="0.01"
+                      min="0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending_approval: { color: 'bg-yellow-100 text-yellow-800', label: 'Pending Approval' },
-      approved: { color: 'bg-green-100 text-green-800', label: 'Approved' },
-      matched: { color: 'bg-blue-100 text-blue-800', label: 'Matched' },
-      quoting: { color: 'bg-purple-100 text-purple-800', label: 'Quoting' },
-      closed: { color: 'bg-gray-100 text-gray-800', label: 'Closed' }
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending_approval;
-    return <Badge className={config.color}>{config.label}</Badge>;
-  };
+              {/* Delivery & Terms */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Truck className="h-5 w-5 mr-2" />
+                  Delivery & Terms
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Delivery Timeline
+                    </label>
+                    <input
+                      type="text"
+                      name="delivery_timeline"
+                      value={formData.delivery_timeline}
+                      onChange={handleChange}
+                      placeholder="e.g., 30 days from order confirmation"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
 
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shipping Terms
+                    </label>
+                    <input
+                      type="text"
+                      name="shipping_terms"
+                      value={formData.shipping_terms}
+                      onChange={handleChange}
+                      placeholder="e.g., FOB Mumbai, CIF destination port"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">RFQ Management</h1>
-          <div className="text-sm text-gray-500">
-            Total RFQs: {rfqs.length}
+              {/* Quality & Certifications */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Award className="h-5 w-5 mr-2" />
+                  Quality & Certifications
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Quality Standards
+                    </label>
+                    <input
+                      type="text"
+                      name="quality_standards"
+                      value={formData.quality_standards}
+                      onChange={handleChange}
+                      placeholder="e.g., ISO 9001, Six Sigma"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Certifications Needed
+                    </label>
+                    <input
+                      type="text"
+                      name="certifications_needed"
+                      value={formData.certifications_needed}
+                      onChange={handleChange}
+                      placeholder="e.g., GOTS, OEKO-TEX, CE Marking"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Requirements
+                  </label>
+                  <textarea
+                    name="additional_requirements"
+                    value={formData.additional_requirements}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any other specific requirements or notes..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end pt-6 border-t border-gray-200">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-8 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Creating RFQ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4" />
+                      <span>Submit RFQ</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Pending Approval</p>
-                  <p className="text-xl font-semibold">
-                    {rfqs.filter(r => r.status === 'pending_approval').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Approved</p>
-                  <p className="text-xl font-semibold">
-                    {rfqs.filter(r => r.status === 'approved').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Matched</p>
-                  <p className="text-xl font-semibold">
-                    {rfqs.filter(r => r.status === 'matched').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Package className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-xl font-semibold">
-                    {rfqs.filter(r => ['approved', 'matched', 'quoting'].includes(r.status)).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* RFQs List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>All RFQs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {rfqs.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No RFQs found</p>
-              ) : (
-                rfqs.map(rfq => (
-                  <div key={rfq.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg">{rfq.title}</h3>
-                        <p className="text-gray-600 mt-1">{rfq.description}</p>
-                        <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                          <span>Category: {rfq.category}</span>
-                          <span>Quantity: {rfq.quantity} {rfq.unit}</span>
-                          {rfq.target_price && (
-                            <span className="flex items-center">
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              Target: ${rfq.target_price}
-                            </span>
-                          )}
-                          <span>Created: {new Date(rfq.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(rfq.status)}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-3 border-t">
-                      <div className="text-sm text-gray-600">
-                        Buyer: {rfq.profiles?.company_name || rfq.profiles?.full_name || 'Unknown'}
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        {rfq.status === 'pending_approval' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleApprove(rfq.id)}
-                            disabled={approveRFQ.isPending}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
-                        )}
-                        
-                        {rfq.status === 'approved' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleAssignSuppliers(rfq)}
-                          >
-                            <Users className="h-4 w-4 mr-1" />
-                            Assign Suppliers
-                          </Button>
-                        )}
-                        
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </div>
-
-      <AssignSuppliersModal
-        rfq={selectedRFQ}
-        isOpen={showAssignModal}
-        onClose={() => setShowAssignModal(false)}
-      />
     </DashboardLayout>
   );
-}
+};
+
+export default CreateRFQ;

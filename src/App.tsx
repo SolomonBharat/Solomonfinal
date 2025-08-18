@@ -14,6 +14,8 @@ import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
+import AdminSupplierOnboarding from './pages/admin/AdminSupplierOnboarding';
+import AdminSupplierOnboarding from './pages/admin/AdminSupplierOnboarding';
 
 // Buyer pages
 import BuyerDashboard from './pages/BuyerDashboard';
@@ -30,6 +32,8 @@ import SupplierQuotations from './pages/SupplierQuotations';
 import SupplierOrders from './pages/SupplierOrders';
 import SupplierPerformance from './pages/SupplierPerformance';
 import SupplierProfile from './pages/SupplierProfile';
+import SupplierSampleRequests from './pages/supplier/SupplierSampleRequests';
+import SupplierSampleRequests from './pages/supplier/SupplierSampleRequests';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,6 +73,8 @@ function AppContent() {
         <Route element={<RequireRole allowedRoles={['admin']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/rfqs" element={<AdminRFQs />} />
+          <Route path="/admin/onboard-supplier" element={<AdminSupplierOnboarding />} />
+          <Route path="/admin/onboard-supplier" element={<AdminSupplierOnboarding />} />
         </Route>
 
         {/* Protected Buyer Routes */}
@@ -89,6 +95,8 @@ function AppContent() {
           <Route path="/supplier/orders" element={<SupplierOrders />} />
           <Route path="/supplier/performance" element={<SupplierPerformance />} />
           <Route path="/supplier/profile" element={<SupplierProfile />} />
+          <Route path="/supplier/sample-requests" element={<SupplierSampleRequests />} />
+          <Route path="/supplier/sample-requests" element={<SupplierSampleRequests />} />
         </Route>
 
         {/* Catch all */}

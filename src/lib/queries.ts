@@ -47,7 +47,7 @@ export const useCreateCategory = () => {
 }
 
 // RFQs
-export const useRFQs = (filters?: { status?: string; buyer_id?: string }) => {
+export const useRFQs = (filters?: { status?: string; buyer_id?: string; categories?: string[] }) => {
   return useQuery({
     queryKey: ['rfqs', filters],
     queryFn: async () => {
@@ -61,6 +61,9 @@ export const useRFQs = (filters?: { status?: string; buyer_id?: string }) => {
       }
       if (filters?.buyer_id) {
         query = query.eq('buyer_id', filters.buyer_id)
+      }
+      if (filters?.categories && filters.categories.length > 0) {
+        query = query.in('category', filters.categories)
       }
       
       const { data, error } = await query.order('created_at', { ascending: false })
@@ -137,7 +140,7 @@ export const useDeleteRFQ = () => {
 }
 
 // Suppliers
-export const useSuppliers = (filters?: { verification_status?: string }) => {
+export const useSuppliers = (filters?: { verification_status?: string; categories?: string[] }) => {
   return useQuery({
     queryKey: ['suppliers', filters],
     queryFn: async () => {
@@ -152,6 +155,10 @@ export const useSuppliers = (filters?: { verification_status?: string }) => {
         query = query.eq('verification_status', filters.verification_status)
       }
       
+      if (filters?.categories && filters.categories.length > 0) {
+        query = query.overlaps('product_categories', filters.categories)
+      }
+      
       const { data, error } = await query
       
       if (error) throw error
@@ -164,7 +171,7 @@ export const useCreateSupplier = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: async (supplierData: Omit<Supplier, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (supplierData: Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'profiles'>) => {
       const { data, error } = await supabase
         .from('suppliers')
         .insert({
@@ -231,6 +238,58 @@ export const useCreateQuotation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotations'] })
+    }
+  })
+}
+
+// Sample Requests
+export const useSampleRequests = (filters?: { supplier_id?: string; buyer_id?: string }) => {
+  return useQuery({
+    queryKey: ['sample_requests', filters],
+    queryFn: async () => {
+      let query = supabase.from('sample_requests').select(`
+        *,
+        rfqs!inner(*),
+        supplier_quotations!inner(*),
+        buyer_profiles:profiles!buyer_id(*),
+        supplier_profiles:profiles!supplier_id(*)
+      `)
+      
+      if (filters?.supplier_id) {
+        query = query.eq('supplier_id', filters.supplier_id)
+      }
+      if (filters?.buyer_id) {
+        query = query.eq('buyer_id', filters.buyer_id)
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data
+    }
+  })
+}
+
+export const useUpdateSampleRequest = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      const { data, error } = await supabase
+        .from('sample_requests')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sample_requests'] })
     }
   })
 }
