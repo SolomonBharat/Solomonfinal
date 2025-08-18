@@ -3,8 +3,8 @@ import {
   useRFQs, 
   useAdminApproveRFQ, 
   useUpdateRFQ
-} from '../../hooks/useRFQs';
-import { useSuppliers, useAdminAssignSuppliers } from '../../hooks/useSuppliers';
+} from '../lib/queries';
+import { useSuppliers, useAdminAssignSuppliers } from '../lib/queries';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
