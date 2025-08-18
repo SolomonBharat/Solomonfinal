@@ -5,6 +5,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { Plus, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, Package } from 'lucide-react';
 import { useRFQs, useDeleteRFQ } from '../lib/queries';
 import { toast } from 'sonner';
+
+const MyRFQs = () => {
+  const { user } = useAuth();
+  const [filter, setFilter] = useState('all');
+  const deleteRFQMutation = useDeleteRFQ();
+  
   const { data: allRFQs = [], isLoading: loading } = useRFQs();
   
   // Filter RFQs for current user
@@ -15,6 +21,7 @@ import { toast } from 'sonner';
       try {
         await deleteRFQMutation.mutateAsync(rfqId);
         toast.success('RFQ deleted successfully');
+      } catch (error) {
         console.error('Error deleting RFQ:', error);
         toast.error('Failed to delete RFQ');
       }
