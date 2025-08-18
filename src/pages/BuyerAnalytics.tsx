@@ -32,10 +32,14 @@ const BuyerAnalytics = () => {
   const { data: allOrders = [] } = useOrders();
   const { data: quotations = [] } = useQuotations();
 
+  useEffect(() => {
+    if (user?.id) {
+      const rfqs = allRFQs.filter(rfq => rfq.buyer_id === user.id);
+      const orders = allOrders.filter(order => order.buyer_id === user.id);
       const totalSpent = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
       const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoting'].includes(rfq.status));
       const completedOrders = orders.filter(order => order.status === 'completed');
-      const orders = allOrders.filter(order => order.buyer_id === user.id);
+      
       // Calculate category distribution
       const categoryCount: { [key: string]: number } = {};
       rfqs.forEach(rfq => {
