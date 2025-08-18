@@ -3,17 +3,18 @@ import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Plus, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { db } from '../lib/database';
+import { useRFQs, useOrders } from '../lib/queries';
 
 const BuyerDashboard = () => {
   const { profile } = useAuth();
   const { user } = useAuth();
+  // Load real data from Supabase
+  const { data: allRFQs = [], isLoading: rfqsLoading } = useRFQs();
+  const { data: allOrders = [], isLoading: ordersLoading } = useOrders();
   
-  // Load real data from database
-  const rfqs = user?.id ? db.getRFQs().filter(rfq => rfq.buyer_id === user.id) : [];
-  const orders = user?.id ? db.getOrders().filter(order => order.buyer_id === user.id) : [];
-  const rfqsLoading = false;
-  const ordersLoading = false;
+  // Filter data for current user
+  const rfqs = allRFQs.filter(rfq => rfq.buyer_id === user?.id);
+  const orders = allOrders.filter(order => order.buyer_id === user?.id);
 
   const stats = {
     totalRFQs: rfqs.length,
@@ -25,11 +26,12 @@ const BuyerDashboard = () => {
   if (rfqsLoading || ordersLoading) {
     return (
       <DashboardLayout title="Dashboard" subtitle="Welcome to your buyer dashboard">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="p-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
       </DashboardLayout>
     );
   }
-
   return (
     <DashboardLayout title="Dashboard" subtitle={`Welcome back, ${profile?.full_name || 'User'}`}>
       <div className="p-6 space-y-6">
@@ -93,17 +95,20 @@ const BuyerDashboard = () => {
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs yet</h3>
               <p className="text-gray-600 mb-6">Start by creating your first sourcing request</p>
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2">
+              <Link 
+                to="/create-rfq"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+              >
                 <Plus className="h-5 w-5" />
                 <span>Create Your First RFQ</span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
+          <Link to="/create-rfq" className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <FileText className="h-8 w-8" />
               <div>
@@ -111,9 +116,9 @@ const BuyerDashboard = () => {
                 <p className="text-sm opacity-90">Start a new sourcing request</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
+          <Link to="/suppliers" className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <Package className="h-8 w-8" />
               <div>
@@ -121,9 +126,9 @@ const BuyerDashboard = () => {
                 <p className="text-sm opacity-90">Find verified suppliers</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
+          <Link to="/analytics" className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <DollarSign className="h-8 w-8" />
               <div>
@@ -131,7 +136,7 @@ const BuyerDashboard = () => {
                 <p className="text-sm opacity-90">Track your sourcing metrics</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </DashboardLayout>

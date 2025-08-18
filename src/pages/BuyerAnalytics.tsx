@@ -12,7 +12,7 @@ import {
   Award
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/database';
+import { useRFQs, useOrders, useQuotations } from '../lib/queries';
 
 const BuyerAnalytics = () => {
   const { user } = useAuth();
@@ -28,13 +28,12 @@ const BuyerAnalytics = () => {
     rfqSuccessRate: 0
   });
 
+  const { data: rfqs = [] } = useRFQs({ buyer_id: user?.id });
+  const { data: orders = [] } = useOrders({ buyer_id: user?.id });
+  const { data: quotations = [] } = useQuotations();
+
   useEffect(() => {
     if (user?.id) {
-      // Load buyer-specific analytics
-      const rfqs = db.getRFQs().filter(rfq => rfq.buyer_id === user.id);
-      const orders = db.getOrders().filter(order => order.buyer_id === user.id);
-      const quotations = db.getQuotations();
-
       const totalSpent = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
       const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status));
       const completedOrders = orders.filter(order => order.status === 'completed');
@@ -81,7 +80,7 @@ const BuyerAnalytics = () => {
         rfqSuccessRate: rfqs.length > 0 ? (completedOrders.length / rfqs.length) * 100 : 0
       });
     }
-  }, [user?.id]);
+  }, [user?.id, rfqs, orders, quotations]);
 
   return (
     <DashboardLayout title="Analytics" subtitle="Track your sourcing performance and insights">

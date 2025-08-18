@@ -2,21 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { FileText, Clock, CheckCircle, XCircle, Eye, Edit, Send } from 'lucide-react';
-import { db } from '../lib/database';
+import { useQuotations } from '../lib/queries';
 
 const SupplierQuotations = () => {
   const { user } = useAuth();
-  const [quotations, setQuotations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    // Load quotations from database
-    const allQuotations = db.getQuotations();
-    const myQuotations = allQuotations.filter(q => q.supplier_id === user?.id);
-    setQuotations(myQuotations);
-    setLoading(false);
-  }, [user]);
+  const { data: quotations = [], isLoading: loading } = useQuotations({ 
+    supplier_id: user?.id 
+  });
 
   const getStatusBadge = (status: string) => {
     const badges = {

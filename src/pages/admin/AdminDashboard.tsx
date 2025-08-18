@@ -3,15 +3,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Users, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { db } from '../../lib/database';
+import { useRFQs, useSuppliers, useQuotations } from '../../lib/queries';
 
 const AdminDashboard = () => {
   const { profile } = useAuth();
   
-  // Load real data from database
-  const rfqs = db.getRFQs();
-  const suppliers = db.getSuppliers();
-  const quotations = db.getQuotations();
+  // Load real data from Supabase
+  const { data: rfqs = [] } = useRFQs();
+  const { data: suppliers = [] } = useSuppliers();
+  const { data: quotations = [] } = useQuotations();
 
   const stats = {
     totalRFQs: rfqs.length,

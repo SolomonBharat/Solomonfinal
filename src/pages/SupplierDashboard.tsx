@@ -2,22 +2,21 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
-import { db } from '../lib/database';
+import { useRFQs, useQuotations, useOrders } from '../lib/queries';
+import { Link } from 'react-router-dom';
 
 const SupplierDashboard = () => {
-  const { profile } = useAuth();
-  const { user } = useAuth();
+  const { profile, user } = useAuth();
   
-  // Load real data from database
-  const rfqs = db.getRFQs();
-  const quotations = user?.id ? db.getQuotations().filter(q => q.supplier_id === user.id) : [];
-  const orders = user?.id ? db.getOrders().filter(order => order.supplier_id === user.id) : [];
-  const rfqsLoading = false;
-  const quotationsLoading = false;
-  const ordersLoading = false;
+  // Load real data from Supabase
+  const { data: allRFQs = [], isLoading: rfqsLoading } = useRFQs();
+  const { data: allQuotations = [], isLoading: quotationsLoading } = useQuotations();
+  const { data: allOrders = [], isLoading: ordersLoading } = useOrders();
 
-  // Filter RFQs that match supplier's categories
-  const availableRFQs = rfqs.filter(rfq => rfq.status === 'approved');
+  // Filter data for current user
+  const availableRFQs = allRFQs.filter(rfq => rfq.status === 'approved');
+  const quotations = allQuotations.filter(q => q.supplier_id === user?.id);
+  const orders = allOrders.filter(order => order.supplier_id === user?.id);
 
   const stats = {
     availableRFQs: availableRFQs.length,
@@ -29,7 +28,9 @@ const SupplierDashboard = () => {
   if (rfqsLoading || quotationsLoading || ordersLoading) {
     return (
       <DashboardLayout title="Supplier Dashboard" subtitle="Welcome to your supplier dashboard">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="p-6 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
       </DashboardLayout>
     );
   }
@@ -97,7 +98,7 @@ const SupplierDashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
+          <Link to="/supplier/dashboard" className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <FileText className="h-8 w-8" />
               <div>
@@ -105,9 +106,9 @@ const SupplierDashboard = () => {
                 <p className="text-sm opacity-90">Find new opportunities</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
+          <Link to="/supplier/quotations" className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <Package className="h-8 w-8" />
               <div>
@@ -115,9 +116,9 @@ const SupplierDashboard = () => {
                 <p className="text-sm opacity-90">Manage your quotes</p>
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
+          <Link to="/supplier/performance" className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
             <div className="flex items-center space-x-3">
               <DollarSign className="h-8 w-8" />
               <div>
@@ -125,7 +126,7 @@ const SupplierDashboard = () => {
                 <p className="text-sm opacity-90">View your metrics</p>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </DashboardLayout>

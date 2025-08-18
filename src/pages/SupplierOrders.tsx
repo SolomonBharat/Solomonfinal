@@ -2,20 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye, Edit } from 'lucide-react';
-import { db } from '../lib/database';
+import { useOrders, useUpdateOrder } from '../lib/queries';
+import { toast } from 'sonner';
 
 const SupplierOrders = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const updateOrderMutation = useUpdateOrder();
 
-  useEffect(() => {
-    // Load orders from database
-    const allOrders = db.getOrders();
-    const myOrders = allOrders.filter(order => order.supplier_id === user?.id);
-    setOrders(myOrders);
-    setLoading(false);
-  }, [user]);
+  const { data: orders = [], isLoading: loading } = useOrders({ 
+    supplier_id: user?.id 
+  });
 
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -37,12 +33,17 @@ const SupplierOrders = () => {
     );
   };
 
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
-    db.updateOrder(orderId, { status: newStatus as any });
-    
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await updateOrderMutation.mutateAsync({
+        id: orderId,
+        updates: { status: newStatus as any }
+      });
+      toast.success('Order status updated successfully');
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    }
   };
 
   const stats = {

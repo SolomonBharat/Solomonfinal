@@ -2,20 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye } from 'lucide-react';
-import { db } from '../lib/database';
+import { useOrders } from '../lib/queries';
 
 const BuyerOrders = () => {
   const { user } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Load orders from database
-    const allOrders = db.getOrders();
-    const myOrders = allOrders.filter(order => order.buyer_id === user?.id);
-    setOrders(myOrders);
-    setLoading(false);
-  }, [user]);
+  const { data: orders = [], isLoading: loading } = useOrders({ 
+    buyer_id: user?.id 
+  });
 
   const getStatusBadge = (status: string) => {
     const badges = {

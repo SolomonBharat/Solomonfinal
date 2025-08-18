@@ -3,53 +3,34 @@ import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Plus, Eye, Edit, Trash2, Clock, CheckCircle, XCircle, Package } from 'lucide-react';
-import { db } from '../lib/database';
+import { useRFQs, useDeleteRFQ } from '../lib/queries';
+import { toast } from 'sonner';
+  const { data: allRFQs = [], isLoading: loading } = useRFQs();
+  
+  // Filter RFQs for current user
+  const rfqs = allRFQs.filter(rfq => rfq.buyer_id === user?.id);
 
-const MyRFQs = () => {
-  const { user } = useAuth();
-  const [rfqs, setRFQs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    loadRFQs();
-  }, [user]);
-
-  const loadRFQs = () => {
-    try {
-      const allRFQs = db.getRFQs();
-      const myRFQs = allRFQs.filter(rfq => rfq.buyer_id === user?.id);
-      setRFQs(myRFQs);
-    } catch (error) {
-      console.error('Error loading RFQs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteRFQ = (rfqId: string) => {
+  const deleteRFQ = async (rfqId: string) => {
     if (window.confirm('Are you sure you want to delete this RFQ?')) {
       try {
-        db.deleteRFQ(rfqId);
-        loadRFQs();
-      } catch (error) {
+        await deleteRFQMutation.mutateAsync(rfqId);
+        toast.success('RFQ deleted successfully');
         console.error('Error deleting RFQ:', error);
+        toast.error('Failed to delete RFQ');
       }
     }
   };
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      draft: { color: 'bg-gray-100 text-gray-800', icon: Edit },
       pending_approval: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
       approved: { color: 'bg-blue-100 text-blue-800', icon: CheckCircle },
       matched: { color: 'bg-purple-100 text-purple-800', icon: Package },
-      quoted: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
+      quoting: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
       closed: { color: 'bg-gray-100 text-gray-800', icon: XCircle },
-      rejected: { color: 'bg-red-100 text-red-800', icon: XCircle }
     };
     
-    const badge = badges[status as keyof typeof badges] || badges.draft;
+    const badge = badges[status as keyof typeof badges] || badges.pending_approval;
     const Icon = badge.icon;
     
     return (
@@ -67,9 +48,8 @@ const MyRFQs = () => {
 
   const stats = {
     total: rfqs.length,
-    draft: rfqs.filter(r => r.status === 'draft').length,
     pending: rfqs.filter(r => r.status === 'pending_approval').length,
-    active: rfqs.filter(r => ['approved', 'matched', 'quoted'].includes(r.status)).length,
+    active: rfqs.filter(r => ['approved', 'matched', 'quoting'].includes(r.status)).length,
   };
 
   if (loading) {
@@ -99,10 +79,6 @@ const MyRFQs = () => {
             <div className="text-2xl font-bold text-blue-600">{stats.active}</div>
             <div className="text-sm text-gray-600">Active RFQs</div>
           </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-            <div className="text-2xl font-bold text-gray-600">{stats.draft}</div>
-            <div className="text-sm text-gray-600">Drafts</div>
-          </div>
         </div>
 
         {/* Header */}
@@ -113,12 +89,6 @@ const MyRFQs = () => {
               className={`px-3 py-1 rounded-md text-sm ${filter === 'all' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               All ({rfqs.length})
-            </button>
-            <button
-              onClick={() => setFilter('draft')}
-              className={`px-3 py-1 rounded-md text-sm ${filter === 'draft' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}
-            >
-              Drafts ({stats.draft})
             </button>
             <button
               onClick={() => setFilter('pending_approval')}
@@ -194,11 +164,6 @@ const MyRFQs = () => {
                       <button className="text-gray-400 hover:text-blue-600">
                         <Eye className="h-4 w-4" />
                       </button>
-                      {rfq.status === 'draft' && (
-                        <button className="text-gray-400 hover:text-green-600">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                      )}
                       <button
                         onClick={() => deleteRFQ(rfq.id)}
                         className="text-gray-400 hover:text-red-600"
