@@ -22,7 +22,10 @@ const MyRFQs = () => {
         await deleteRFQMutation.mutateAsync(rfqId);
         toast.success('RFQ deleted successfully');
       } catch (error) {
+      } catch (error) {
         console.error('Error deleting RFQ:', error);
+        toast.error('Failed to delete RFQ');
+      }
         toast.error('Failed to delete RFQ');
       }
     }

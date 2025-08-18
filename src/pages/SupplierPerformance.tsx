@@ -34,9 +34,7 @@ const SupplierPerformance = () => {
 
   useEffect(() => {
     if (user?.id) {
-      const quotations = allQuotations.filter(q => q.supplier_id === user.id);
-      const orders = allOrders.filter(order => order.supplier_id === user.id);
-      const acceptedQuotes = quotations.filter(q => q.status === 'approved_for_buyer');
+      const acceptedQuotes = userQuotations.filter(q => q.status === 'approved_for_buyer');
       const totalRevenue = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
       const completedOrders = orders.filter(order => order.status === 'completed');
       
@@ -44,7 +42,7 @@ const SupplierPerformance = () => {
       for (let i = 5; i >= 0; i--) {
         const date = new Date();
         date.setMonth(date.getMonth() - i);
-        const monthQuotes = quotations.filter(quote => {
+        const monthQuotes = userQuotations.filter(quote => {
           const quoteDate = new Date(quote.submitted_at);
           return quoteDate.getMonth() === date.getMonth() && 
                  quoteDate.getFullYear() === date.getFullYear();
@@ -58,7 +56,7 @@ const SupplierPerformance = () => {
 
       // Category performance
       const categoryStats: { [key: string]: { quotes: number; accepted: number } } = {};
-      quotations.forEach(quote => {
+      userQuotations.forEach(quote => {
         if (quote.rfqs) {
           if (!categoryStats[quote.rfqs.category]) {
             categoryStats[quote.rfqs.category] = { quotes: 0, accepted: 0 };
@@ -78,13 +76,13 @@ const SupplierPerformance = () => {
       }));
 
       setPerformance({
-        totalQuotes: quotations.length,
+        totalQuotes: userQuotations.length,
         acceptedQuotes: acceptedQuotes.length,
         totalRevenue,
         avgResponseTime: 1.2, // hours
         rating: 4.8,
         completedOrders: completedOrders.length,
-        winRate: quotations.length > 0 ? (acceptedQuotes.length / quotations.length) * 100 : 0,
+        winRate: userQuotations.length > 0 ? (acceptedQuotes.length / userQuotations.length) * 100 : 0,
         monthlyQuotes,
         categoryPerformance,
         recentFeedback: [
