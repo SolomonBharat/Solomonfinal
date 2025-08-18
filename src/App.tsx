@@ -59,11 +59,23 @@ function AppContent() {
         {/* Protected Buyer Routes */}
         <Route element={<RequireRole allowedRoles={['buyer']} />}>
           <Route path="/dashboard" element={<BuyerDashboard />} />
+          <Route path="/my-rfqs" element={<BuyerDashboard />} />
+          <Route path="/create-rfq" element={<BuyerDashboard />} />
+          <Route path="/orders" element={<BuyerDashboard />} />
+          <Route path="/suppliers" element={<BuyerDashboard />} />
+          <Route path="/messages" element={<BuyerDashboard />} />
+          <Route path="/analytics" element={<BuyerDashboard />} />
+          <Route path="/profile" element={<BuyerDashboard />} />
         </Route>
 
         {/* Protected Supplier Routes */}
         <Route element={<RequireRole allowedRoles={['supplier']} />}>
           <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+          <Route path="/supplier/quotations" element={<SupplierDashboard />} />
+          <Route path="/supplier/drafts" element={<SupplierDashboard />} />
+          <Route path="/supplier/orders" element={<SupplierDashboard />} />
+          <Route path="/supplier/performance" element={<SupplierDashboard />} />
+          <Route path="/supplier/profile" element={<SupplierDashboard />} />
         </Route>
 
         {/* Catch all */}
