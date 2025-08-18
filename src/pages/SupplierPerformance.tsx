@@ -32,13 +32,14 @@ const SupplierPerformance = () => {
   const { data: allQuotations = [] } = useQuotations();
   const { data: allOrders = [] } = useOrders();
 
-  const { data: quotations = [] } = useQuotations({ supplier_id: user?.id });
-  const { data: orders = [] } = useOrders({ supplier_id: user?.id });
+  useEffect(() => {
+    if (user?.id) {
+      const quotations = allQuotations.filter(q => q.supplier_id === user.id);
+      const orders = allOrders.filter(order => order.supplier_id === user.id);
       const acceptedQuotes = quotations.filter(q => q.status === 'approved_for_buyer');
       const totalRevenue = orders.reduce((sum, order) => sum + (order.total_value || 0), 0);
       const completedOrders = orders.filter(order => order.status === 'completed');
-      const quotations = allQuotations.filter(q => q.supplier_id === user.id);
-      const orders = allOrders.filter(order => order.supplier_id === user.id);
+      
       const monthlyQuotes = [];
       for (let i = 5; i >= 0; i--) {
         const date = new Date();
