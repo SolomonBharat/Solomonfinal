@@ -144,7 +144,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase || !isSupabaseConfigured) {
       // Use persistent mock authentication
       try {
         const result = await mockDB.signIn(email, password);
@@ -167,27 +167,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email,
         password,
       });
-      
-      // If Supabase auth fails, fall back to mock auth
-      if (error && error.message.includes('Invalid login credentials')) {
-        console.log('Supabase auth failed, falling back to mock auth');
-        setLoading(false);
-        
-        try {
-          const result = await mockDB.signIn(email, password);
-          if (!result) {
-            return { error: { message: 'Invalid email or password' } };
-          }
-          
-          setUser(result.user as any);
-          setProfile(result.profile);
-          localStorage.setItem('mock_auth', JSON.stringify(result));
-          return { error: null };
-        } catch (mockError: any) {
-          return { error: { message: mockError.message || 'Login failed' } };
-        }
-      }
-      
       setLoading(false);
       return { error };
     } catch (error) {
@@ -208,7 +187,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       // Use persistent mock authentication
       try {
         const result = await mockDB.createUser(email, password, userData);
