@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { 
   useRFQs, 
+  useSuppliers, 
   useAdminApproveRFQ, 
+  useAdminAssignSuppliers,
   useUpdateRFQ
-} from '../lib/queries';
-import { useSuppliers, useAdminAssignSuppliers } from '../lib/queries';
+} from '../../lib/queries';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { 
   CheckCircle, 
@@ -146,7 +147,6 @@ export default function AdminRFQs() {
       toast.error('Failed to reject RFQ');
     }
   };
-  
   const handleAssignSuppliers = (rfq: any) => {
     setSelectedRFQ(rfq);
     setShowAssignModal(true);

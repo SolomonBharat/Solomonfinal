@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FileText, Clock, CheckCircle, XCircle, Eye, Edit, Send } from 'lucide-react';
 import { useQuotations } from '../lib/queries';
 
-function SupplierQuotations() {
+const SupplierQuotations = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState('all');
 
@@ -209,6 +209,6 @@ function SupplierQuotations() {
       </div>
     </DashboardLayout>
   );
-}
+};
 
 export default SupplierQuotations;
