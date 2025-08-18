@@ -3,13 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Plus, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { db } from '../lib/database';
 
 const BuyerDashboard = () => {
   const { profile } = useAuth();
+  const { user } = useAuth();
   
-  // Mock data for now since we're fixing the database
-  const rfqs = [];
-  const orders = [];
+  // Load real data from database
+  const rfqs = user?.id ? db.getRFQs().filter(rfq => rfq.buyer_id === user.id) : [];
+  const orders = user?.id ? db.getOrders().filter(order => order.buyer_id === user.id) : [];
   const rfqsLoading = false;
   const ordersLoading = false;
 
@@ -17,7 +19,7 @@ const BuyerDashboard = () => {
     totalRFQs: rfqs.length,
     activeRFQs: rfqs.filter(rfq => ['approved', 'matched', 'quoting'].includes(rfq.status)).length,
     totalOrders: orders.length,
-    totalSpent: 0,
+    totalSpent: orders.reduce((sum, order) => sum + (order.total_value || 0), 0),
   };
 
   if (rfqsLoading || ordersLoading) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, Truck, CheckCircle, Clock, Eye, Edit } from 'lucide-react';
+import { db } from '../lib/database';
 
 const SupplierOrders = () => {
   const { user } = useAuth();
@@ -9,59 +10,10 @@ const SupplierOrders = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load mock orders
-    const mockOrders = [
-      {
-        id: 'order-1',
-        rfq_title: 'Cotton T-Shirts Export Quality',
-        buyer_company: 'Global Trade Corp',
-        buyer_contact: 'John Smith',
-        quantity: 1000,
-        unit: 'pieces',
-        unit_price: 12.50,
-        total_value: 12500,
-        status: 'in_production',
-        created_at: '2024-01-15T10:00:00Z',
-        expected_delivery: '2024-02-15T00:00:00Z',
-        tracking_info: 'IN-PROD-2024-001',
-        payment_terms: '30% advance, 70% on shipment',
-        shipping_address: '123 Trade Street, New York, USA'
-      },
-      {
-        id: 'order-2',
-        rfq_title: 'Organic Turmeric Powder',
-        buyer_company: 'Health Foods Inc',
-        buyer_contact: 'Sarah Johnson',
-        quantity: 500,
-        unit: 'kg',
-        unit_price: 8.75,
-        total_value: 4375,
-        status: 'shipped',
-        created_at: '2024-01-10T14:30:00Z',
-        expected_delivery: '2024-02-10T00:00:00Z',
-        tracking_info: 'TRK-2024-SP-789',
-        payment_terms: 'LC at sight',
-        shipping_address: '456 Health Ave, California, USA'
-      },
-      {
-        id: 'order-3',
-        rfq_title: 'Handcrafted Wooden Furniture',
-        buyer_company: 'Home Decor Ltd',
-        buyer_contact: 'Mike Wilson',
-        quantity: 50,
-        unit: 'sets',
-        unit_price: 245.00,
-        total_value: 12250,
-        status: 'completed',
-        created_at: '2023-12-20T09:15:00Z',
-        expected_delivery: '2024-01-20T00:00:00Z',
-        tracking_info: 'DELIVERED',
-        payment_terms: '50% advance, 50% before shipment',
-        shipping_address: '789 Decor Blvd, Texas, USA'
-      }
-    ];
-    
-    setOrders(mockOrders);
+    // Load orders from database
+    const allOrders = db.getOrders();
+    const myOrders = allOrders.filter(order => order.supplier_id === user?.id);
+    setOrders(myOrders);
     setLoading(false);
   }, [user]);
 
@@ -86,6 +38,8 @@ const SupplierOrders = () => {
   };
 
   const updateOrderStatus = (orderId: string, newStatus: string) => {
+    db.updateOrder(orderId, { status: newStatus as any });
+    
     setOrders(prev => prev.map(order => 
       order.id === orderId ? { ...order, status: newStatus } : order
     ));
@@ -96,7 +50,7 @@ const SupplierOrders = () => {
     in_production: orders.filter(o => o.status === 'in_production').length,
     shipped: orders.filter(o => o.status === 'shipped').length,
     completed: orders.filter(o => o.status === 'completed').length,
-    total_revenue: orders.reduce((sum, order) => sum + order.total_value, 0)
+    total_revenue: orders.reduce((sum, order) => sum + (order.total_value || 0), 0)
   };
 
   if (loading) {
@@ -155,21 +109,21 @@ const SupplierOrders = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{order.rfq_title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">Order #{order.id}</h3>
                         {getStatusBadge(order.status)}
                       </div>
                       <p className="text-gray-600 mb-3">
-                        Buyer: <span className="font-medium">{order.buyer_company}</span> • Contact: {order.buyer_contact}
+                        Buyer: <span className="font-medium">{order.buyer_id}</span>
                       </p>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500 mb-3">
                         <div>
-                          <span className="font-medium">Quantity:</span> {order.quantity.toLocaleString()} {order.unit}
+                          <span className="font-medium">Quantity:</span> {order.quantity.toLocaleString()}
                         </div>
                         <div>
                           <span className="font-medium">Unit Price:</span> ${order.unit_price}
                         </div>
                         <div>
-                          <span className="font-medium">Total Value:</span> ${order.total_value.toLocaleString()}
+                          <span className="font-medium">Total Value:</span> ${(order.total_value || 0).toLocaleString()}
                         </div>
                         <div>
                           <span className="font-medium">Order Date:</span> {new Date(order.created_at).toLocaleDateString()}
@@ -177,17 +131,14 @@ const SupplierOrders = () => {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500 mb-3">
                         <div>
-                          <span className="font-medium">Payment Terms:</span> {order.payment_terms}
+                          <span className="font-medium">Payment Terms:</span> {order.payment_terms || 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium">Expected Delivery:</span> {new Date(order.expected_delivery).toLocaleDateString()}
+                          <span className="font-medium">Expected Delivery:</span> {order.expected_delivery ? new Date(order.expected_delivery).toLocaleDateString() : 'TBD'}
                         </div>
                       </div>
-                      <div className="text-sm text-gray-500 mb-3">
-                        <span className="font-medium">Shipping Address:</span> {order.shipping_address}
-                      </div>
                       <div className="text-sm text-gray-500">
-                        <span className="font-medium">Tracking:</span> {order.tracking_info}
+                        <span className="font-medium">Tracking:</span> {order.tracking_info || 'N/A'}
                       </div>
                     </div>
                     <div className="flex flex-col space-y-2 ml-4">

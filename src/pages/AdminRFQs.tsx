@@ -1,63 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users, Edit } from 'lucide-react';
-
-interface RFQ {
-  id: string;
-  title: string;
-  buyer: {
-    name: string;
-    company: string;
-    country: string;
-    email: string;
-    phone: string;
-  };
-  category: string;
-  quantity: number;
-  unit: string;
-  budget: number;
-  status: 'pending_approval' | 'approved' | 'matched' | 'quoted' | 'closed' | 'rejected';
-  created_at: string;
-  urgency: 'low' | 'medium' | 'high';
-  matched_suppliers: number;
-  fullDetails?: any;
-}
+import { db } from '../lib/database';
 
 const AdminRFQs = () => {
-  const [rfqs, setRFQs] = useState<RFQ[]>([]);
+  const [rfqs, setRFQs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
+  const [selectedRFQ, setSelectedRFQ] = useState<any | null>(null);
   const [showRFQModal, setShowRFQModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
 
   useEffect(() => {
-    // Load all RFQs including user submitted ones
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    
-    // Convert user RFQs to admin format
-    const convertedUserRFQs = userRFQs.map((rfq: any) => ({
-      id: rfq.id,
-      title: rfq.title,
-      buyer: {
-        name: rfq.buyer_name || 'User',
-        company: rfq.buyer_company || 'Company',
-        country: rfq.buyer_country || 'Country',
-        email: rfq.buyer_email || 'buyer@example.com',
-        phone: rfq.buyer_phone || 'Phone'
-      },
-      category: rfq.category,
-      quantity: parseInt(rfq.quantity),
-      unit: rfq.unit,
-      budget: parseFloat(rfq.target_price) * parseInt(rfq.quantity),
-      status: rfq.status || 'pending_approval',
-      created_at: rfq.created_at,
-      urgency: 'medium',
-      matched_suppliers: 0,
-      fullDetails: rfq
-    }));
-    
-    setRFQs(convertedUserRFQs);
+    // Load all RFQs from database
+    const allRFQs = db.getRFQs();
+    setRFQs(allRFQs);
     setLoading(false);
   }, []);
 
@@ -74,67 +31,44 @@ const AdminRFQs = () => {
   };
 
   const handleApprove = (rfqId: string) => {
+    db.updateRFQ(rfqId, { 
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      approved_by: 'admin-1'
+    });
+    
     setRFQs(prev => prev.map(rfq => 
-      rfq.id === rfqId ? { ...rfq, status: 'approved' as const } : rfq
+      rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
     ));
     
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => {
-      if (rfq.id === rfqId) {
-        // Mark buyer as verified after first approval
-        if (rfq.buyer_id) {
-          const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
-          const updatedBuyers = registeredBuyers.map((buyer: any) => 
-            buyer.id === rfq.buyer_id ? { ...buyer, verification_status: 'verified' } : buyer
-          );
-          localStorage.setItem('registered_buyers', JSON.stringify(updatedBuyers));
-        }
-        return { ...rfq, status: 'approved' };
-      }
-      return rfq;
-    });
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
     alert('RFQ approved successfully!');
   };
 
   const handleReject = (rfqId: string) => {
+    db.updateRFQ(rfqId, { status: 'rejected' });
+    
     setRFQs(prev => prev.map(rfq => 
-      rfq.id === rfqId ? { ...rfq, status: 'rejected' as const } : rfq
+      rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
     ));
     
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
     alert('RFQ rejected.');
   };
 
   const handleAssignSuppliers = (rfqId: string) => {
+    db.updateRFQ(rfqId, { status: 'matched' });
+    
     setRFQs(prev => prev.map(rfq => 
       rfq.id === rfqId 
-        ? { ...rfq, status: 'matched' as const, matched_suppliers: 3 } 
+        ? { ...rfq, status: 'matched' } 
         : rfq
     ));
     
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'matched' } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
     alert('Suppliers assigned successfully!');
   };
 
-  const handleViewRFQDetails = (rfq: RFQ) => {
-    // Load full RFQ details
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const fullRFQ = userRFQs.find((r: any) => r.id === rfq.id);
-    
+  const handleViewRFQDetails = (rfq: any) => {
     setSelectedRFQ(rfq);
-    setEditFormData(fullRFQ || rfq);
+    setEditFormData(rfq);
     setShowRFQModal(true);
     setEditMode(false);
   };
@@ -144,12 +78,9 @@ const AdminRFQs = () => {
   };
 
   const handleSaveEdit = () => {
-    // Update RFQ in localStorage
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === selectedRFQ?.id ? { ...rfq, ...editFormData } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    if (selectedRFQ) {
+      db.updateRFQ(selectedRFQ.id, editFormData);
+    }
     
     // Update local state
     setRFQs(prev => prev.map(rfq => 
@@ -185,7 +116,6 @@ const AdminRFQs = () => {
   const filteredRFQs = rfqs.filter(rfq => {
     const matchesStatus = filterStatus === 'all' || rfq.status === filterStatus;
     const matchesSearch = rfq.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         rfq.buyer.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          rfq.category.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
@@ -332,30 +262,25 @@ const AdminRFQs = () => {
                       </td>
                       <td className="px-3 sm:px-6 py-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{rfq.buyer.name}</p>
-                          <p className="text-xs text-gray-500">{rfq.buyer.company}</p>
-                          <p className="text-xs text-gray-400">{rfq.buyer.country}</p>
+                          <p className="text-sm font-medium text-gray-900">Buyer</p>
+                          <p className="text-xs text-gray-500">Company</p>
+                          <p className="text-xs text-gray-400">Country</p>
                         </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
                         {rfq.quantity.toLocaleString()} {rfq.unit}
                       </td>
                       <td className="px-3 sm:px-6 py-4 text-sm font-medium text-gray-900">
-                        ${rfq.budget.toLocaleString()}
+                        ${(rfq.target_price * rfq.quantity || 0).toLocaleString()}
                       </td>
                       <td className="px-3 sm:px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(rfq.status)}`}>
                           {rfq.status.replace('_', ' ')}
                         </span>
-                        {rfq.matched_suppliers > 0 && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {rfq.matched_suppliers} suppliers matched
-                          </p>
-                        )}
                       </td>
                       <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyBadge(rfq.urgency)}`}>
-                          {rfq.urgency}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyBadge('medium')}`}>
+                          medium
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-4">
@@ -560,19 +485,19 @@ const AdminRFQs = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="text-blue-700 font-medium">Company:</span>
-                        <p className="text-blue-900">{editFormData.buyer_company}</p>
+                        <p className="text-blue-900">Company Name</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Contact:</span>
-                        <p className="text-blue-900">{editFormData.buyer_name}</p>
+                        <p className="text-blue-900">Contact Name</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Email:</span>
-                        <p className="text-blue-900">{editFormData.buyer_email}</p>
+                        <p className="text-blue-900">email@example.com</p>
                       </div>
                       <div>
                         <span className="text-blue-700 font-medium">Phone:</span>
-                        <p className="text-blue-900">{editFormData.buyer_phone}</p>
+                        <p className="text-blue-900">Phone Number</p>
                       </div>
                     </div>
                   </div>
