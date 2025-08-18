@@ -32,8 +32,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize mock auth if Supabase not configured
   useEffect(() => {
+    console.log('AuthProvider initializing...');
+    
     if (!isSupabaseConfigured) {
       console.log('Supabase not configured, using mock authentication');
       const mockAuth = localStorage.getItem('mock_auth');
@@ -44,51 +45,79 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setProfile(mockProfile);
         } catch (error) {
           console.error('Error parsing mock auth:', error);
+          localStorage.removeItem('mock_auth');
         }
       }
       setLoading(false);
       return;
     }
+
+    // Initialize Supabase auth
+    initializeSupabaseAuth();
   }, []);
 
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+  const initializeSupabaseAuth = async () => {
+    if (!supabase) {
+      console.error('Supabase client not available');
+      setLoading(false);
       return;
     }
+
     
-    console.log('Supabase is configured, initializing...');
+    try {
+      console.log('Initializing Supabase auth...');
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+      // Get initial session
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('Error getting session:', error);
         setLoading(false);
+        return;
       }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         await fetchProfile(session.user.id);
       } else {
-        setProfile(null);
         setLoading(false);
       }
-    });
 
-    return () => subscription.unsubscribe();
-  }, []);
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+          setLoading(false);
+        }
+      });
+
+      // Cleanup subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error('Error initializing Supabase auth:', error);
+      setLoading(false);
+    }
+  };
 
   const fetchProfile = async (userId: string) => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!supabase) {
+      console.log('No Supabase client available for profile fetch');
+      setLoading(false);
+      return;
+    }
 
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -96,8 +125,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .single();
 
       if (error) {
-        console.error('Error fetching profile:', error);
+        if (error.code === 'PGRST116') {
+          console.log('No profile found for user, this is normal for new users');
+        } else {
+          console.error('Error fetching profile:', error);
+        }
       } else {
+        console.log('Profile fetched successfully:', data);
         setProfile(data);
       }
     } catch (error) {
@@ -108,7 +142,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       // Mock authentication for demo purposes
       const mockUser = {
         id: 'mock-user-id',
@@ -137,12 +171,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-    return { error };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      setLoading(false);
+      return { error };
+    } catch (error) {
+      setLoading(false);
+      return { error };
+    }
   };
 
   const signUp = async (
@@ -157,7 +196,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       // Mock authentication for demo purposes
       const mockUser = {
         id: 'mock-user-' + Date.now(),
@@ -269,18 +308,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       setUser(null);
       setProfile(null);
       localStorage.removeItem('mock_auth');
       return;
     }
 
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+    setUser(null);
+    setProfile(null);
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!supabase) {
       if (profile) {
         const updatedProfile = { ...profile, ...updates };
         setProfile(updatedProfile);
@@ -292,16 +337,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (!user) return { error: 'No user logged in' };
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
 
-    if (!error) {
-      setProfile(prev => prev ? { ...prev, ...updates } : null);
+      if (!error) {
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+      }
+
+      return { error };
+    } catch (error) {
+      return { error };
     }
-
-    return { error };
   };
 
   // Legacy login function for compatibility

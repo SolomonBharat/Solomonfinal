@@ -15,15 +15,27 @@ console.log('Supabase configuration:', {
   keyLength: isSupabaseConfigured ? supabaseAnonKey.length : 0
 });
 
-// Only create Supabase client if properly configured
-export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce'
+// Create Supabase client with error handling
+export const supabase = (() => {
+  if (!isSupabaseConfigured) {
+    console.log('Supabase not configured, client will be null');
+    return null;
   }
-}) : null;
+  
+  try {
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+        flowType: 'pkce'
+      }
+    });
+  } catch (error) {
+    console.error('Error creating Supabase client:', error);
+    return null;
+  }
+})();
 
 // Export configuration status
 export { isSupabaseConfigured };
@@ -43,14 +55,21 @@ export interface UserProfile {
 
 // Helper function to check if user is admin
 export const isAdmin = async (): Promise<boolean> => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return false
+  if (!supabase) return false;
   
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('user_type')
-    .eq('id', user.id)
-    .single()
-  
-  return profile?.user_type === 'admin'
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', user.id)
+      .single()
+    
+    return profile?.user_type === 'admin'
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
 }

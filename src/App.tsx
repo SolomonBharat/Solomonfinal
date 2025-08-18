@@ -26,6 +26,8 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+      retry: false, // Disable retries to prevent endless loading
+      refetchOnWindowFocus: false, // Disable refetch on window focus
     },
   },
 });
@@ -36,7 +38,10 @@ function AppContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -93,6 +98,8 @@ function AppContent() {
 }
 
 function App() {
+  console.log('App component rendering...');
+  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
