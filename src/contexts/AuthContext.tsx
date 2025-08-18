@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
+    if (!supabase || !isSupabaseConfigured) {
       // Mock authentication for demo purposes
       const mockUser = {
         id: 'mock-user-id',
@@ -309,7 +309,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
-    if (!supabase) {
+    if (!supabase || !isSupabaseConfigured) {
       setUser(null);
       setProfile(null);
       localStorage.removeItem('mock_auth');
