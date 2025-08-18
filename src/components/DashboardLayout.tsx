@@ -172,7 +172,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
                   {item.name}
                   {item.badge && (
                     <span className="ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
+                      {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
                 </Link>
@@ -204,12 +204,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-medium">
-                {user?.name?.charAt(0).toUpperCase()}
+                {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{user?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.company}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.name || user?.email}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.company || 'Company'}</p>
             </div>
           </div>
         </div>
@@ -274,7 +274,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
                   {profileDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                       <div className="px-4 py-2 border-b border-gray-100">
-                        <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                        <p className="text-sm font-medium text-gray-900">{user?.name || user?.email}</p>
                         <p className="text-xs text-gray-500">{user?.email}</p>
                       </div>
                       <Link

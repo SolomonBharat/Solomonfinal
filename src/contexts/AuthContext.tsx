@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { mockDB } from '../lib/mockDatabase';
 import type { UserProfile } from '../lib/supabase';
 
 interface AuthContextType {
@@ -144,31 +145,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     if (!supabase || !isSupabaseConfigured) {
-      // Mock authentication for demo purposes
-      const mockUser = {
-        id: 'mock-user-id',
-        email,
-        name: email.split('@')[0],
-        company: 'Demo Company'
-      };
-      
-      const mockProfile = {
-        id: 'mock-user-id',
-        user_type: email.includes('admin') ? 'admin' as const : 
-                   email.includes('supplier') ? 'supplier' as const : 'buyer' as const,
-        full_name: email.split('@')[0],
-        company_name: 'Demo Company',
-        phone: null,
-        country: null,
-        website: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setUser(mockUser as any);
-      setProfile(mockProfile);
-      localStorage.setItem('mock_auth', JSON.stringify({ user: mockUser, profile: mockProfile }));
-      return { error: null };
+      // Use persistent mock authentication
+      try {
+        const result = await mockDB.signIn(email, password);
+        if (!result) {
+          return { error: { message: 'Invalid email or password' } };
+        }
+        
+        setUser(result.user as any);
+        setProfile(result.profile);
+        localStorage.setItem('mock_auth', JSON.stringify(result));
+        return { error: null };
+      } catch (error: any) {
+        return { error: { message: error.message || 'Login failed' } };
+      }
     }
 
     setLoading(true);
@@ -198,30 +188,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   ) => {
     if (!supabase) {
-      // Mock authentication for demo purposes
-      const mockUser = {
-        id: 'mock-user-' + Date.now(),
-        email,
-        name: userData.fullName,
-        company: userData.companyName
-      };
-      
-      const mockProfile = {
-        id: mockUser.id,
-        user_type: userData.userType,
-        full_name: userData.fullName,
-        company_name: userData.companyName,
-        phone: userData.phone || null,
-        country: userData.country || null,
-        website: userData.website || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setUser(mockUser as any);
-      setProfile(mockProfile);
-      localStorage.setItem('mock_auth', JSON.stringify({ user: mockUser, profile: mockProfile }));
-      return { error: null };
+      // Use persistent mock authentication
+      try {
+        const result = await mockDB.createUser(email, password, userData);
+        setUser(result.user as any);
+        setProfile(result.profile);
+        localStorage.setItem('mock_auth', JSON.stringify(result));
+        return { error: null };
+      } catch (error: any) {
+        return { error: { message: error.message || 'Registration failed' } };
+      }
     }
     
     setLoading(true);
@@ -327,13 +303,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!supabase) {
-      if (profile) {
-        const updatedProfile = { ...profile, ...updates };
-        setProfile(updatedProfile);
-        const mockAuth = JSON.parse(localStorage.getItem('mock_auth') || '{}');
-        localStorage.setItem('mock_auth', JSON.stringify({ ...mockAuth, profile: updatedProfile }));
+      if (user && profile) {
+        try {
+          const updatedProfile = await mockDB.updateProfile(user.id, updates);
+          if (updatedProfile) {
+            setProfile(updatedProfile);
+            const mockAuth = JSON.parse(localStorage.getItem('mock_auth') || '{}');
+            localStorage.setItem('mock_auth', JSON.stringify({ ...mockAuth, profile: updatedProfile }));
+          }
+          return { error: null };
+        } catch (error: any) {
+          return { error: { message: error.message || 'Update failed' } };
+        }
       }
-      return { error: null };
+      return { error: { message: 'No user logged in' } };
     }
 
     if (!user) return { error: 'No user logged in' };
