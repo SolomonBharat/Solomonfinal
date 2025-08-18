@@ -15,7 +15,6 @@ import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
 import AdminSupplierOnboarding from './pages/admin/AdminSupplierOnboarding';
-import AdminSupplierOnboarding from './pages/admin/AdminSupplierOnboarding';
 
 // Buyer pages
 import BuyerDashboard from './pages/BuyerDashboard';
