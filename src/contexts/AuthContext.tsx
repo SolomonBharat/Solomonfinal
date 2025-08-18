@@ -44,15 +44,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Get initial session
     const getInitialSession = async () => {
       try {
-        if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        if (isSupabaseConfigured) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             setUser(session.user);
             await loadUserProfile(session.user.id);
           }
-        } else {
-          // Using mock database - no initial session to load
-          console.log('Using mock database for authentication');
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -63,7 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     getInitialSession();
 
-    if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    if (isSupabaseConfigured) {
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
@@ -88,7 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loadUserProfile = async (userId: string) => {
     try {
-      if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      if (isSupabaseConfigured) {
         const { data: profile, error } = await supabase
           .from('profiles')
           .select('*')
@@ -109,7 +106,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
-      if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      if (isSupabaseConfigured) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -153,7 +150,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   ) => {
     try {
-      if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      if (isSupabaseConfigured) {
         // Sign up the user
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
@@ -235,7 +232,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signOut = async () => {
     try {
-      if (isSupabaseConfigured && import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      if (isSupabaseConfigured) {
         await supabase.auth.signOut();
       }
       setUser(null);
