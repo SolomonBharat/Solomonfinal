@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { UserProfile } from '../lib/supabase';
 
 interface AuthContextType {
@@ -32,24 +32,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if Supabase is properly configured
-  const isSupabaseConfigured = () => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    console.log('Supabase Config Check:', {
-      url: url ? 'Set' : 'Missing',
-      key: key ? 'Set' : 'Missing',
-      isPlaceholder: url === 'https://placeholder.supabase.co'
-    });
-    
-    return url && key && url !== 'https://placeholder.supabase.co';
-  };
+  // Initialize mock auth if Supabase not configured
+  useEffect(() => {
+    if (!isSupabaseConfigured) {
+      console.log('Supabase not configured, using mock authentication');
+      const mockAuth = localStorage.getItem('mock_auth');
+      if (mockAuth) {
+        try {
+          const { user: mockUser, profile: mockProfile } = JSON.parse(mockAuth);
+          setUser(mockUser);
+          setProfile(mockProfile);
+        } catch (error) {
+          console.error('Error parsing mock auth:', error);
+        }
+      }
+      setLoading(false);
+      return;
+    }
+  }, []);
 
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      console.warn('Supabase not configured, using mock authentication');
-      setLoading(false);
+    if (!isSupabaseConfigured || !supabase) {
       return;
     }
     
@@ -83,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    if (!isSupabaseConfigured()) return;
+    if (!isSupabaseConfigured || !supabase) return;
 
     try {
       const { data, error } = await supabase
@@ -105,7 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured || !supabase) {
       // Mock authentication for demo purposes
       const mockUser = {
         id: 'mock-user-id',
@@ -154,7 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured || !supabase) {
       // Mock authentication for demo purposes
       const mockUser = {
         id: 'mock-user-' + Date.now(),
@@ -266,7 +269,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured || !supabase) {
       setUser(null);
       setProfile(null);
       localStorage.removeItem('mock_auth');
@@ -277,7 +280,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!isSupabaseConfigured()) {
+    if (!isSupabaseConfigured || !supabase) {
       if (profile) {
         const updatedProfile = { ...profile, ...updates };
         setProfile(updatedProfile);
@@ -300,19 +303,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return { error };
   };
-
-  // Initialize mock auth if Supabase not configured
-  useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      const mockAuth = localStorage.getItem('mock_auth');
-      if (mockAuth) {
-        const { user: mockUser, profile: mockProfile } = JSON.parse(mockAuth);
-        setUser(mockUser);
-        setProfile(mockProfile);
-      }
-      setLoading(false);
-    }
-  }, []);
 
   // Legacy login function for compatibility
   const login = async (email: string, password: string) => {
