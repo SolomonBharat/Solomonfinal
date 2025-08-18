@@ -3,8 +3,12 @@ import {
   useRFQs, 
   useAdminApproveRFQ, 
   useUpdateRFQ
+} from '../../hooks/useRFQs';
+import { useSuppliers, useAdminAssignSuppliers } from '../../hooks/useSuppliers';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { 
   CheckCircle, 
   XCircle, 
@@ -142,6 +146,7 @@ export default function AdminRFQs() {
       toast.error('Failed to reject RFQ');
     }
   };
+  
   const handleAssignSuppliers = (rfq: any) => {
     setSelectedRFQ(rfq);
     setShowAssignModal(true);
