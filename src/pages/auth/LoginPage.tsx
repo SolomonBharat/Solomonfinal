@@ -108,17 +108,10 @@ const LoginPage = () => {
         <div className="mt-4 p-4 bg-gray-50 rounded-md">
           <p className="text-xs text-gray-600 mb-2">Test Accounts:</p>
           <div className="text-xs space-y-1">
-            <div className="cursor-pointer hover:bg-gray-100 p-1 rounded" onClick={() => { setEmail('admin@example.com'); setPassword('password'); }}>
-              <strong>Admin:</strong> admin@example.com / password
-            </div>
-            <div className="cursor-pointer hover:bg-gray-100 p-1 rounded" onClick={() => { setEmail('buyer@example.com'); setPassword('password'); }}>
-              <strong>Buyer:</strong> buyer@example.com / password
-            </div>
-            <div className="cursor-pointer hover:bg-gray-100 p-1 rounded" onClick={() => { setEmail('supplier@example.com'); setPassword('password'); }}>
-              <strong>Supplier:</strong> supplier@example.com / password
-            </div>
+            <div><strong>Admin:</strong> admin@example.com / password</div>
+            <div><strong>Buyer:</strong> buyer@example.com / password</div>
+            <div><strong>Supplier:</strong> supplier@example.com / password</div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Click on any test account to auto-fill credentials</p>
         </div>
       </div>
     </div>
