@@ -14,18 +14,19 @@ import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
-import AdminSuppliers from './pages/AdminSuppliers';
-import AdminSampleRequests from './pages/AdminSampleRequests';
-import AdminCategoryManagement from './pages/AdminCategoryManagement';
+import AdminSuppliers from './pages/admin/AdminSuppliers';
+import AdminQuotationModeration from './pages/admin/AdminQuotationModeration';
+import AdminSampleRequests from './pages/admin/AdminSampleRequests';
+import AdminCategoryManagement from './pages/admin/AdminCategoryManagement';
 
 // Buyer pages
-import BuyerDashboard from './pages/BuyerDashboard';
-import CreateRFQ from './pages/CreateRFQ';
-import QuotationComparison from './pages/QuotationComparison';
+import BuyerDashboard from './pages/buyer/BuyerDashboard';
+import CreateRFQ from './pages/buyer/CreateRFQ';
+import QuotationComparison from './pages/buyer/QuotationComparison';
 
 // Supplier pages
-import SupplierDashboard from './pages/SupplierDashboard';
-import SupplierQuote from './pages/SupplierQuote';
+import SupplierDashboard from './pages/supplier/SupplierDashboard';
+import SupplierQuote from './pages/supplier/SupplierQuote';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,6 +62,7 @@ function AppContent() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/rfqs" element={<AdminRFQs />} />
           <Route path="/admin/suppliers" element={<AdminSuppliers />} />
+          <Route path="/admin/quotations" element={<AdminQuotationModeration />} />
           <Route path="/admin/samples" element={<AdminSampleRequests />} />
           <Route path="/admin/categories" element={<AdminCategoryManagement />} />
         </Route>
