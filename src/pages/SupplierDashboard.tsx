@@ -35,11 +35,9 @@ const SupplierDashboard = () => {
   useEffect(() => {
     // Get supplier's categories from onboarded suppliers
     const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const currentSupplier = onboardedSuppliers.find((s: any) => {
-      return s.email === user?.email || 
-             s.contactPerson === user?.name ||
-             s.contact_person === user?.name;
-    });
+    const currentSupplier = onboardedSuppliers.find((s: any) => 
+      s.email === user?.email || s.contactPerson === user?.name
+    );
     
     let supplierCategories = [];
     if (currentSupplier && (currentSupplier.productCategories || currentSupplier.product_categories)) {
@@ -58,19 +56,15 @@ const SupplierDashboard = () => {
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     
-    // Show only approved and matched RFQs that match supplier's categories
+    // Show approved and matched RFQs that match supplier's categories
     const availableRFQs = userRFQs.filter((rfq: any) => 
       (rfq.status === 'approved' || rfq.status === 'matched') && 
       supplierCategories.includes(rfq.category)
     ).map((rfq: any) => {
-      // Check if THIS SPECIFIC supplier has already quoted for this RFQ
-      const hasQuoted = supplierQuotations.some((q: any) => {
-        return q.rfq_id === rfq.id && (
-          q.supplier_email === user?.email || 
-          q.supplier_name === user?.name ||
-          q.supplier_id === user?.id
-        );
-      });
+      // Check if this supplier has already quoted for this RFQ
+      const hasQuoted = supplierQuotations.some((q: any) => 
+        q.rfq_id === rfq.id && (q.supplier_email === user?.email || q.supplier_name === user?.name)
+      );
       
       return {
         ...rfq,

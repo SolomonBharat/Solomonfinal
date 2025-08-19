@@ -93,11 +93,9 @@ const SupplierQuote = () => {
     
     // Get current supplier info from onboarded suppliers
     const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const currentSupplier = onboardedSuppliers.find((s: any) => {
-      return s.email === user?.email || 
-             s.contactPerson === user?.name ||
-             s.contact_person === user?.name;
-    });
+    const currentSupplier = onboardedSuppliers.find((s: any) => 
+      s.email === user?.email || s.contactPerson === user?.name
+    );
     
     const quotationData = {
       id: isEdit ? 
