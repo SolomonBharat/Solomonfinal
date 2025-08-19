@@ -145,38 +145,56 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       website?: string;
     }
   ) => {
+    if (!isSupabaseConfigured()) {
+      // Mock registration for demo purposes
+      const mockUser = {
+        id: `mock-${Date.now()}`,
+        email,
+        name: userData.fullName,
+        company: userData.companyName
+      };
+      
+      const mockProfile = {
+        id: mockUser.id,
+        user_type: userData.userType,
+        full_name: userData.fullName,
+        company_name: userData.companyName,
+        phone: userData.phone || null,
+        country: userData.country || null,
+        website: userData.website || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setUser(mockUser as any);
+      setProfile(mockProfile);
+      localStorage.setItem('mock_auth', JSON.stringify({ user: mockUser, profile: mockProfile }));
+      return { error: null };
+    }
+
     setLoading(true);
     
     try {
-      console.log('Starting signup process for:', email);
-      
       // Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: undefined,
           data: {
-            full_name: userData.fullName,
-            company_name: userData.companyName,
-            user_type: userData.userType
+            email_confirm: false
           }
         }
       });
 
-      console.log('Auth signup result:', { authData, authError });
-
       if (authError) {
         setLoading(false);
-        console.error('Auth error:', authError);
         return { error: authError };
       }
 
       if (authData.user) {
-        console.log('Creating profile for user:', authData.user.id);
-        
         // Create profile
-        const { data: profileData, error: profileError } = await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
           .insert({
             id: authData.user.id,
@@ -186,66 +204,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             phone: userData.phone,
             country: userData.country,
             website: userData.website,
-          })
-          .select()
-          .single();
-
-        console.log('Profile creation result:', { profileData, profileError });
+          });
 
         if (profileError) {
           setLoading(false);
-          console.error('Profile error:', profileError);
           return { error: profileError };
         }
 
         // Create role-specific record
         if (userData.userType === 'buyer') {
-          console.log('Creating buyer record');
-          const { data: buyerData, error: buyerError } = await supabase
+          const { error: buyerError } = await supabase
             .from('buyers')
-            .insert({ id: authData.user.id })
-            .select()
-            .single();
-          
-          console.log('Buyer creation result:', { buyerData, buyerError });
+            .insert({ id: authData.user.id });
           
           if (buyerError) {
             setLoading(false);
-            console.error('Buyer error:', buyerError);
             return { error: buyerError };
           }
         } else if (userData.userType === 'supplier') {
-          console.log('Creating supplier record');
-          const { data: supplierData, error: supplierError } = await supabase
+          const { error: supplierError } = await supabase
             .from('suppliers')
             .insert({ 
               id: authData.user.id,
               product_categories: [],
               years_in_business: null,
               certifications: []
-            })
-            .select()
-            .single();
-          
-          console.log('Supplier creation result:', { supplierData, supplierError });
+            });
           
           if (supplierError) {
             setLoading(false);
-            console.error('Supplier error:', supplierError);
             return { error: supplierError };
           }
         }
 
-        // Set the profile data immediately
-        setProfile(profileData);
-        console.log('Signup completed successfully');
+        // Automatically sign in the user after successful registration
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          setLoading(false);
+          return { error: signInError };
+        }
       }
 
       setLoading(false);
       return { error: null };
     } catch (error) {
       setLoading(false);
-      console.error('Signup error:', error);
       return { error };
     }
   };
