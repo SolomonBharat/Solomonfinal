@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRFQs, useSuppliers, useQuotations } from '../../lib/queries';
 import { Users, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { profile } = useAuth();
@@ -65,8 +64,8 @@ const AdminDashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Link
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <a
               href="/admin/rfqs"
               className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
             >
@@ -77,31 +76,46 @@ const AdminDashboard = () => {
                   <p className="text-sm text-gray-600">Review and approve RFQs</p>
                 </div>
               </div>
-            </Link>
+            </a>
 
-            <div
+            <a
+              href="/admin/suppliers"
               className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-green-300 transition-colors"
             >
               <div className="flex items-center space-x-3">
                 <Users className="h-8 w-8 text-green-500" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Suppliers</h3>
-                  <p className="text-sm text-gray-600">Manage supplier network</p>
+                  <h3 className="font-semibold text-gray-900">Verify Suppliers</h3>
+                  <p className="text-sm text-gray-600">Review supplier applications</p>
                 </div>
               </div>
-            </div>
+            </a>
 
-            <div
+            <a
+              href="/admin/quotations"
               className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-purple-300 transition-colors"
             >
               <div className="flex items-center space-x-3">
                 <Package className="h-8 w-8 text-purple-500" />
                 <div>
-                  <h3 className="font-semibold text-gray-900">Quotations</h3>
+                  <h3 className="font-semibold text-gray-900">Moderate Quotes</h3>
                   <p className="text-sm text-gray-600">Review quotations</p>
                 </div>
               </div>
-            </div>
+            </a>
+
+            <a
+              href="/admin/samples"
+              className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-orange-300 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Clock className="h-8 w-8 text-orange-500" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Sample Requests</h3>
+                  <p className="text-sm text-gray-600">Manage sample requests</p>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
       </div>

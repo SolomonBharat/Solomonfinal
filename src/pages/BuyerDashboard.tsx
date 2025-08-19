@@ -1,142 +1,591 @@
-import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useRFQs, useOrders } from '../lib/queries';
-import { Plus, FileText, Package, DollarSign, Clock, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign, Package } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+
+interface RFQ {
+  id: string;
+  title: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  target_price: number;
+  status: 'pending_approval' | 'approved' | 'matched' | 'quoted' | 'closed' | 'rejected';
+  created_at: string;
+  buyer_id: string; // Added for filtering sample requests
+  quotations_count: number;
+  description?: string;
+  delivery_timeline?: string;
+  shipping_terms?: string;
+  quality_standards?: string;
+  certifications_needed?: string;
+  additional_requirements?: string;
+  max_price?: number;
+  verification_status?: string;
+}
 
 const BuyerDashboard = () => {
-  const { profile } = useAuth();
-  const { data: rfqs = [], isLoading: rfqsLoading } = useRFQs({ buyer_id: profile?.id });
-  const { data: orders = [], isLoading: ordersLoading } = useOrders({ buyer_id: profile?.id });
+  const { user, logout } = useAuth();
+  const [rfqs, setRfqs] = useState<RFQ[]>([]);
+  const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
+  const [sampleRequestsCount, setSampleRequestsCount] = useState(0);
+  const [showRfqModal, setShowRfqModal] = useState(false);
 
-  const stats = {
-    totalRFQs: rfqs.length,
-    activeRFQs: rfqs.filter(rfq => ['approved', 'matched', 'quoting'].includes(rfq.status)).length,
-    totalOrders: orders.length,
-    totalSpent: orders.reduce((sum, order) => sum + order.total_value, 0),
+  useEffect(() => {
+    // Load user's RFQs from localStorage
+    const allRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    
+    // Check for quotations that have been sent to buyer
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    
+    // Load sample requests for the current buyer
+    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    const buyerSampleRequests = allSampleRequests.filter((req: any) => req.buyer_id === user?.id);
+    setSampleRequestsCount(buyerSampleRequests.length);
+    const sentQuotations = supplierQuotations.filter((q: any) => 
+      q.status === 'sent_to_buyer'
+    );
+    
+    // Filter RFQs to show only the current user's RFQs
+    const userRFQs = allRFQs.filter((rfq: any) => 
+      rfq.buyer_id === user?.id || rfq.buyer_email === user?.email
+    ).map((rfq: any) => {
+      // Get current buyer verification status from registered_buyers
+      const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
+      const currentBuyer = registeredBuyers.find((buyer: any) => 
+        buyer.id === rfq.buyer_id || buyer.email === rfq.buyer_email
+      );
+      
+      // Check if this RFQ has quotations
+      const rfqQuotations = sentQuotations.filter((q: any) => q.rfq_id === rfq.id);
+      
+      // Ensure all numeric fields are properly converted
+      const convertedRFQ = {
+        ...rfq,
+        quantity: parseInt(rfq.quantity) || 0,
+        target_price: parseFloat(rfq.target_price) || 0,
+        quotations_count: rfqQuotations.length,
+        verification_status: currentBuyer?.verification_status || 'unverified'
+      };
+      
+      // Update status based on quotations
+      if (rfqQuotations.length > 0) {
+        convertedRFQ.status = 'quoted';
+      }
+      
+      return convertedRFQ;
+    });
+    
+    setRfqs(userRFQs);
+  }, [user?.id]);
+
+  const handleViewRfqDetails = (rfq: RFQ) => {
+    setSelectedRfq(rfq);
+    setShowRfqModal(true);
   };
 
-  if (rfqsLoading || ordersLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const getStatusBadge = (status: string) => {
+    const badges = {
+      pending_approval: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-blue-100 text-blue-800',
+      matched: 'bg-purple-100 text-purple-800',
+      quoted: 'bg-green-100 text-green-800',
+      closed: 'bg-gray-100 text-gray-800',
+      rejected: 'bg-red-100 text-red-800'
+    };
+    return badges[status as keyof typeof badges] || badges.pending_approval;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending_approval': return <Clock className="h-4 w-4" />;
+      case 'approved': return <CheckCircle className="h-4 w-4" />;
+      case 'matched': return <CheckCircle className="h-4 w-4" />;
+      case 'quoted': return <CheckCircle className="h-4 w-4" />;
+      case 'closed': return <X className="h-4 w-4" />;
+      case 'rejected': return <X className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {profile?.full_name}</h1>
-            <p className="text-gray-600">Manage your sourcing requests and connect with verified suppliers</p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total RFQs</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalRFQs}</p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-500" />
-              </div>
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+            <div className="flex items-center space-x-4">
+              <Link to="/" className="text-xl sm:text-2xl font-bold text-blue-600">Solomon Bharat</Link>
+              <span className="text-gray-300 hidden sm:inline">|</span>
+              <span className="text-gray-600 text-sm sm:text-base">Buyer Dashboard</span>
             </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active RFQs</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.activeRFQs}</p>
-                </div>
-                <Clock className="h-8 w-8 text-blue-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.totalOrders}</p>
-                </div>
-                <Package className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Spent</p>
-                  <p className="text-2xl font-bold text-purple-600">${stats.totalSpent.toLocaleString()}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-purple-500" />
-              </div>
-            </div>
-          </div>
-
-          {/* Recent RFQs */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-900">Recent RFQs</h2>
-                <Link
-                  to="/create-rfq"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
+            <div className="flex items-center justify-between sm:justify-end space-x-4">
+              <Bell className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              <div className="flex items-center space-x-2">
+                <User className="h-5 w-5 text-gray-400" />
+                <span className="text-sm text-gray-700 truncate max-w-32 sm:max-w-none">{user?.name}</span>
+                <button
+                  onClick={logout}
+                  className="text-sm text-gray-500 hover:text-red-600 flex items-center space-x-1"
                 >
-                  <Plus className="h-4 w-4" />
-                  <span>Create RFQ</span>
-                </Link>
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
               </div>
-            </div>
-
-            <div className="p-6">
-              {rfqs.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs yet</h3>
-                  <p className="text-gray-600 mb-6">Start by creating your first sourcing request</p>
-                  <Link
-                    to="/create-rfq"
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
-                  >
-                    <Plus className="h-5 w-5" />
-                    <span>Create Your First RFQ</span>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {rfqs.slice(0, 5).map((rfq) => (
-                    <div key={rfq.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{rfq.title}</h3>
-                          <p className="text-sm text-gray-600 mt-1">{rfq.category}</p>
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <span>Quantity: {rfq.quantity} {rfq.unit}</span>
-                            {rfq.target_price && <span>Target: ${rfq.target_price}</span>}
-                            <span>Created: {new Date(rfq.created_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          rfq.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
-                          rfq.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          rfq.status === 'matched' ? 'bg-blue-100 text-blue-800' :
-                          rfq.status === 'quoting' ? 'bg-purple-100 text-purple-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {rfq.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>
+      </header>
+
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
+        {/* Welcome Section */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {user?.name}
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base">
+            Manage your sourcing requests and connect with verified Indian suppliers
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Total RFQs</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{rfqs.length}</p>
+              </div>
+              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Active RFQs</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status)).length}
+                </p>
+              </div>
+              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">Quotations</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                  {rfqs.reduce((sum, rfq) => sum + rfq.quotations_count, 0)}
+                </p>
+              </div>
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+            </div>
+          </div>
+
+          <Link 
+            to="/create-rfq" 
+            className="bg-blue-600 hover:bg-blue-700 text-white p-4 sm:p-6 rounded-lg shadow-sm border border-blue-600 transition-colors flex items-center justify-center"
+          >
+            <div className="text-center">
+              <Plus className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2" />
+              <p className="font-semibold text-sm sm:text-base">Create RFQ</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* Sample Requests Card for Buyer */}
+        {sampleRequestsCount > 0 && (
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-600">My Sample Requests</p>
+                <p className="text-xl sm:text-2xl font-bold text-orange-600">{sampleRequestsCount}</p>
+              </div>
+              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
+            </div>
+          </div>
+        )}
+
+
+        {/* RFQs Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Your RFQs</h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Quantity
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Target Price
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Quotations
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                    Created
+                  </th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rfqs.map((rfq) => (
+                  <tr key={rfq.id} className="hover:bg-gray-50">
+                    <td className="px-3 sm:px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 truncate max-w-32 sm:max-w-none">{rfq.title}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{rfq.category}</p>
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">
+                      {rfq.quantity.toLocaleString()} {rfq.unit}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">
+                      ${rfq.target_price.toFixed(2)}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4">
+                      <span className={`inline-flex items-center space-x-1 px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(rfq.status)}`}>
+                        {getStatusIcon(rfq.status)}
+                        <span className="capitalize hidden sm:inline">{rfq.status.replace('_', ' ')}</span>
+                      </span>
+                      {rfq.verification_status === 'unverified' && rfq.status === 'pending_approval' && (
+                        <span className="block mt-1 bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-xs font-medium">
+                          Unverified Buyer
+                        </span>
+                      )}
+                      {rfq.verification_status === 'verified' && (
+                        <span className="block mt-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                          ✅ Verified
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-900">
+                      {rfq.quotations_count > 0 ? (
+                        <span className="text-green-600 font-medium">{rfq.quotations_count} received</span>
+                      ) : (
+                        <span className="text-gray-400">None yet</span>
+                      )}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 hidden sm:table-cell">
+                      {new Date(rfq.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-3 sm:px-6 py-4 text-xs sm:text-sm">
+                      <div className="flex flex-col space-y-1">
+                        {rfq.status === 'matched' && (
+                          <Link 
+                            to={`/rfq/${rfq.id}/suppliers`}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            View Suppliers
+                          </Link>
+                        )}
+                        {rfq.status === 'quoted' && (
+                          <div className="flex flex-col space-y-1">
+                            <Link 
+                              to={`/rfq/${rfq.id}/quotations`}
+                              className="text-green-600 hover:text-green-800 font-medium"
+                            >
+                              View Quotes ({rfq.quotations_count})
+                            </Link>
+                            <p className="text-xs text-gray-500">
+                              Compare prices & suppliers
+                            </p>
+                          </div>
+                        )}
+                        {rfq.status === 'closed' && (
+                          <div className="text-green-600 font-medium">
+                            ✅ Quote Accepted
+                            <p className="text-xs text-gray-500">
+                              Order in progress
+                            </p>
+                          </div>
+                        )}
+                        {rfq.status === 'pending_approval' && (
+                          <div className="text-yellow-600 text-sm">
+                            ⏳ Awaiting Approval
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleViewRfqDetails(rfq)}
+                          className="text-gray-600 hover:text-gray-800 text-xs flex items-center space-x-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          <span>Quick View</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {rfqs.length === 0 && (
+            <div className="text-center py-8 sm:py-12">
+              <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs yet</h3>
+              <p className="text-gray-600 mb-6">
+                Start by creating your first sourcing request
+              </p>
+              <Link 
+                to="/create-rfq"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Create Your First RFQ</span>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <Link 
+            to="/my-rfqs"
+            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">My RFQs</h3>
+                <p className="text-xs sm:text-sm text-gray-600">View all your sourcing requests</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link 
+            to="/profile"
+            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <User className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+              <div>
+                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Update Profile</h3>
+                <p className="text-xs sm:text-sm text-gray-600">Manage your company details</p>
+              </div>
+            </div>
+          </Link>
+
+          <a 
+            href="https://wa.me/918595135554" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-green-50 p-4 sm:p-6 rounded-lg border border-green-200 hover:bg-green-100 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center space-x-3">
+              <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+              <div>
+                <h3 className="font-semibold text-green-900 text-sm sm:text-base">Need Help?</h3>
+                <p className="text-xs sm:text-sm text-green-700">Contact our sourcing experts on WhatsApp</p>
+              </div>
+            </div>
+          </a>
+        </div>
       </div>
+
+      {/* RFQ Details Modal */}
+      {showRfqModal && selectedRfq && (
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg sm:text-2xl font-bold text-blue-900">📋 RFQ Details</h3>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete information about your sourcing request</p>
+              </div>
+              <button
+                onClick={() => setShowRfqModal(false)}
+                className="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full p-2 transition-colors"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4 sm:p-8 overflow-y-auto max-h-[calc(95vh-140px)] bg-gray-50">
+              {/* Basic Information */}
+              <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 sm:p-6 border-2 border-blue-200 shadow-sm">
+                <h4 className="text-lg sm:text-xl font-bold text-blue-900 mb-4 flex items-center">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  📝 Basic Information
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-blue-800 mb-2">📦 Product Title</label>
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                      <p className="text-sm sm:text-lg text-gray-900 font-semibold">{selectedRfq.title}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-blue-800 mb-2">🏷️ Category</label>
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                      <p className="text-sm sm:text-lg text-gray-900">{selectedRfq.category}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-blue-800 mb-2">📊 Quantity</label>
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                      <p className="text-sm sm:text-lg text-gray-900 font-semibold">{selectedRfq.quantity.toLocaleString()} {selectedRfq.unit}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-blue-800 mb-2">📈 Status</label>
+                    <div className="bg-white p-3 sm:p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                      <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(selectedRfq.status)}`}>
+                        {getStatusIcon(selectedRfq.status)}
+                        <span className="capitalize">{selectedRfq.status.replace('_', ' ')}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pricing Information */}
+              <div className="mb-6 sm:mb-8 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 sm:p-6 border-2 border-green-200 shadow-sm">
+                <h4 className="text-lg sm:text-xl font-bold text-green-900 mb-4 flex items-center">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  💰 Pricing Information
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="bg-white p-4 sm:p-6 rounded-xl border-2 border-green-300 shadow-lg">
+                    <label className="block text-sm font-bold text-green-800 mb-2">🎯 Target Price</label>
+                    <p className="text-2xl sm:text-4xl font-bold text-green-900">${selectedRfq.target_price.toFixed(2)}</p>
+                    <p className="text-xs sm:text-sm text-green-600 mt-1 font-medium">per {selectedRfq.unit.slice(0, -1)}</p>
+                  </div>
+                  {selectedRfq.max_price && (
+                    <div className="bg-white p-4 sm:p-6 rounded-xl border-2 border-orange-300 shadow-lg">
+                      <label className="block text-sm font-bold text-orange-800 mb-2">🔺 Maximum Price</label>
+                      <p className="text-2xl sm:text-4xl font-bold text-orange-900">${selectedRfq.max_price.toFixed(2)}</p>
+                      <p className="text-xs sm:text-sm text-orange-600 mt-1 font-medium">per {selectedRfq.unit.slice(0, -1)}</p>
+                    </div>
+                  )}
+                  <div className="bg-white p-4 sm:p-6 rounded-xl border-2 border-purple-300 shadow-lg">
+                    <label className="block text-sm font-bold text-purple-800 mb-2">💵 Total Budget</label>
+                    <p className="text-2xl sm:text-4xl font-bold text-purple-900">${(selectedRfq.target_price * selectedRfq.quantity).toLocaleString()}</p>
+                    <p className="text-xs sm:text-sm text-purple-600 mt-1 font-medium">estimated</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Description */}
+              {selectedRfq.description && (
+                <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 sm:p-6 border-2 border-purple-200 shadow-sm">
+                  <h4 className="text-lg sm:text-xl font-bold text-purple-900 mb-4 flex items-center">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    📝 Product Description
+                  </h4>
+                  <div className="bg-white p-4 sm:p-6 rounded-lg border-2 border-purple-300 shadow-sm">
+                    <p className="text-gray-800 leading-relaxed text-sm sm:text-lg">{selectedRfq.description}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Requirements & Terms */}
+              <div className="mb-6 sm:mb-8 bg-yellow-50 rounded-lg p-4 sm:p-6 border border-yellow-200">
+                <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  Requirements & Terms
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  {selectedRfq.delivery_timeline && (
+                    <div>
+                      <label className="block text-sm font-medium text-yellow-700 mb-1">Delivery Timeline</label>
+                      <div className="bg-white p-3 rounded-md border">
+                        <p className="text-sm text-gray-900">{selectedRfq.delivery_timeline}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedRfq.shipping_terms && (
+                    <div>
+                      <label className="block text-sm font-medium text-yellow-700 mb-1">Shipping Terms</label>
+                      <div className="bg-white p-3 rounded-md border">
+                        <p className="text-sm text-gray-900">{selectedRfq.shipping_terms}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedRfq.quality_standards && (
+                    <div>
+                      <label className="block text-sm font-medium text-yellow-700 mb-1">Quality Standards</label>
+                      <div className="bg-white p-3 rounded-md border">
+                        <p className="text-sm text-gray-900">{selectedRfq.quality_standards}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selectedRfq.certifications_needed && (
+                    <div>
+                      <label className="block text-sm font-medium text-yellow-700 mb-1">Required Certifications</label>
+                      <div className="bg-white p-3 rounded-md border">
+                        <p className="text-sm text-gray-900">{selectedRfq.certifications_needed}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Requirements */}
+              {selectedRfq.additional_requirements && (
+                <div className="mb-6 sm:mb-8 bg-red-50 rounded-lg p-4 sm:p-6 border border-red-200">
+                  <h4 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    Additional Requirements
+                  </h4>
+                  <div className="bg-white p-4 rounded-lg border">
+                    <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{selectedRfq.additional_requirements}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 border border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  Timeline & Status
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
+                    <div className="bg-white p-3 rounded-md border">
+                      <p className="text-sm text-gray-900 font-medium">{new Date(selectedRfq.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Quotations Received</label>
+                    <div className="bg-white p-3 rounded-md border">
+                      <p className="text-sm text-gray-900 font-medium">
+                        {selectedRfq.quotations_count > 0 ? `${selectedRfq.quotations_count} quotations` : 'No quotations yet'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-gray-100 to-gray-200 border-t-2 border-gray-300 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+              <div className="text-sm text-gray-600">
+                <span className="font-semibold">📋 RFQ ID:</span> {selectedRfq.id} • <span className="font-semibold">📅 Created:</span> {new Date(selectedRfq.created_at).toLocaleDateString()}
+              </div>
+              <button
+                onClick={() => setShowRfqModal(false)}
+                className="w-full sm:w-auto px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-bold shadow-lg transform hover:scale-105"
+              >
+                ✅ Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

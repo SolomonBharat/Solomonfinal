@@ -14,12 +14,18 @@ import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminRFQs from './pages/admin/AdminRFQs';
+import AdminSuppliers from './pages/AdminSuppliers';
+import AdminSampleRequests from './pages/AdminSampleRequests';
+import AdminCategoryManagement from './pages/AdminCategoryManagement';
 
 // Buyer pages
 import BuyerDashboard from './pages/BuyerDashboard';
+import CreateRFQ from './pages/CreateRFQ';
+import QuotationComparison from './pages/QuotationComparison';
 
 // Supplier pages
 import SupplierDashboard from './pages/SupplierDashboard';
+import SupplierQuote from './pages/SupplierQuote';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,16 +60,22 @@ function AppContent() {
         <Route element={<RequireRole allowedRoles={['admin']} />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/rfqs" element={<AdminRFQs />} />
+          <Route path="/admin/suppliers" element={<AdminSuppliers />} />
+          <Route path="/admin/samples" element={<AdminSampleRequests />} />
+          <Route path="/admin/categories" element={<AdminCategoryManagement />} />
         </Route>
 
         {/* Protected Buyer Routes */}
         <Route element={<RequireRole allowedRoles={['buyer']} />}>
           <Route path="/dashboard" element={<BuyerDashboard />} />
+          <Route path="/create-rfq" element={<CreateRFQ />} />
+          <Route path="/rfq/:rfqId/quotes" element={<QuotationComparison />} />
         </Route>
 
         {/* Protected Supplier Routes */}
         <Route element={<RequireRole allowedRoles={['supplier']} />}>
           <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+          <Route path="/supplier/rfq/:rfqId/quote" element={<SupplierQuote />} />
         </Route>
 
         {/* Catch all */}
