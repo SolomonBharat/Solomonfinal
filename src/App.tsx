@@ -27,7 +27,6 @@ import AdminSampleRequests from './pages/AdminSampleRequests';
 import OnboardSupplier from './pages/OnboardSupplier';
 import BuyerOrders from './pages/BuyerOrders';
 import SupplierOrders from './pages/SupplierOrders';
-import AdminCategoryManagement from './pages/AdminCategoryManagement';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -157,10 +156,6 @@ function AppContent() {
       <Route 
         path="/admin/sample-requests" 
         element={user && userType === 'admin' ? <AdminSampleRequests /> : <Navigate to="/login" replace />} 
-      />
-      <Route 
-        path="/admin/categories" 
-        element={user && userType === 'admin' ? <AdminCategoryManagement /> : <Navigate to="/login" replace />} 
       />
 
       {/* Catch all */}

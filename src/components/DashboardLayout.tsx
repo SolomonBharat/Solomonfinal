@@ -112,7 +112,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
             { name: 'All Suppliers', href: '/admin/suppliers', icon: Users },
             { name: 'Verification Queue', href: '/admin/suppliers?status=pending', icon: Users },
             { name: 'Sample Requests', href: '/admin/sample-requests', icon: Package },
-            { name: 'Category Management', href: '/admin/categories', icon: Settings },
           ]
         },
         { name: 'Quotations', href: '/admin/quotations', icon: Package },

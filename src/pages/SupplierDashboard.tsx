@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X, Truck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { performanceService } from '../lib/performanceOptimization';
 
 interface RFQ {
   id: string;
@@ -38,41 +37,35 @@ const SupplierDashboard = () => {
   const [showRfqDetailsModal, setShowRfqDetailsModal] = useState(false);
 
   useEffect(() => {
-    // Use performance-optimized supplier matching
-    const supplierCategories = performanceService.getCache(`supplier_categories_${user?.id}`);
-    let categories = supplierCategories;
+    // Get supplier's categories from onboarded suppliers
+    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
+    const currentSupplier = onboardedSuppliers.find((s: any) => {
+      return s.email === user?.email || 
+             s.contactPerson === user?.name ||
+             s.contact_person === user?.name;
+    });
     
-    if (!categories) {
-      // Get supplier's approved categories from category mappings
-      const categoryMappings = JSON.parse(localStorage.getItem('supplier_category_mappings') || '[]');
-      const supplierMappings = categoryMappings.filter((mapping: any) => 
-        mapping.supplier_id === user?.id && mapping.status === 'approved'
-      );
-      
-      const configuredCategories = JSON.parse(localStorage.getItem('configured_categories') || '[]');
-      categories = supplierMappings.map((mapping: any) => {
-        const category = configuredCategories.find((cat: any) => cat.id === mapping.category_id);
-        return category?.name;
-      }).filter(Boolean);
-      
-      // Cache the result
-      performanceService.setCache(`supplier_categories_${user?.id}`, categories, 600000); // 10 minutes
-    }
-    
-    if (categories.length === 0) {
-      setRfqs([]);
-      return;
+    let supplierCategories = [];
+    if (currentSupplier && (currentSupplier.productCategories || currentSupplier.product_categories)) {
+      supplierCategories = currentSupplier.productCategories || currentSupplier.product_categories;
+    } else {
+      // If no supplier found, show all categories for demo
+      supplierCategories = [
+        'Textiles & Apparel',
+        'Spices & Food Products', 
+        'Handicrafts & Home Decor',
+        'Electronics & Components'
+      ];
     }
     
     // Load approved RFQs from localStorage that match supplier's categories
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
     
-    // Show only approved and matched RFQs that EXACTLY match supplier's onboarded categories
+    // Show only approved and matched RFQs that match supplier's categories
     const availableRFQs = userRFQs.filter((rfq: any) => 
       (rfq.status === 'approved' || rfq.status === 'matched') && 
-      categories.includes(rfq.category)
+      supplierCategories.includes(rfq.category)
     ).map((rfq: any) => {
       // Check if THIS SPECIFIC supplier has already quoted for this RFQ
       const hasQuoted = supplierQuotations.some((q: any) => {
