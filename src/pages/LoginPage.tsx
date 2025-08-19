@@ -33,7 +33,7 @@ const LoginPage = () => {
       setError(result.error || 'Login failed');
       
       // Show resend verification option if email not confirmed
-      if (result.error?.includes('email') || result.error?.includes('confirm')) {
+      if (result.error?.includes('Email not confirmed')) {
         setShowResendVerification(true);
       }
     }
@@ -42,7 +42,10 @@ const LoginPage = () => {
   };
 
   const handleResendVerification = async () => {
+    setLoading(true);
     const result = await resendVerification();
+    setLoading(false);
+    
     if (result.success) {
       alert('Verification email sent! Please check your inbox.');
       setShowResendVerification(false);
