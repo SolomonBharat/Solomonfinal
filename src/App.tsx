@@ -1,44 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import RequireRole from './components/RequireRole';
-import { Toast } from './components/ui/toast';
-
-// Import pages
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
-import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
-
-// Admin pages
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminRFQs from './pages/admin/AdminRFQs';
-import AdminSuppliers from './pages/admin/AdminSuppliers';
-import AdminQuotationModeration from './pages/admin/AdminQuotationModeration';
-import AdminSampleRequests from './pages/admin/AdminSampleRequests';
-import AdminCategoryManagement from './pages/admin/AdminCategoryManagement';
-
-// Buyer pages
-import BuyerDashboard from './pages/buyer/BuyerDashboard';
-import CreateRFQ from './pages/buyer/CreateRFQ';
-import QuotationComparison from './pages/buyer/QuotationComparison';
-
-// Supplier pages
-import SupplierDashboard from './pages/supplier/SupplierDashboard';
-import SupplierQuote from './pages/supplier/SupplierQuote';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-    },
-  },
-});
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import BuyerDashboard from './pages/BuyerDashboard';
+import CreateRFQ from './pages/CreateRFQ';
+import MatchingResults from './pages/MatchingResults';
+import QuotationComparison from './pages/QuotationComparison';
+import Messaging from './pages/Messaging';
+import Profile from './pages/Profile';
+import MyRFQs from './pages/MyRFQs';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminSuppliers from './pages/AdminSuppliers';
+import AdminRFQs from './pages/AdminRFQs';
+import AdminSettings from './pages/AdminSettings';
+import SupplierLogin from './pages/SupplierLogin';
+import SupplierDashboard from './pages/SupplierDashboard';
+import SupplierQuote from './pages/SupplierQuote';
+import SupplierQuotations from './pages/SupplierQuotations';
+import SupplierProfile from './pages/SupplierProfile';
+import BuyerAnalytics from './pages/BuyerAnalytics';
+import SupplierPerformance from './pages/SupplierPerformance';
+import AdminAnalytics from './pages/AdminAnalytics';
+import WorkflowDocumentation from './pages/WorkflowDocumentation';
+import AdminSampleRequests from './pages/AdminSampleRequests';
+import OnboardSupplier from './pages/OnboardSupplier';
+import BuyerOrders from './pages/BuyerOrders';
+import SupplierOrders from './pages/SupplierOrders';
+import AdminCategoryManagement from './pages/AdminCategoryManagement';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, userType, loading } = useAuth();
 
   if (loading) {
     return (
@@ -49,56 +42,140 @@ function AppContent() {
   }
 
   return (
-    <>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/supplier/register" element={<SupplierRegisterPage />} />
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={userType === 'admin' ? '/admin' : userType === 'supplier' ? '/supplier/dashboard' : '/dashboard'} replace />} />
+      <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to={userType === 'admin' ? '/admin' : userType === 'supplier' ? '/supplier/dashboard' : '/dashboard'} replace />} />
+      <Route path="/supplier/login" element={!user ? <SupplierLogin /> : <Navigate to={userType === 'supplier' ? '/supplier/dashboard' : userType === 'admin' ? '/admin' : '/dashboard'} replace />} />
+      
+      {/* Protected Buyer Routes */}
+      <Route 
+        path="/dashboard" 
+        element={user && userType === 'buyer' ? <BuyerDashboard /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/my-rfqs" 
+        element={user && userType === 'buyer' ? <MyRFQs /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/create-rfq" 
+        element={user && userType === 'buyer' ? <CreateRFQ /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/rfq/:rfqId/suppliers" 
+        element={user && userType === 'buyer' ? <MatchingResults /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/rfq/:rfqId/quotations" 
+        element={user && userType === 'buyer' ? <QuotationComparison /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/messages" 
+        element={user ? <Messaging /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/messages/:conversationId" 
+        element={user ? <Messaging /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/profile" 
+        element={user ? <Profile /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/analytics" 
+        element={user && userType === 'buyer' ? <BuyerAnalytics /> : <Navigate to="/login" />} 
+      />
+      <Route 
+        path="/orders" 
+        element={user && userType === 'buyer' ? <BuyerOrders /> : <Navigate to="/login" />} 
+      />
 
-        {/* Protected Admin Routes */}
-        <Route element={<RequireRole allowedRoles={['admin']} />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/rfqs" element={<AdminRFQs />} />
-          <Route path="/admin/suppliers" element={<AdminSuppliers />} />
-          <Route path="/admin/quotations" element={<AdminQuotationModeration />} />
-          <Route path="/admin/samples" element={<AdminSampleRequests />} />
-          <Route path="/admin/categories" element={<AdminCategoryManagement />} />
-        </Route>
+      {/* Protected Supplier Routes */}
+      <Route 
+        path="/supplier/dashboard" 
+        element={user && userType === 'supplier' ? <SupplierDashboard /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/quotations" 
+        element={user && userType === 'supplier' ? <SupplierQuotations /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/profile" 
+        element={user && userType === 'supplier' ? <SupplierProfile /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/quote/:rfqId" 
+        element={user && userType === 'supplier' ? <SupplierQuote /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/quotations" 
+        element={user && userType === 'supplier' ? <SupplierQuotations /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/profile" 
+        element={user && userType === 'supplier' ? <SupplierProfile /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/performance" 
+        element={user && userType === 'supplier' ? <SupplierPerformance /> : <Navigate to="/supplier/login" />} 
+      />
+      <Route 
+        path="/supplier/orders" 
+        element={user && userType === 'supplier' ? <SupplierOrders /> : <Navigate to="/supplier/login" />} 
+      />
 
-        {/* Protected Buyer Routes */}
-        <Route element={<RequireRole allowedRoles={['buyer']} />}>
-          <Route path="/buyer" element={<Navigate to="/buyer/dashboard" replace />} />
-          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
-          <Route path="/buyer/create-rfq" element={<CreateRFQ />} />
-          <Route path="/buyer/rfq/:rfqId/quotes" element={<QuotationComparison />} />
-        </Route>
+      {/* Protected Admin Routes */}
+      <Route 
+        path="/admin" 
+        element={user && userType === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/suppliers" 
+        element={user && userType === 'admin' ? <AdminSuppliers /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/rfqs" 
+        element={user && userType === 'admin' ? <AdminRFQs /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/analytics" 
+        element={user && userType === 'admin' ? <AdminAnalytics /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/onboard-supplier" 
+        element={user && userType === 'admin' ? <OnboardSupplier /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/settings" 
+        element={user && userType === 'admin' ? <AdminSettings /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/workflow" 
+        element={user && userType === 'admin' ? <WorkflowDocumentation /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/sample-requests" 
+        element={user && userType === 'admin' ? <AdminSampleRequests /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/categories" 
+        element={user && userType === 'admin' ? <AdminCategoryManagement /> : <Navigate to="/login" replace />} 
+      />
 
-        {/* Protected Supplier Routes */}
-        <Route element={<RequireRole allowedRoles={['supplier']} />}>
-          <Route path="/supplier" element={<Navigate to="/supplier/dashboard" replace />} />
-          <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
-          <Route path="/supplier/rfq/:rfqId/quote" element={<SupplierQuote />} />
-        </Route>
-
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      <Toast />
-    </>
+      {/* Catch all */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 
