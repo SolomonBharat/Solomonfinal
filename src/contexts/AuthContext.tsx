@@ -34,16 +34,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Check if Supabase is properly configured
   const isSupabaseConfigured = () => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    console.log('Supabase Config Check:', {
-      url: url ? 'Set' : 'Missing',
-      key: key ? 'Set' : 'Missing',
-      isPlaceholder: url === 'https://placeholder.supabase.co'
-    });
-    
-    return url && key && url !== 'https://placeholder.supabase.co';
+    return import.meta.env.VITE_SUPABASE_URL && 
+           import.meta.env.VITE_SUPABASE_ANON_KEY &&
+           import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder.supabase.co';
   };
 
   useEffect(() => {
@@ -52,8 +45,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
       return;
     }
-    
-    console.log('Supabase is configured, initializing...');
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -133,29 +124,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { error: null };
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-
+    setLoading(false);
     return { error };
   };
 
-  const signUp = async (email: string, password: string, userData: {
-    userType: 'buyer' | 'supplier';
-    fullName: string;
-    companyName: string;
-    phone?: string;
-    country?: string;
-    website?: string;
-  }) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    userData: {
+      userType: 'buyer' | 'supplier';
+      fullName: string;
+      companyName: string;
+      phone?: string;
+      country?: string;
+      website?: string;
+    }
+  ) => {
     setLoading(true);
     
     try {
       console.log('Starting signup process for:', email);
-      
-      console.log('Starting signup process for:', email);
-      console.log('User data:', userData);
       
       // Sign up user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -167,30 +160,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             full_name: userData.fullName,
             company_name: userData.companyName,
             user_type: userData.userType
-          },
-          // Explicitly disable email confirmation
-          emailRedirectTo: undefined
+          }
         }
       });
-
-      console.log('Auth signup result:', { authData, authError });
 
       console.log('Auth signup result:', { authData, authError });
 
       if (authError) {
         setLoading(false);
         console.error('Auth error:', authError);
-        console.error('Auth error:', authError);
         return { error: authError };
       }
 
-      if (authData.user && authData.user.id) {
+      if (authData.user) {
         console.log('Creating profile for user:', authData.user.id);
-        
-        console.log('Creating profile for user:', authData.user.id);
-        
-        // Wait a moment for the user to be fully created
-        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Create profile
         const { data: profileData, error: profileError } = await supabase
@@ -209,13 +192,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         console.log('Profile creation result:', { profileData, profileError });
 
-        console.log('Profile creation result:', { profileData, profileError });
-
         if (profileError) {
+          setLoading(false);
           console.error('Profile error:', profileError);
-          // Don't fail completely if profile creation fails
-          console.error('Profile error:', profileError);
-          console.log('Continuing despite profile error...');
+          return { error: profileError };
         }
 
         // Create role-specific record
@@ -229,14 +209,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           console.log('Buyer creation result:', { buyerData, buyerError });
           
-          console.log('Buyer creation result:', { buyerData, buyerError });
-          
           if (buyerError) {
+            setLoading(false);
             console.error('Buyer error:', buyerError);
-            console.error('Buyer error:', buyerError);
+            return { error: buyerError };
           }
         } else if (userData.userType === 'supplier') {
-          console.log('Creating supplier record');
           console.log('Creating supplier record');
           const { data: supplierData, error: supplierError } = await supabase
             .from('suppliers')
@@ -251,18 +229,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           console.log('Supplier creation result:', { supplierData, supplierError });
           
-          console.log('Supplier creation result:', { supplierData, supplierError });
-          
           if (supplierError) {
+            setLoading(false);
             console.error('Supplier error:', supplierError);
-            console.error('Supplier error:', supplierError);
+            return { error: supplierError };
           }
         }
 
         // Set the profile data immediately
         setProfile(profileData);
-        console.log('Signup completed successfully');
-        
         console.log('Signup completed successfully');
       }
 
@@ -270,7 +245,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { error: null };
     } catch (error) {
       setLoading(false);
-      console.error('Signup error:', error);
       console.error('Signup error:', error);
       return { error };
     }
