@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Globe, Eye, EyeOff } from 'lucide-react';
+import { Globe, Eye, EyeOff, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
@@ -78,6 +78,10 @@ const RegisterPage = () => {
     // Save to localStorage
     existingBuyers.push(newBuyer);
     localStorage.setItem('registered_buyers', JSON.stringify(existingBuyers));
+
+    // IMPORTANT: In a real application, email verification would happen here.
+    // This would involve sending an email with a unique link to the user's email address.
+    // For this simulated environment, we'll skip the actual email sending.
 
     setTimeout(() => {
       setLoading(false);
@@ -223,12 +227,13 @@ const RegisterPage = () => {
               </label>
               <input
                 type="text"
+                type="text"
                 id="country"
                 name="country"
                 required
                 value={formData.country}
                 onChange={handleChange}
-                placeholder="Enter your country"
+                placeholder="e.g., United States"
                 className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
               />
             </div>
@@ -302,6 +307,12 @@ const RegisterPage = () => {
               • Buyer: buyer@example.com / buyer123<br/>
               • Admin: admin@solomonbharat.com / admin123
             </p>
+            <div className="flex items-start mt-3 text-blue-700">
+              <Info className="h-4 w-4 mr-2 flex-shrink-0 mt-1" />
+              <p className="text-xs">
+                For this demo, email verification is simulated. In a real application, a verification link would be sent to your email.
+              </p>
+            </div>
           </div>
         </div>
       </div>
