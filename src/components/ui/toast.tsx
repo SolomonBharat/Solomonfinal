@@ -1,3 +1,4 @@
+import * as React from "react"
 import { Toaster } from "sonner"
 
 export { toast } from "sonner"
