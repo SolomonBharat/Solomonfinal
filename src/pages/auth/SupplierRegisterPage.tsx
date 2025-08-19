@@ -27,12 +27,14 @@ const SupplierRegisterPage = () => {
     setLoading(true);
 
     try {
-      const { error } = await signUp(formData.email, formData.password, {
-        userType: 'supplier',
-        fullName: formData.fullName,
-        companyName: formData.companyName,
+      const { error } = await signUp(formData.email, formData.password, 'supplier', {
+        full_name: formData.fullName,
+        company_name: formData.companyName,
         phone: formData.phone,
         country: formData.country,
+        product_categories: formData.productCategories,
+        years_in_business: formData.yearsInBusiness ? parseInt(formData.yearsInBusiness) : null,
+        certifications: formData.certifications,
       });
 
       if (error) {
@@ -41,7 +43,7 @@ const SupplierRegisterPage = () => {
         });
       } else {
         toast.success('Registration successful', {
-          description: 'Account created successfully! Your account is pending verification.',
+          description: 'Your account is pending verification. You will be notified once approved.',
         });
         navigate('/login');
       }

@@ -14,13 +14,9 @@ interface AuthContextType {
     companyName: string;
     phone?: string;
     country?: string;
-    website?: string;
   }) => Promise<{ error?: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  userType: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,14 +88,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (
     email: string, 
     password: string, 
-    userData: {
-      userType: 'buyer' | 'supplier';
-      fullName: string;
-      companyName: string;
-      phone?: string;
-      country?: string;
-      website?: string;
-    }
+    userType: 'buyer' | 'supplier',
+    profileData: any
   ) => {
     setLoading(true);
     
@@ -121,12 +111,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .from('profiles')
           .insert({
             id: authData.user.id,
-            user_type: userData.userType,
-            full_name: userData.fullName,
-            company_name: userData.companyName,
-            phone: userData.phone,
-            country: userData.country,
-            website: userData.website,
+            user_type: userType,
+            full_name: profileData.full_name,
+            company_name: profileData.company_name,
+            phone: profileData.phone,
+            country: profileData.country,
           });
 
         if (profileError) {
@@ -135,7 +124,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Create role-specific record
-        if (userData.userType === 'buyer') {
+        if (userType === 'buyer') {
           const { error: buyerError } = await supabase
             .from('buyers')
             .insert({ id: authData.user.id });
@@ -144,14 +133,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(false);
             return { error: buyerError };
           }
-        } else if (userData.userType === 'supplier') {
+        } else if (userType === 'supplier') {
           const { error: supplierError } = await supabase
             .from('suppliers')
             .insert({ 
               id: authData.user.id,
-              product_categories: [],
-              years_in_business: null,
-              certifications: []
+              product_categories: profileData.product_categories || [],
+              years_in_business: profileData.years_in_business,
+              certifications: profileData.certifications || []
             });
           
           if (supplierError) {
@@ -188,19 +177,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { error };
   };
 
-  // Legacy login function for compatibility
-  const login = async (email: string, password: string) => {
-    const result = await signIn(email, password);
-    if (result.error) {
-      return { success: false, error: result.error.message };
-    }
-    return { success: true };
-  };
-
-  // Legacy logout function for compatibility
-  const logout = async () => {
-    await signOut();
-  };
   const value: AuthContextType = {
     user,
     profile,
@@ -210,9 +186,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signUp,
     signOut,
     updateProfile,
-    login,
-    logout,
-    userType: profile?.user_type || null,
   };
 
   return (

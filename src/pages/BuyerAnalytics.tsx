@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DashboardLayout } from '../components/DashboardLayout';
+import DashboardLayout from '../components/DashboardLayout';
 import StatsCard from '../components/StatsCard';
 import { 
   BarChart3, 

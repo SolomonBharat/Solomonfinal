@@ -307,4 +307,4 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
   );
 };
 
-export { DashboardLayout };
+export default DashboardLayout;
