@@ -105,37 +105,6 @@ const MyRFQs = () => {
       setEditMode(false);
       alert('RFQ updated successfully!');
     } catch (error) {
-      console.error('Error in handleSaveEdit:', error);
-      alert('Failed to update RFQ. Please try again.');
-    }
-  };
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    
-    // Filter RFQs to show only the current user's RFQs
-    const userRFQs = allRFQs.filter((rfq: any) => 
-      rfq.buyer_id === user?.id || rfq.buyer_email === user?.email
-    ).map((rfq: any) => {
-      // Check if this RFQ has quotations
-      const rfqQuotations = supplierQuotations.filter((q: any) => q.rfq_id === rfq.id && q.status === 'sent_to_buyer');
-      
-      // Ensure all numeric fields are properly converted
-      const convertedRFQ = {
-        ...rfq,
-        quantity: parseInt(rfq.quantity) || 0,
-        target_price: parseFloat(rfq.target_price) || 0,
-        quotations_count: rfqQuotations.length
-      };
-      
-      // Update status based on quotations
-      if (rfqQuotations.length > 0) {
-        convertedRFQ.status = 'quoted';
-      }
-      
-      return convertedRFQ;
-    });
-    
-    setRfqs(userRFQs);
-  }, [user?.id]);
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);

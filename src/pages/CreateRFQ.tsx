@@ -463,53 +463,6 @@ const CreateRFQ = () => {
             </div>
           </form>
 
-          {/* Help Box */}
-          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Better Results</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Be specific about quantities and quality requirements</li>
-              <li>• Upload clear product images (required) and detailed specifications</li>
-              <li>• Mention any compliance standards required in your target market</li>
-              <li>• Our team will review and match you with the best suppliers within 24-48 hours</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CreateRFQ;
-      quantity: parseInt(formData.quantity),
-      target_price: parseFloat(formData.target_price),
-      max_price: formData.max_price ? parseFloat(formData.max_price) : null,
-      status: 'pending_approval',
-      buyer_verified: user?.verification_status === 'verified' || false,
-      created_at: new Date().toISOString().split('T')[0],
-      quotations_count: 0,
-      buyer_id: user?.id,
-      buyer_name: user?.name,
-      buyer_company: user?.company,
-      buyer_country: user?.country,
-      buyer_email: user?.email,
-      buyer_phone: user?.phone,
-      product_images: formData.product_images.map(f => f.name),
-      verification_status: user?.verification_status || 'unverified'
-    };
-    
-    // Add to localStorage
-    const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    existingRFQs.push(newRFQ);
-    localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
-    
-    setTimeout(() => {
-      setLoading(false);
-      alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
-      navigate('/dashboard');
-    }, 1000);
-  };
-
-  return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
