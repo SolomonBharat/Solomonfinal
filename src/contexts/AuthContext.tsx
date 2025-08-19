@@ -49,12 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userType, setUserType] = useState<'buyer' | 'supplier' | 'admin' | null>(null);
 
   useEffect(() => {
-    // If Supabase is not configured, use demo mode
-    if (!isSupabaseConfigured()) {
-      console.log('🔧 Running in demo mode - Supabase not configured');
-      setLoading(false);
-      return;
-    }
+    console.log('🔗 Connecting to Supabase...');
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -67,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event);
       if (session?.user) {
         await loadUserProfile(session.user);
       } else {
@@ -130,13 +126,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     website?: string;
     user_type: 'buyer' | 'supplier';
   }): Promise<{ success: boolean; error?: string }> => {
-    // If Supabase is not configured, show helpful message
-    if (!isSupabaseConfigured()) {
-      return { 
-        success: false, 
-        error: 'Supabase is not configured. Please set up your Supabase project and update the .env file with your credentials.' 
-      };
-    }
 
     try {
       setLoading(true);
@@ -211,13 +200,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // If Supabase is not configured, show helpful message
-    if (!isSupabaseConfigured()) {
-      return { 
-        success: false, 
-        error: 'Supabase is not configured. Please set up your Supabase project and update the .env file with your credentials.' 
-      };
-    }
 
     try {
       setLoading(true);

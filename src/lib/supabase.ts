@@ -4,30 +4,24 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase not configured - using demo mode');
-  console.log('To connect Supabase:');
-  console.log('1. Create a Supabase project at https://supabase.com');
-  console.log('2. Get your Project URL and anon key from Project Settings > API');
-  console.log('3. Update the .env file with your credentials');
-  console.log('4. Restart the development server');
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://demo.supabase.co', 
-  supabaseAnonKey || 'demo-key', 
+  supabaseUrl,
+  supabaseAnonKey,
   {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
 // Check if Supabase is properly configured
 export const isSupabaseConfigured = () => {
-  return !!(supabaseUrl && supabaseAnonKey && 
-    supabaseUrl !== 'https://demo.supabase.co' && 
-    supabaseAnonKey !== 'demo-key');
+  return !!(supabaseUrl && supabaseAnonKey);
 };
 
 // Database types
