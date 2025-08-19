@@ -32,13 +32,13 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime)
+      cacheTime: 10 * 60 * 1000, // 10 minutes
     },
   },
 });
 
 function AppContent() {
-  const { profile, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -55,7 +55,7 @@ function AppContent() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/supplier-register" element={<SupplierRegisterPage />} />
+        <Route path="/supplier/register" element={<SupplierRegisterPage />} />
 
         {/* Protected Admin Routes */}
         <Route element={<RequireRole allowedRoles={['admin']} />}>
@@ -69,25 +69,21 @@ function AppContent() {
 
         {/* Protected Buyer Routes */}
         <Route element={<RequireRole allowedRoles={['buyer']} />}>
-          <Route path="/dashboard" element={<BuyerDashboard />} />
-          <Route path="/create-rfq" element={<CreateRFQ />} />
-          <Route path="/rfq/:rfqId/quotes" element={<QuotationComparison />} />
+          <Route path="/buyer" element={<Navigate to="/buyer/dashboard" replace />} />
+          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+          <Route path="/buyer/create-rfq" element={<CreateRFQ />} />
+          <Route path="/buyer/rfq/:rfqId/quotes" element={<QuotationComparison />} />
         </Route>
 
         {/* Protected Supplier Routes */}
         <Route element={<RequireRole allowedRoles={['supplier']} />}>
+          <Route path="/supplier" element={<Navigate to="/supplier/dashboard" replace />} />
           <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
           <Route path="/supplier/rfq/:rfqId/quote" element={<SupplierQuote />} />
         </Route>
 
         {/* Catch all */}
-        <Route path="*" element={
-          profile ? (
-            profile.user_type === 'admin' ? <Navigate to="/admin" /> :
-            profile.user_type === 'buyer' ? <Navigate to="/dashboard" /> :
-            <Navigate to="/supplier/dashboard" />
-          ) : <Navigate to="/" />
-        } />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Toast />
     </>

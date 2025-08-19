@@ -32,7 +32,7 @@ const RequireRole: React.FC<RequireRoleProps> = ({ allowedRoles, fallbackPath })
       case 'admin':
         return <Navigate to="/admin" replace />;
       case 'buyer':
-        return <Navigate to="/dashboard" replace />;
+        return <Navigate to="/buyer/dashboard" replace />;
       case 'supplier':
         return <Navigate to="/supplier/dashboard" replace />;
       default:

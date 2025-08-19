@@ -88,8 +88,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signUp = async (
     email: string, 
     password: string, 
-    userType: 'buyer' | 'supplier',
-    profileData: any
+    userData: {
+      userType: 'buyer' | 'supplier';
+      fullName: string;
+      companyName: string;
+      phone?: string;
+      country?: string;
+    }
   ) => {
     setLoading(true);
     
@@ -111,11 +116,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .from('profiles')
           .insert({
             id: authData.user.id,
-            user_type: userType,
-            full_name: profileData.full_name,
-            company_name: profileData.company_name,
-            phone: profileData.phone,
-            country: profileData.country,
+            user_type: userData.userType,
+            full_name: userData.fullName,
+            company_name: userData.companyName,
+            phone: userData.phone,
+            country: userData.country,
           });
 
         if (profileError) {
@@ -124,7 +129,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Create role-specific record
-        if (userType === 'buyer') {
+        if (userData.userType === 'buyer') {
           const { error: buyerError } = await supabase
             .from('buyers')
             .insert({ id: authData.user.id });
@@ -133,15 +138,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLoading(false);
             return { error: buyerError };
           }
-        } else if (userType === 'supplier') {
+        } else if (userData.userType === 'supplier') {
           const { error: supplierError } = await supabase
             .from('suppliers')
-            .insert({ 
-              id: authData.user.id,
-              product_categories: profileData.product_categories || [],
-              years_in_business: profileData.years_in_business,
-              certifications: profileData.certifications || []
-            });
+            .insert({ id: authData.user.id });
           
           if (supplierError) {
             setLoading(false);
