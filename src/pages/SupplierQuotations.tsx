@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, FileText, Clock, CheckCircle, Eye, Edit, DollarSign, X, Truck } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, CheckCircle, Eye, Edit, DollarSign, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface Quotation {
@@ -21,18 +21,6 @@ interface Quotation {
   validity_days?: number;
   quality_guarantee?: boolean;
   sample_available?: boolean;
-  // Add sample request related fields
-  sample_request_id?: string;
-  sample_request_status?: 'pending_admin_review' | 'approved_by_admin' | 'shipped_by_supplier' | 'delivered_to_buyer';
-  sample_courier_service?: string;
-  sample_tracking_id?: string;
-}
-
-interface SampleRequest {
-  id: string;
-  status: 'pending_admin_review' | 'approved_by_admin' | 'shipped_by_supplier' | 'delivered_to_buyer';
-  courier_service?: string;
-  tracking_id?: string;
 }
 
 const SupplierQuotations = () => {
@@ -40,8 +28,6 @@ const SupplierQuotations = () => {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
-  const [showSampleTrackingModal, setShowSampleTrackingModal] = useState(false);
-  const [sampleTrackingData, setSampleTrackingData] = useState({ requestId: '', courierService: '', trackingId: '' });
 
   useEffect(() => {
     // Load quotations from localStorage
@@ -53,21 +39,7 @@ const SupplierQuotations = () => {
              q.supplier_name === user?.name ||
              q.supplier_id === user?.id;
     });
-
-    // Merge sample request status into quotations
-    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-    const mergedQuotations = myQuotations.map((quote: any) => {
-      const relatedSampleRequest = allSampleRequests.find((req: any) => 
-        req.rfq_id === quote.rfq_id && req.supplier_id === quote.supplier_id
-      );
-      return {
-        ...quote,
-        sample_request_id: relatedSampleRequest?.id,
-        sample_request_status: relatedSampleRequest?.status,
-        sample_courier_service: relatedSampleRequest?.courier_service,
-        sample_tracking_id: relatedSampleRequest?.tracking_id,
-      };
-    });
+    
     setQuotations(myQuotations);
   }, []);
 
@@ -76,30 +48,6 @@ const SupplierQuotations = () => {
   const handleViewQuotationDetails = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setShowQuotationModal(true);
-  };
-
-  const handleOpenSampleTracking = (quotation: Quotation) => {
-    setSelectedQuotation(quotation);
-    setSampleTrackingData({
-      requestId: quotation.sample_request_id || '',
-      courierService: quotation.sample_courier_service || '',
-      trackingId: quotation.sample_tracking_id || '',
-    });
-    setShowSampleTrackingModal(true);
-  };
-
-  const handleSaveSampleTracking = () => {
-    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-    const updatedRequests = allSampleRequests.map((req: SampleRequest) =>
-      req.id === sampleTrackingData.requestId
-        ? { ...req, courier_service: sampleTrackingData.courierService, tracking_id: sampleTrackingData.trackingId, status: 'shipped_by_supplier', shipped_at: new Date().toISOString() }
-        : req
-    );
-    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
-    loadSampleRequests(); // Reload data to reflect changes
-    setShowSampleTrackingModal(false);
-    alert('Sample tracking details saved and status updated to Shipped!');
-    window.location.reload(); // Force reload to update UI
   };
   const getStatusBadge = (status: string) => {
     const badges = {
@@ -299,16 +247,6 @@ const SupplierQuotations = () => {
                           <span onClick={() => window.location.href = `/supplier/quote/${quotation.rfq_id}?edit=true`}>Edit Quote</span>
                         </button>
                       )}
-                      {quotation.sample_request_status === 'approved_by_admin' && (
-                        <button
-                          onClick={() => handleOpenSampleTracking(quotation)}
-                          className="flex items-center space-x-1 text-purple-600 hover:text-purple-800 text-sm"
-                        >
-                          <Truck className="h-3 w-3" />
-                          <span>Add Tracking</span>
-                        </button>
-                      )}
-
                       <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
                         <Eye className="h-3 w-3" />
                         <span onClick={() => handleViewQuotationDetails(quotation)}>Quick View</span>
@@ -534,58 +472,6 @@ const SupplierQuotations = () => {
               >
                 Close
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sample Tracking Modal */}
-      {showSampleTrackingModal && selectedQuotation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Add Sample Tracking</h3>
-              <button
-                onClick={() => setShowSampleTrackingModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">For RFQ: <strong>{selectedQuotation.rfq_title}</strong></p>
-                <p className="text-sm text-gray-600">Buyer: <strong>{selectedQuotation.buyer_company}</strong></p>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Courier Service Name</label>
-                  <input
-                    type="text"
-                    value={sampleTrackingData.courierService}
-                    onChange={(e) => setSampleTrackingData(prev => ({ ...prev, courierService: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., DHL, FedEx"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tracking ID</label>
-                  <input
-                    type="text"
-                    value={sampleTrackingData.trackingId}
-                    onChange={(e) => setSampleTrackingData(prev => ({ ...prev, trackingId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter tracking number"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-              <button onClick={() => setShowSampleTrackingModal(false)} className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
-              <button onClick={handleSaveSampleTracking} disabled={!sampleTrackingData.courierService || !sampleTrackingData.trackingId} className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">Save Tracking</button>
             </div>
           </div>
         </div>

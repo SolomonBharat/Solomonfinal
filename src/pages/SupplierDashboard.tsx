@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X, Truck } from 'lucide-react';
+import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RFQ {
@@ -23,10 +23,6 @@ interface RFQ {
   quality_standards?: string;
   certifications_needed?: string;
   additional_requirements?: string;
-  // Add sample request status to RFQ for display
-  sample_request_id?: string;
-  sample_request_status?: 'pending_admin_review' | 'approved_by_admin' | 'shipped_by_supplier' | 'delivered_to_buyer';
-
 }
 
 const SupplierDashboard = () => {
@@ -78,9 +74,6 @@ const SupplierDashboard = () => {
       
       return {
         ...rfq,
-        // Merge sample request status into RFQ for display
-        sample_request_id: allSampleRequests.find((req: any) => req.rfq_id === rfq.id && req.supplier_id === user?.id)?.id,
-        sample_request_status: allSampleRequests.find((req: any) => req.rfq_id === rfq.id && req.supplier_id === user?.id)?.status,
         target_price: parseFloat(rfq.target_price) || 0,
         buyer_company: rfq.buyer_company || 'Buyer Company',
         buyer_country: rfq.buyer_country || 'Country',

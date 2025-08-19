@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -68,6 +68,10 @@ const AdminSuppliers = () => {
     }));
     setSuppliers(convertedSuppliers);
   }, []);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSuppliers(prev => 

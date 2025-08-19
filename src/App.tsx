@@ -23,7 +23,6 @@ import BuyerAnalytics from './pages/BuyerAnalytics';
 import SupplierPerformance from './pages/SupplierPerformance';
 import AdminAnalytics from './pages/AdminAnalytics';
 import WorkflowDocumentation from './pages/WorkflowDocumentation';
-import AdminSampleRequests from './pages/AdminSampleRequests';
 import OnboardSupplier from './pages/OnboardSupplier';
 import BuyerOrders from './pages/BuyerOrders';
 import SupplierOrders from './pages/SupplierOrders';
@@ -152,10 +151,6 @@ function AppContent() {
       <Route 
         path="/admin/workflow" 
         element={user && userType === 'admin' ? <WorkflowDocumentation /> : <Navigate to="/login" replace />} 
-      />
-      <Route 
-        path="/admin/sample-requests" 
-        element={user && userType === 'admin' ? <AdminSampleRequests /> : <Navigate to="/login" replace />} 
       />
 
       {/* Catch all */}

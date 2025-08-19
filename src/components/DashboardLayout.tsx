@@ -111,7 +111,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
           children: [
             { name: 'All Suppliers', href: '/admin/suppliers', icon: Users },
             { name: 'Verification Queue', href: '/admin/suppliers?status=pending', icon: Users },
-            { name: 'Sample Requests', href: '/admin/sample-requests', icon: Package },
           ]
         },
         { name: 'Quotations', href: '/admin/quotations', icon: Package },

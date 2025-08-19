@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign, Package } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RFQ {
@@ -12,7 +12,6 @@ interface RFQ {
   target_price: number;
   status: 'pending_approval' | 'approved' | 'matched' | 'quoted' | 'closed' | 'rejected';
   created_at: string;
-  buyer_id: string; // Added for filtering sample requests
   quotations_count: number;
   description?: string;
   delivery_timeline?: string;
@@ -28,7 +27,6 @@ const BuyerDashboard = () => {
   const { user, logout } = useAuth();
   const [rfqs, setRfqs] = useState<RFQ[]>([]);
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
-  const [sampleRequestsCount, setSampleRequestsCount] = useState(0);
   const [showRfqModal, setShowRfqModal] = useState(false);
 
   useEffect(() => {
@@ -37,11 +35,6 @@ const BuyerDashboard = () => {
     
     // Check for quotations that have been sent to buyer
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    
-    // Load sample requests for the current buyer
-    const allSampleRequests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-    const buyerSampleRequests = allSampleRequests.filter((req: any) => req.buyer_id === user?.id);
-    setSampleRequestsCount(buyerSampleRequests.length);
     const sentQuotations = supplierQuotations.filter((q: any) => 
       q.status === 'sent_to_buyer'
     );
@@ -187,20 +180,6 @@ const BuyerDashboard = () => {
             </div>
           </Link>
         </div>
-
-        {/* Sample Requests Card for Buyer */}
-        {sampleRequestsCount > 0 && (
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">My Sample Requests</p>
-                <p className="text-xl sm:text-2xl font-bold text-orange-600">{sampleRequestsCount}</p>
-              </div>
-              <Package className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
-            </div>
-          </div>
-        )}
-
 
         {/* RFQs Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
