@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Globe, Eye, EyeOff } from 'lucide-react';
+import { Globe, Eye, EyeOff, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
@@ -9,7 +9,8 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const { login, resendVerification } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +28,27 @@ const LoginPage = () => {
     const result = await login(email, password);
     
     if (result.success) {
-      // Navigation is handled by the login function
+      // Navigation will be handled by the auth context
     } else {
       setError(result.error || 'Login failed');
+      
+      // Show resend verification option if email not confirmed
+      if (result.error?.includes('email') || result.error?.includes('confirm')) {
+        setShowResendVerification(true);
+      }
     }
     
     setLoading(false);
+  };
+
+  const handleResendVerification = async () => {
+    const result = await resendVerification();
+    if (result.success) {
+      alert('Verification email sent! Please check your inbox.');
+      setShowResendVerification(false);
+    } else {
+      alert(result.error || 'Failed to send verification email');
+    }
   };
 
   return (
@@ -53,6 +69,20 @@ const LoginPage = () => {
       <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-6 sm:py-8 px-4 sm:px-10 shadow rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            {showResendVerification && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 sm:p-4">
+                <div className="flex items-start">
+                  <AlertCircle className="h-4 w-4 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <p className="font-medium">Email verification required</p>
+                    <button onClick={handleResendVerification} className="underline hover:no-underline">
+                      Resend verification email
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:p-4">
                 <p className="text-sm text-red-600">{error}</p>
@@ -137,12 +167,16 @@ const LoginPage = () => {
             </div>
           </div>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-3 sm:p-4 bg-gray-50 rounded-md">
-            <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
-            <div className="space-y-1 text-sm text-gray-600">
-              <p><strong>Demo Buyer:</strong> buyer@example.com / buyer123</p>
-              <p><strong>Admin:</strong> admin@solomonbharat.com / admin123</p>
+          {/* Email Verification Info */}
+          <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-start text-blue-700">
+              <Mail className="h-4 w-4 mr-2 flex-shrink-0 mt-1" />
+              <div>
+                <p className="text-sm font-medium">New to Solomon Bharat?</p>
+                <p className="text-xs mt-1">
+                  After registration, you'll need to verify your email address before you can sign in.
+                </p>
+              </div>
             </div>
           </div>
         </div>

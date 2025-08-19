@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import EmailVerificationBanner from '../components/EmailVerificationBanner';
 
 interface RFQ {
   id: string;
@@ -30,8 +32,46 @@ const BuyerDashboard = () => {
   const [showRfqModal, setShowRfqModal] = useState(false);
 
   useEffect(() => {
-    // Load user's RFQs from localStorage
-    const allRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    loadUserRFQs();
+  }, [user?.id]);
+
+  const loadUserRFQs = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data: rfqsData, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .eq('buyer_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading RFQs:', error);
+        return;
+      }
+
+      // Get quotation counts for each RFQ
+      const rfqsWithQuotations = await Promise.all(
+        (rfqsData || []).map(async (rfq) => {
+          const { count } = await supabase
+            .from('supplier_quotations')
+            .select('*', { count: 'exact', head: true })
+            .eq('rfq_id', rfq.id)
+            .eq('status', 'approved_for_buyer');
+
+          return {
+            ...rfq,
+            quotations_count: count || 0,
+            status: count && count > 0 ? 'quoted' : rfq.status
+          };
+        })
+      );
+
+      setRfqs(rfqsWithQuotations);
+    } catch (error) {
+      console.error('Error in loadUserRFQs:', error);
+    }
+  };
     
     // Check for quotations that have been sent to buyer
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
@@ -122,6 +162,9 @@ const BuyerDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Email Verification Banner */}
+      <EmailVerificationBanner />
 
       <div className="px-4 sm:px-6 py-6 sm:py-8">
         {/* Welcome Section */}
