@@ -427,7 +427,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userAccount: User = {
           id: buyer.id || `buyer_${Date.now()}`,
           email: buyer.email,
-          name: buyer.name,
+          name: buyer.company, // Use company name as primary display name
           company: buyer.company,
           country: buyer.country,
           phone: buyer.phone,
@@ -514,16 +514,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const newUser: User = {
       id: `buyer_${Date.now()}`,
       email: userData.email!,
-      name: userData.name!,
+      name: userData.company!, // Use company name as primary display name
       company: userData.company!,
       country: userData.country!,
       phone: userData.phone,
-      website: formData.website,
+      website: userData.website,
       user_type: 'buyer',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       profile_completed: true,
-      verification_status: 'unverified'
+      verification_status: 'pending'
     };
 
     // Save to registered buyers with password

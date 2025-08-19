@@ -556,6 +556,23 @@ const MyRFQs = () => {
                     </div>
                   )}
 
+                  {/* Product Images */}
+                  {selectedRfq.product_images && selectedRfq.product_images.length > 0 && (
+                    <div className="mb-8">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h4>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {selectedRfq.product_images.map((imageName, index) => (
+                          <div key={index} className="bg-gray-100 rounded-lg p-3 text-center">
+                            <div className="aspect-square bg-gray-200 rounded flex items-center justify-center mb-2">
+                              <span className="text-xs text-gray-600">📷</span>
+                            </div>
+                            <span className="text-xs text-gray-700 break-words">{imageName}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Requirements & Terms */}
                   <div className="mb-8">
                     <h4 className="text-lg font-semibold text-gray-900 mb-4">Requirements & Terms</h4>
