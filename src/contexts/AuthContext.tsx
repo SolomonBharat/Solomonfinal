@@ -133,35 +133,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { error: null };
     }
 
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    setLoading(false);
+
     return { error };
   };
 
-  const signUp = async (
-    email: string, 
-    password: string, 
-    userData: {
-      userType: 'buyer' | 'supplier';
-      fullName: string;
-      companyName: string;
-      phone?: string;
-      country?: string;
-      website?: string;
-    }
-  ) => {
-    if (!isSupabaseConfigured()) {
-      console.error('Supabase not configured - cannot create real account');
-      return { error: new Error('Supabase not configured') };
-    }
-    
+  const signUp = async (email: string, password: string, userData: {
+    userType: 'buyer' | 'supplier';
+    fullName: string;
+    companyName: string;
+    phone?: string;
+    country?: string;
+    website?: string;
+  }) => {
     setLoading(true);
     
     try {
+      console.log('Starting signup process for:', email);
+      
       console.log('Starting signup process for:', email);
       console.log('User data:', userData);
       
@@ -170,7 +162,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         email,
         password,
         options: {
-          emailRedirectTo: undefined, // Disable email confirmation
+          emailRedirectTo: window.location.origin,
           data: {
             full_name: userData.fullName,
             company_name: userData.companyName,
@@ -183,13 +175,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       console.log('Auth signup result:', { authData, authError });
 
+      console.log('Auth signup result:', { authData, authError });
+
       if (authError) {
         setLoading(false);
+        console.error('Auth error:', authError);
         console.error('Auth error:', authError);
         return { error: authError };
       }
 
       if (authData.user && authData.user.id) {
+        console.log('Creating profile for user:', authData.user.id);
+        
         console.log('Creating profile for user:', authData.user.id);
         
         // Wait a moment for the user to be fully created
@@ -212,9 +209,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         console.log('Profile creation result:', { profileData, profileError });
 
+        console.log('Profile creation result:', { profileData, profileError });
+
         if (profileError) {
           console.error('Profile error:', profileError);
           // Don't fail completely if profile creation fails
+          console.error('Profile error:', profileError);
           console.log('Continuing despite profile error...');
         }
 
@@ -229,10 +229,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           console.log('Buyer creation result:', { buyerData, buyerError });
           
+          console.log('Buyer creation result:', { buyerData, buyerError });
+          
           if (buyerError) {
+            console.error('Buyer error:', buyerError);
             console.error('Buyer error:', buyerError);
           }
         } else if (userData.userType === 'supplier') {
+          console.log('Creating supplier record');
           console.log('Creating supplier record');
           const { data: supplierData, error: supplierError } = await supabase
             .from('suppliers')
@@ -247,24 +251,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           console.log('Supplier creation result:', { supplierData, supplierError });
           
+          console.log('Supplier creation result:', { supplierData, supplierError });
+          
           if (supplierError) {
+            console.error('Supplier error:', supplierError);
             console.error('Supplier error:', supplierError);
           }
         }
 
-        // Set the profile data if we have it
-        if (profileData) {
-          setProfile(profileData);
-        }
-        
-        // Try to sign in the user immediately
-        console.log('Attempting to sign in user after signup...');
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        console.log('Sign in after signup result:', { signInData, signInError });
+        // Set the profile data immediately
+        setProfile(profileData);
+        console.log('Signup completed successfully');
         
         console.log('Signup completed successfully');
       }
@@ -273,6 +270,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { error: null };
     } catch (error) {
       setLoading(false);
+      console.error('Signup error:', error);
       console.error('Signup error:', error);
       return { error };
     }
