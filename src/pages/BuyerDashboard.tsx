@@ -4,7 +4,6 @@ import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarS
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import EmailVerificationBanner from '../components/EmailVerificationBanner';
-import SupabaseSetupBanner from '../components/SupabaseSetupBanner';
 
 interface RFQ {
   id: string;
@@ -134,9 +133,6 @@ const BuyerDashboard = () => {
 
       {/* Email Verification Banner */}
       <EmailVerificationBanner />
-
-      {/* Supabase Setup Banner */}
-      <SupabaseSetupBanner />
 
       <div className="px-4 sm:px-6 py-6 sm:py-8">
         {/* Welcome Section */}

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Globe, Eye, EyeOff, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import SupabaseSetupBanner from '../components/SupabaseSetupBanner';
 
 const RegisterPage = () => {
   const { register } = useAuth();
@@ -90,9 +89,6 @@ const RegisterPage = () => {
       </div>
 
       <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        {/* Supabase Setup Banner */}
-        <SupabaseSetupBanner />
-        
         <div className="bg-white py-6 sm:py-8 px-4 sm:px-10 shadow rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {error && (

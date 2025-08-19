@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface User {
@@ -49,13 +49,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userType, setUserType] = useState<'buyer' | 'supplier' | 'admin' | null>(null);
 
   useEffect(() => {
-    // If Supabase is not configured, use demo mode
-    if (!isSupabaseConfigured()) {
-      console.log('🔧 Running in demo mode - Supabase not configured');
-      setLoading(false);
-      return;
-    }
-
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
@@ -130,14 +123,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     website?: string;
     user_type: 'buyer' | 'supplier';
   }): Promise<{ success: boolean; error?: string }> => {
-    // If Supabase is not configured, show helpful message
-    if (!isSupabaseConfigured()) {
-      return { 
-        success: false, 
-        error: 'Supabase is not configured. Please set up your Supabase project and update the .env file with your credentials.' 
-      };
-    }
-
     try {
       setLoading(true);
 
@@ -211,14 +196,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // If Supabase is not configured, show helpful message
-    if (!isSupabaseConfigured()) {
-      return { 
-        success: false, 
-        error: 'Supabase is not configured. Please set up your Supabase project and update the .env file with your credentials.' 
-      };
-    }
-
     try {
       setLoading(true);
 
