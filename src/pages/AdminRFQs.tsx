@@ -28,7 +28,7 @@ const AdminRFQs = () => {
   const [loading, setLoading] = useState(true);
   const [selectedRfqForQuestions, setSelectedRfqForQuestions] = useState<RFQ | null>(null);
   const [showQuestionsModal, setShowQuestionsModal] = useState(false);
-  const [rfqQuestions, setRfqQuestions] = useState<any[]>([]);
+  const [rfqQuestions, setRfqQuestions] = useState<RFQQuestion[]>([]);
   const [buyerAnswerForm, setBuyerAnswerForm] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
@@ -184,7 +184,7 @@ const AdminRFQs = () => {
 
   const handleViewQuestions = (rfq: RFQ) => {
     setSelectedRfqForQuestions(rfq);
-    const questions = db.getRFQQuestionsByRFQId(rfq.id);
+    const questions = db.getRFQQuestions(rfq.id);
     setRfqQuestions(questions);
     setShowQuestionsModal(true);
   };
@@ -197,12 +197,13 @@ const AdminRFQs = () => {
 
     db.updateRFQQuestion(questionId, {
       buyer_answer: answer.trim(),
-      status: 'answered_by_buyer'
+      status: 'answered_by_buyer',
+      answered_at: new Date().toISOString()
     });
 
     // Refresh questions
     if (selectedRfqForQuestions) {
-      const updatedQuestions = db.getRFQQuestionsByRFQId(selectedRfqForQuestions.id);
+      const updatedQuestions = db.getRFQQuestions(selectedRfqForQuestions.id);
       setRfqQuestions(updatedQuestions);
     }
 
@@ -217,12 +218,13 @@ const AdminRFQs = () => {
 
   const handleShareAnswer = (questionId: string) => {
     db.updateRFQQuestion(questionId, {
-      status: 'shared_with_suppliers'
+      status: 'shared_with_suppliers',
+      shared_at: new Date().toISOString()
     });
 
     // Refresh questions
     if (selectedRfqForQuestions) {
-      const updatedQuestions = db.getRFQQuestionsByRFQId(selectedRfqForQuestions.id);
+      const updatedQuestions = db.getRFQQuestions(selectedRfqForQuestions.id);
       setRfqQuestions(updatedQuestions);
     }
 
