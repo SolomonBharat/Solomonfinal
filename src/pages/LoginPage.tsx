@@ -1,379 +1,150 @@
-// Enhanced Database Layer with proper data management
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  company: string;
-  country: string;
-  phone?: string;
-  user_type: 'buyer' | 'supplier' | 'admin';
-  created_at: string;
-  updated_at: string;
-  profile_completed: boolean;
-  verification_status: 'pending' | 'verified' | 'rejected';
-}
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Globe, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-export interface RFQ {
-  id: string;
-  buyer_id: string;
-  title: string;
-  category: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  target_price: number;
-  max_price?: number;
-  delivery_timeline: string;
-  shipping_terms: string;
-  quality_standards?: string;
-  certifications_needed?: string;
-  additional_requirements?: string;
-  status: 'pending_approval' | 'approved' | 'matched' | 'quoted' | 'closed' | 'rejected';
-  created_at: string;
-  updated_at: string;
-  expires_at: string;
-  matched_suppliers: string[];
-  quotations_count: number;
-}
+const LoginPage = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-export interface Quotation {
-  id: string;
-  rfq_id: string;
-  supplier_id: string;
-  supplier_name: string;
-  supplier_company: string;
-  supplier_location: string;
-  supplier_email: string;
-  supplier_phone: string;
-  quoted_price: number;
-  moq: number;
-  lead_time: string;
-  payment_terms: string;
-  shipping_terms: string;
-  validity_days: number;
-  quality_guarantee: boolean;
-  sample_available: boolean;
-  notes: string;
-  status: 'pending_review' | 'approved' | 'rejected' | 'sent_to_buyer' | 'accepted';
-  submitted_at: string;
-  reviewed_at?: string;
-  total_value: number;
-}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-export interface Supplier {
-  id: string;
-  user_id: string;
-  company_name: string;
-  contact_person: string;
-  business_type: string;
-  years_in_business: number;
-  annual_turnover: string;
-  employee_count: string;
-  product_categories: string[];
-  certifications: string[];
-  export_countries: string[];
-  production_capacity: string;
-  minimum_order_quantity: string;
-  quality_standards: string;
-  gst_number: string;
-  iec_code: string;
-  rating: number;
-  total_orders: number;
-  verified: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Order {
-  id: string;
-  rfq_id: string;
-  quotation_id: string;
-  buyer_id: string;
-  supplier_id: string;
-  order_value: number;
-  quantity: number;
-  unit_price: number;
-  payment_terms: string;
-  delivery_terms: string;
-  status: 'confirmed' | 'in_production' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
-  created_at: string;
-  updated_at: string;
-  expected_delivery: string;
-  tracking_info?: string;
-}
-
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  receiver_id: string;
-  message: string;
-  attachments?: string[];
-  read: boolean;
-  created_at: string;
-}
-
-export interface Analytics {
-  total_users: number;
-  total_buyers: number;
-  total_suppliers: number;
-  total_rfqs: number;
-  total_quotations: number;
-  total_orders: number;
-  total_gmv: number;
-  monthly_gmv: number;
-  avg_order_value: number;
-  success_rate: number;
-  top_categories: { category: string; count: number }[];
-  top_countries: { country: string; count: number }[];
-}
-
-// Database Service Class
-export class DatabaseService {
-  private static instance: DatabaseService;
-  
-  static getInstance(): DatabaseService {
-    if (!DatabaseService.instance) {
-      DatabaseService.instance = new DatabaseService();
+    // Basic validation
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
     }
-    return DatabaseService.instance;
-  }
 
-  // User Management
-  async createUser(userData: Partial<User>): Promise<User> {
-    const user: User = {
-      id: `user_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      profile_completed: false,
-      verification_status: 'pending',
-      ...userData
-    } as User;
-
-    const users = this.getUsers();
-    users.push(user);
-    localStorage.setItem('users', JSON.stringify(users));
-    return user;
-  }
-
-  getUsers(): User[] {
-    return JSON.parse(localStorage.getItem('users') || '[]');
-  }
-
-  getUserById(id: string): User | null {
-    const users = this.getUsers();
-    return users.find(user => user.id === id) || null;
-  }
-
-  updateUser(id: string, updates: Partial<User>): User | null {
-    const users = this.getUsers();
-    const index = users.findIndex(user => user.id === id);
-    if (index !== -1) {
-      users[index] = { ...users[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('users', JSON.stringify(users));
-      return users[index];
-    }
-    return null;
-  }
-
-  // RFQ Management
-  createRFQ(rfqData: Partial<RFQ>): RFQ {
-    const rfq: RFQ = {
-      id: `rfq_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      matched_suppliers: [],
-      quotations_count: 0,
-      status: 'pending_approval',
-      ...rfqData
-    } as RFQ;
-
-    const rfqs = this.getRFQs();
-    rfqs.push(rfq);
-    localStorage.setItem('rfqs', JSON.stringify(rfqs));
-    return rfq;
-  }
-
-  getRFQs(): RFQ[] {
-    return JSON.parse(localStorage.getItem('rfqs') || '[]');
-  }
-
-  getRFQById(id: string): RFQ | null {
-    const rfqs = this.getRFQs();
-    return rfqs.find(rfq => rfq.id === id) || null;
-  }
-
-  updateRFQ(id: string, updates: Partial<RFQ>): RFQ | null {
-    const rfqs = this.getRFQs();
-    const index = rfqs.findIndex(rfq => rfq.id === id);
-    if (index !== -1) {
-      rfqs[index] = { ...rfqs[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('rfqs', JSON.stringify(rfqs));
-      return rfqs[index];
-    }
-    return null;
-  }
-
-  // Quotation Management
-  createQuotation(quotationData: Partial<Quotation>): Quotation {
-    const quotation: Quotation = {
-      id: `quote_${Date.now()}`,
-      submitted_at: new Date().toISOString(),
-      status: 'pending_review',
-      ...quotationData
-    } as Quotation;
-
-    const quotations = this.getQuotations();
-    quotations.push(quotation);
-    localStorage.setItem('quotations', JSON.stringify(quotations));
-    return quotation;
-  }
-
-  getQuotations(): Quotation[] {
-    return JSON.parse(localStorage.getItem('quotations') || '[]');
-  }
-
-  updateQuotation(id: string, updates: Partial<Quotation>): Quotation | null {
-    const quotations = this.getQuotations();
-    const index = quotations.findIndex(q => q.id === id);
-    if (index !== -1) {
-      quotations[index] = { ...quotations[index], ...updates };
-      if (updates.status) {
-        quotations[index].reviewed_at = new Date().toISOString();
-      }
-      localStorage.setItem('quotations', JSON.stringify(quotations));
-      return quotations[index];
-    }
-    return null;
-  }
-
-  // Order Management
-  createOrder(orderData: Partial<Order>): Order {
-    const order: Order = {
-      id: `order_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: 'confirmed',
-      ...orderData
-    } as Order;
-
-    const orders = this.getOrders();
-    orders.push(order);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    return order;
-  }
-
-  getOrders(): Order[] {
-    return JSON.parse(localStorage.getItem('orders') || '[]');
-  }
-
-  updateOrder(id: string, updates: Partial<Order>): Order | null {
-    const orders = this.getOrders();
-    const index = orders.findIndex(order => order.id === id);
-    if (index !== -1) {
-      orders[index] = { ...orders[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('orders', JSON.stringify(orders));
-      return orders[index];
-    }
-    return null;
-  }
-
-  // Analytics
-  getAnalytics(): Analytics {
-    const users = this.getUsers();
-    const rfqs = this.getRFQs();
-    const quotations = this.getQuotations();
-    const orders = this.getOrders();
-
-    const buyers = users.filter(u => u.user_type === 'buyer');
-    const suppliers = users.filter(u => u.user_type === 'supplier');
-
-    const totalGMV = orders.reduce((sum, order) => sum + order.order_value, 0);
-    const currentMonth = new Date().getMonth();
-    const monthlyOrders = orders.filter(order => 
-      new Date(order.created_at).getMonth() === currentMonth
-    );
-    const monthlyGMV = monthlyOrders.reduce((sum, order) => sum + order.order_value, 0);
-
-    const categoryCount: { [key: string]: number } = {};
-    rfqs.forEach(rfq => {
-      categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
-    });
-
-    const countryCount: { [key: string]: number } = {};
-    buyers.forEach(buyer => {
-      countryCount[buyer.country] = (countryCount[buyer.country] || 0) + 1;
-    });
-
-    return {
-      total_users: users.length,
-      total_buyers: buyers.length,
-      total_suppliers: suppliers.length,
-      total_rfqs: rfqs.length,
-      total_quotations: quotations.length,
-      total_orders: orders.length,
-      total_gmv: totalGMV,
-      monthly_gmv: monthlyGMV,
-      avg_order_value: orders.length > 0 ? totalGMV / orders.length : 0,
-      success_rate: rfqs.length > 0 ? (orders.length / rfqs.length) * 100 : 0,
-      top_categories: Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5),
-      top_countries: Object.entries(countryCount)
-        .map(([country, count]) => ({ country, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-    };
-  }
-
-  // Search and Filter
-  searchRFQs(query: string, filters?: { category?: string; status?: string }): RFQ[] {
-    let rfqs = this.getRFQs();
+    const result = await login(email, password);
     
-    if (query) {
-      rfqs = rfqs.filter(rfq => 
-        rfq.title.toLowerCase().includes(query.toLowerCase()) ||
-        rfq.description.toLowerCase().includes(query.toLowerCase()) ||
-        rfq.category.toLowerCase().includes(query.toLowerCase())
-      );
+    if (result.success) {
+      // Navigation is handled by the login function
+      // Just wait for the redirect
+    } else {
+      setError(result.error || 'Login failed');
     }
+    
+    setLoading(false);
+  };
 
-    if (filters?.category) {
-      rfqs = rfqs.filter(rfq => rfq.category === filters.category);
-    }
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link to="/" className="flex items-center justify-center space-x-2 mb-8">
+          <Globe className="h-8 w-8 text-blue-600" />
+          <span className="text-2xl font-bold text-gray-900">Solomon Bharat</span>
+        </Link>
+        <h2 className="text-center text-3xl font-bold text-gray-900">
+          Sign in to your account
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Or{' '}
+          <Link
+            to="/register"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
+            create a new account
+          </Link>
+        </p>
+      </div>
 
-    if (filters?.status) {
-      rfqs = rfqs.filter(rfq => rfq.status === filters.status);
-    }
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
 
-    return rfqs;
-  }
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
 
-  // Notification System
-  createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    const notification = {
-      id: `notif_${Date.now()}`,
-      user_id: userId,
-      title,
-      message,
-      type,
-      read: false,
-      created_at: new Date().toISOString()
-    };
-    notifications.push(notification);
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-    return notification;
-  }
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-  getUserNotifications(userId: string) {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    return notifications.filter((n: any) => n.user_id === userId).sort((a: any, b: any) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }
-}
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                  Forgot your password?
+                </a>
+              </div>
+            </div>
 
-export const db = DatabaseService.getInstance();
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </div>
+          </form>
+
+          {/* Demo Credentials */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-md">
+            <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
+            <div className="space-y-1 text-sm text-gray-600">
+              <p><strong>Buyer:</strong> buyer@example.com / buyer123</p>
+              <p><strong>Admin:</strong> admin@solomonbharat.com / admin123</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;
