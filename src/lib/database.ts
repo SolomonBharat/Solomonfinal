@@ -12,6 +12,40 @@ export interface RFQQuestion {
   shared_at?: string;
 }
 
+export interface SampleRequest {
+  id: string;
+  rfq_id: string;
+  rfq_title: string;
+  buyer_id: string;
+  buyer_name: string;
+  buyer_company: string;
+  supplier_ids: string[];
+  supplier_names: string[];
+  sample_quantity: number;
+  specifications: string;
+  delivery_location: string;
+  status: 'pending_admin_approval' | 'approved' | 'rejected' | 'sent_to_suppliers';
+  created_at: string;
+  approved_at?: string;
+  admin_notes?: string;
+}
+
+export interface SampleQuote {
+  id: string;
+  sample_request_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  supplier_company: string;
+  sample_price: number;
+  shipping_cost: number;
+  total_cost: number;
+  delivery_time: string;
+  notes: string;
+  status: 'pending' | 'submitted' | 'accepted' | 'rejected';
+  created_at: string;
+  submitted_at?: string;
+}
+
 export class DatabaseService {
   // RFQ Questions Management
   createRFQQuestion(question: Omit<RFQQuestion, 'id' | 'created_at' | 'status'>): RFQQuestion {
@@ -182,6 +216,115 @@ export class DatabaseService {
       n.id === notificationId ? { ...n, unread: false } : n
     );
     localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+  }
+
+  // Sample Request Management
+  createSampleRequest(request: Omit<SampleRequest, 'id' | 'created_at' | 'status'>): SampleRequest {
+    const newRequest: SampleRequest = {
+      ...request,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString(),
+      status: 'pending_admin_approval'
+    };
+
+    const existingRequests = this.getSampleRequests();
+    const updatedRequests = [...existingRequests, newRequest];
+    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
+    
+    return newRequest;
+  }
+
+  getSampleRequests(buyerId?: string): SampleRequest[] {
+    const requests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
+    return buyerId ? requests.filter((r: SampleRequest) => r.buyer_id === buyerId) : requests;
+  }
+
+  updateSampleRequest(requestId: string, updates: Partial<SampleRequest>): void {
+    const requests = this.getSampleRequests();
+    const updatedRequests = requests.map(r => 
+      r.id === requestId ? { ...r, ...updates } : r
+    );
+    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
+
+    // Notify suppliers when sample request is approved
+    if (updates.status === 'sent_to_suppliers') {
+      const request = requests.find(r => r.id === requestId);
+      if (request) {
+        request.supplier_ids.forEach((supplierId, index) => {
+          this.createNotification({
+            user_id: supplierId,
+            user_type: 'supplier',
+            title: 'Sample Request Approved',
+            message: `Sample request for "${request.rfq_title}" has been approved. Please provide sample pricing.`,
+            type: 'sample_request',
+            related_id: requestId,
+            unread: true
+          });
+        });
+      }
+    }
+  }
+
+  // Sample Quote Management
+  createSampleQuote(quote: Omit<SampleQuote, 'id' | 'created_at' | 'status'>): SampleQuote {
+    const newQuote: SampleQuote = {
+      ...quote,
+      id: Date.now().toString(),
+      created_at: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    const existingQuotes = this.getSampleQuotes();
+    const updatedQuotes = [...existingQuotes, newQuote];
+    localStorage.setItem('sample_quotes', JSON.stringify(updatedQuotes));
+    
+    return newQuote;
+  }
+
+  getSampleQuotes(supplierId?: string, requestId?: string): SampleQuote[] {
+    const quotes = JSON.parse(localStorage.getItem('sample_quotes') || '[]');
+    let filtered = quotes;
+    
+    if (supplierId) {
+      filtered = filtered.filter((q: SampleQuote) => q.supplier_id === supplierId);
+    }
+    
+    if (requestId) {
+      filtered = filtered.filter((q: SampleQuote) => q.sample_request_id === requestId);
+    }
+    
+    return filtered;
+  }
+
+  updateSampleQuote(quoteId: string, updates: Partial<SampleQuote>): void {
+    const quotes = this.getSampleQuotes();
+    const updatedQuotes = quotes.map(q => 
+      q.id === quoteId ? { ...q, ...updates } : q
+    );
+    localStorage.setItem('sample_quotes', JSON.stringify(updatedQuotes));
+
+    // Notify buyer when sample quote is submitted
+    if (updates.status === 'submitted') {
+      const quote = quotes.find(q => q.id === quoteId);
+      if (quote) {
+        const sampleRequest = this.getSampleRequests().find(r => r.id === quote.sample_request_id);
+        if (sampleRequest) {
+          this.createNotification({
+            user_id: sampleRequest.buyer_id,
+            user_type: 'buyer',
+            title: 'Sample Quote Received',
+            message: `${quote.supplier_company} has provided sample pricing for "${sampleRequest.rfq_title}".`,
+            type: 'sample_quote',
+            related_id: quote.sample_request_id,
+            unread: true
+          });
+        }
+      }
+    }
+  }
+
+  getPendingSampleRequests(): SampleRequest[] {
+    return this.getSampleRequests().filter(r => r.status === 'pending_admin_approval');
   }
 }
 

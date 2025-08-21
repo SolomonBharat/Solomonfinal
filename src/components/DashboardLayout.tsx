@@ -85,6 +85,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, subt
             { name: 'Draft Quotes', href: '/supplier/drafts', icon: Package },
           ]
         },
+        { name: 'Sample Requests', href: '/supplier/samples', icon: Package },
         { name: 'Orders', href: '/supplier/orders', icon: ShoppingCart },
         { name: 'Performance', href: '/supplier/performance', icon: TrendingUp },
         { name: 'Messages', href: '/messages', icon: MessageCircle, badge: 2 },

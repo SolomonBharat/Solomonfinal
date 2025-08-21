@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText } from 'lucide-react';
+import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText, Package } from 'lucide-react';
+import { db } from '../lib/database';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Quotation {
   id: string;
@@ -25,10 +27,18 @@ interface Quotation {
 
 const QuotationComparison = () => {
   const { rfqId } = useParams();
+  const { user } = useAuth();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [selectedForSamples, setSelectedForSamples] = useState<string[]>([]);
+  const [showSampleModal, setShowSampleModal] = useState(false);
+  const [sampleFormData, setSampleFormData] = useState({
+    sample_quantity: 1,
+    specifications: '',
+    delivery_location: ''
+  });
 
   useEffect(() => {
     // Load quotations for this RFQ
@@ -100,6 +110,61 @@ const QuotationComparison = () => {
   const handleViewQuotationDetails = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setShowQuotationModal(true);
+  };
+
+  const handleSelectForSample = (quotationId: string) => {
+    setSelectedForSamples(prev => 
+      prev.includes(quotationId) 
+        ? prev.filter(id => id !== quotationId)
+        : [...prev, quotationId]
+    );
+  };
+
+  const handleRequestSamples = () => {
+    if (selectedForSamples.length === 0) {
+      alert('Please select at least one supplier for sample request.');
+      return;
+    }
+    setShowSampleModal(true);
+  };
+
+  const handleSubmitSampleRequest = () => {
+    if (!sampleFormData.delivery_location.trim()) {
+      alert('Please provide delivery location for samples.');
+      return;
+    }
+
+    const selectedQuotes = quotations.filter(q => selectedForSamples.includes(q.id));
+    const supplierIds = selectedQuotes.map(q => q.id);
+    const supplierNames = selectedQuotes.map(q => q.supplier.name);
+
+    // Get RFQ title
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const rfq = userRFQs.find((r: any) => r.id === rfqId);
+    const rfqTitle = rfq?.title || 'Product';
+
+    const sampleRequest = db.createSampleRequest({
+      rfq_id: rfqId!,
+      rfq_title: rfqTitle,
+      buyer_id: user!.id,
+      buyer_name: user!.name,
+      buyer_company: user!.company,
+      supplier_ids: supplierIds,
+      supplier_names: supplierNames,
+      sample_quantity: sampleFormData.sample_quantity,
+      specifications: sampleFormData.specifications,
+      delivery_location: sampleFormData.delivery_location
+    });
+
+    setShowSampleModal(false);
+    setSelectedForSamples([]);
+    setSampleFormData({
+      sample_quantity: 1,
+      specifications: '',
+      delivery_location: ''
+    });
+
+    alert(`✅ Sample request submitted successfully!\n\n📋 Request Details:\n• ${selectedForSamples.length} supplier(s) selected\n• ${sampleFormData.sample_quantity} sample(s) requested\n• Delivery to: ${sampleFormData.delivery_location}\n\n⏳ Next Steps:\n1. Admin will review your sample request\n2. Once approved, suppliers will be notified\n3. You'll receive sample pricing within 2-3 days`);
   };
   const getBestPrice = () => {
     return Math.min(...quotations.map(q => q.price_per_unit));
@@ -195,6 +260,42 @@ const QuotationComparison = () => {
             </div>
           </div>
 
+          {/* Sample Request Actions */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">📦 Request Product Samples</h3>
+                <p className="text-blue-800">
+                  {selectedForSamples.length > 0 
+                    ? `${selectedForSamples.length} supplier(s) selected for sample request`
+                    : 'Select suppliers below to request product samples before placing your order'
+                  }
+                </p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setSelectedForSamples(quotations.map(q => q.id))}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={() => setSelectedForSamples([])}
+                  className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+                >
+                  Clear All
+                </button>
+                <button
+                  onClick={handleRequestSamples}
+                  disabled={selectedForSamples.length === 0}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+                >
+                  Request Samples ({selectedForSamples.length})
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Quotations Comparison Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -231,6 +332,14 @@ const QuotationComparison = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {quotations.map((quote) => (
                     <tr key={quote.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedForSamples.includes(quote.id)}
+                          onChange={() => handleSelectForSample(quote.id)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-start">
                           <div>
@@ -363,6 +472,113 @@ const QuotationComparison = () => {
           </div>
         </div>
       </div>
+
+      {/* Sample Request Modal */}
+      {showSampleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Request Product Samples</h3>
+              <button
+                onClick={() => setShowSampleModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Selected Suppliers */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-3">Selected Suppliers ({selectedForSamples.length})</h4>
+                <div className="space-y-2">
+                  {quotations.filter(q => selectedForSamples.includes(q.id)).map(quote => (
+                    <div key={quote.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div>
+                        <p className="font-medium text-blue-900">{quote.supplier.contact_person}</p>
+                        <p className="text-sm text-blue-700">{quote.supplier.location}</p>
+                      </div>
+                      <p className="text-sm font-medium text-blue-800">${quote.price_per_unit.toFixed(2)}/unit</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sample Request Form */}
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="sample_quantity" className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Samples (Max 2) *
+                  </label>
+                  <select
+                    id="sample_quantity"
+                    value={sampleFormData.sample_quantity}
+                    onChange={(e) => setSampleFormData(prev => ({ ...prev, sample_quantity: parseInt(e.target.value) }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={1}>1 sample</option>
+                    <option value={2}>2 samples</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="specifications" className="block text-sm font-medium text-gray-700 mb-2">
+                    Sample Specifications
+                  </label>
+                  <textarea
+                    id="specifications"
+                    rows={3}
+                    value={sampleFormData.specifications}
+                    onChange={(e) => setSampleFormData(prev => ({ ...prev, specifications: e.target.value }))}
+                    placeholder="Specify colors, sizes, or any particular requirements for the samples..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="delivery_location" className="block text-sm font-medium text-gray-700 mb-2">
+                    Delivery Location *
+                  </label>
+                  <textarea
+                    id="delivery_location"
+                    rows={2}
+                    value={sampleFormData.delivery_location}
+                    onChange={(e) => setSampleFormData(prev => ({ ...prev, delivery_location: e.target.value }))}
+                    placeholder="Complete address where samples should be delivered..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Important Note */}
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h5 className="font-semibold text-yellow-900 mb-2">📋 Important Notes</h5>
+                <ul className="text-sm text-yellow-800 space-y-1">
+                  <li>• Sample requests require admin approval before being sent to suppliers</li>
+                  <li>• Suppliers will provide sample pricing and delivery timelines</li>
+                  <li>• Sample costs are typically borne by the buyer</li>
+                  <li>• Samples help ensure product quality before placing bulk orders</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowSampleModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitSampleRequest}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Submit Sample Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Quotation Details Modal */}
       {showQuotationModal && selectedQuotation && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
