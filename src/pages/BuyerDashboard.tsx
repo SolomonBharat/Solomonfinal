@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign, Send } from 'lucide-react';
+import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RFQ {
@@ -27,10 +27,6 @@ const BuyerDashboard = () => {
   const [rfqs, setRfqs] = useState<RFQ[]>([]);
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showRfqModal, setShowRfqModal] = useState(false);
-  const [queries, setQueries] = useState<any[]>([]);
-  const [selectedQuery, setSelectedQuery] = useState<any>(null);
-  const [showQueryModal, setShowQueryModal] = useState(false);
-  const [buyerResponse, setBuyerResponse] = useState('');
 
   useEffect(() => {
     // Load user's RFQs from localStorage and demo RFQs

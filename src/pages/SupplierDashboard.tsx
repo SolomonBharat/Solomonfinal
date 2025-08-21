@@ -17,7 +17,7 @@ import {
   Building,
   MessageCircle,
   Package,
-  TrendingUp,
+  TrendingUp
   HelpCircle,
   Send
 } from 'lucide-react';
