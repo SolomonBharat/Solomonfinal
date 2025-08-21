@@ -19,7 +19,6 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -52,26 +51,48 @@ const RegisterPage = () => {
       return;
     }
 
-    const result = await register({
+    // Check if email already exists
+    const existingBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
+    const emailExists = existingBuyers.some((buyer: any) => buyer.email === formData.email);
+    
+    if (emailExists) {
+      setError('An account with this email already exists');
+      setLoading(false);
+      return;
+    }
+
+    // Create new buyer account
+    const newBuyer = {
+      id: `buyer-${Date.now()}`,
+      name: formData.name,
       email: formData.email,
       password: formData.password,
-      name: formData.name,
       company: formData.company,
       country: formData.country,
       phone: formData.phone,
       website: formData.website,
-      user_type: 'buyer'
-    });
+      user_type: 'buyer',
+      created_at: new Date().toISOString(),
+      profile_completed: true,
+      verification_status: 'unverified'
+    };
 
-    setLoading(false);
+    // Save to localStorage
+    existingBuyers.push(newBuyer);
+    localStorage.setItem('registered_buyers', JSON.stringify(existingBuyers));
 
-    if (result.success) {
-      alert('✅ Account created successfully! Please check your email for a verification link before signing in.');
+    // IMPORTANT: In a real application, email verification would happen here.
+    // This would involve sending an email with a unique link to the user's email address.
+    // For this simulated environment, we'll skip the actual email sending.
+
+    setTimeout(() => {
+      setLoading(false);
+      alert(`✅ Account created successfully!\n\n📧 Email: ${formData.email}\n🔑 Password: ${formData.password}\n\nYou can now login with these credentials.`);
       navigate('/login');
-    } else {
-      setError(result.error || 'Registration failed');
-    }
+    }, 1000);
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -210,7 +231,6 @@ const RegisterPage = () => {
               </label>
               <input
                 type="text"
-                type="text"
                 id="country"
                 name="country"
                 required
@@ -285,10 +305,15 @@ const RegisterPage = () => {
 
           {/* Demo Info */}
           <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-800">
+              <strong>Demo Accounts:</strong><br/>
+              • Buyer: buyer@example.com / buyer123<br/>
+              • Admin: admin@solomonbharat.com / admin123
+            </p>
             <div className="flex items-start mt-3 text-blue-700">
               <Info className="h-4 w-4 mr-2 flex-shrink-0 mt-1" />
               <p className="text-xs">
-                After registration, you'll receive a real verification email. Please check your inbox and verify your email before signing in.
+                For this demo, email verification is simulated. In a real application, a verification link would be sent to your email.
               </p>
             </div>
           </div>

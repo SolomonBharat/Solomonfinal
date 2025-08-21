@@ -105,10 +105,6 @@ const MyRFQs = () => {
       setEditMode(false);
       alert('RFQ updated successfully!');
     } catch (error) {
-      console.error('Error in handleSaveEdit:', error);
-      alert('Failed to update RFQ. Please try again.');
-    }
-  };
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
@@ -119,6 +115,23 @@ const MyRFQs = () => {
 
   const handleEditRfq = () => {
     setEditMode(true);
+  };
+
+  const handleSaveEdit = () => {
+    // Update RFQ in localStorage
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const updatedUserRFQs = userRFQs.map((rfq: any) => 
+      rfq.id === selectedRfq?.id ? { ...rfq, ...editFormData } : rfq
+    );
+    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    
+    // Update local state
+    setRfqs(prev => prev.map(rfq => 
+      rfq.id === selectedRfq?.id ? { ...rfq, ...editFormData } : rfq
+    ));
+    
+    setEditMode(false);
+    alert('RFQ updated successfully!');
   };
 
   const getStatusBadge = (status: string) => {
