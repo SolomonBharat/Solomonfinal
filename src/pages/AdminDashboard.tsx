@@ -513,7 +513,10 @@ const AdminDashboard = () => {
             </div>
           </Link>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <Link 
+            to="/admin/rfqs"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-orange-300 transition-colors"
+          >
             <div className="flex items-center space-x-3">
               <MessageCircle className="h-8 w-8 text-orange-500" />
               <div>
@@ -521,7 +524,7 @@ const AdminDashboard = () => {
                 <p className="text-sm text-gray-600">{pendingQuestions.length} supplier questions</p>
               </div>
             </div>
-          </div>
+          </Link>
 
           <Link 
             to="/admin/settings"
