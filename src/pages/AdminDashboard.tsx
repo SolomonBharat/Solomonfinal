@@ -201,6 +201,29 @@ const AdminDashboard = () => {
     }
     setShowRFQModal(true);
   };
+
+  const handleApproveQuery = (queryId: string) => {
+    const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+    const updatedQueries = queries.map((query: any) => 
+      query.id === queryId ? { ...query, status: 'sent_to_buyer', admin_response: queryResponse } : query
+    );
+    localStorage.setItem('supplier_queries', JSON.stringify(updatedQueries));
+    setQueries(updatedQueries);
+    setShowQueryModal(false);
+    setQueryResponse('');
+    alert('Query forwarded to buyer successfully!');
+  };
+
+  const handleRejectQuery = (queryId: string) => {
+    const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+    const updatedQueries = queries.map((query: any) => 
+      query.id === queryId ? { ...query, status: 'rejected_by_admin' } : query
+    );
+    localStorage.setItem('supplier_queries', JSON.stringify(updatedQueries));
+    setQueries(updatedQueries);
+    setShowQueryModal(false);
+    alert('Query rejected.');
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}

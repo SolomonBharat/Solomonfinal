@@ -58,6 +58,15 @@ const BuyerDashboard = () => {
     });
     
     setRfqs(userRFQs);
+    
+    // Load queries forwarded to this buyer
+    const supplierQueries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+    const buyerQueries = supplierQueries.filter((q: any) => {
+      // Find RFQ to check if it belongs to this buyer
+      const rfq = allRFQs.find((r: any) => r.id === q.rfq_id);
+      return rfq && rfq.buyer_id === user?.id && q.status === 'forwarded_to_buyer';
+    });
+    setQueries(buyerQueries);
   }, [user?.id]);
 
   const handleViewRfqDetails = (rfq: RFQ) => {
