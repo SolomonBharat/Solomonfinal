@@ -577,7 +577,7 @@ const AdminRFQs = () => {
                             onClick={() => handleAnswerQuestion(question.id, buyerAnswerForm[question.id] || '')}
                             className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
                           >
-                            Save Buyer's Answer
+                            Save Answer & Notify Supplier
                           </button>
                         </div>
                       )}
@@ -597,7 +597,7 @@ const AdminRFQs = () => {
                             className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center space-x-2"
                           >
                             <Send className="h-4 w-4" />
-                            <span>Share Answer with All Suppliers</span>
+                            <span>Share with All Suppliers & Notify</span>
                           </button>
                         </div>
                       )}

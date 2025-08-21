@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
+import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X, AlertCircle } from 'lucide-react';
 import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRODUCT_CATEGORIES } from '../constants/categories';
@@ -31,6 +31,8 @@ interface RFQ {
 const SupplierDashboard = () => {
   const { user, logout } = useAuth();
   const [rfqs, setRfqs] = useState<RFQ[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showRfqDetailsModal, setShowRfqDetailsModal] = useState(false);
@@ -55,6 +57,11 @@ const SupplierDashboard = () => {
       if (user.product_categories && user.product_categories.length > 0) {
         supplierCategories = user.product_categories;
       }
+      
+      // Load notifications for this supplier
+      const userNotifications = db.getNotifications(user.id, 'supplier');
+      setNotifications(userNotifications);
+      setUnreadCount(userNotifications.filter(n => n.unread).length);
     }
     
     // Load ONLY APPROVED RFQs from localStorage that match supplier's categories
@@ -259,7 +266,14 @@ const SupplierDashboard = () => {
               <span className="text-gray-600">Supplier Portal</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Bell className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+              <div className="relative">
+                <Bell className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-gray-400" />
                 <span className="text-sm text-gray-700">{user?.name || 'Supplier User'}</span>
@@ -329,6 +343,43 @@ const SupplierDashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Notifications Section */}
+        {notifications.filter(n => n.unread).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">🔔 New Notifications</h2>
+            <div className="space-y-3">
+              {notifications.filter(n => n.unread).map((notification) => (
+                <div key={notification.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-blue-900">{notification.title}</h4>
+                        <p className="text-blue-800 text-sm">{notification.message}</p>
+                        <p className="text-blue-600 text-xs mt-1">
+                          {new Date(notification.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        db.markNotificationAsRead(notification.id);
+                        setNotifications(prev => prev.map(n => 
+                          n.id === notification.id ? { ...n, unread: false } : n
+                        ));
+                        setUnreadCount(prev => prev - 1);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 text-sm"
+                    >
+                      Mark as Read
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Available RFQs - Card Layout */}
         <div className="mb-8">

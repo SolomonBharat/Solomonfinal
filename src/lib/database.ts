@@ -40,6 +40,45 @@ export class DatabaseService {
       q.id === questionId ? { ...q, ...updates } : q
     );
     localStorage.setItem('rfq_questions', JSON.stringify(updatedQuestions));
+    
+    // Create notification for supplier when answer is provided
+    if (updates.buyer_answer && updates.status === 'answered_by_buyer') {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        this.createNotification({
+          user_id: question.supplier_id,
+          user_type: 'supplier',
+          title: 'Question Answered',
+          message: `Your question about "${question.rfq_title || 'RFQ'}" has been answered by the buyer.`,
+          type: 'question_answered',
+          related_id: question.rfq_id,
+          unread: true
+        });
+      }
+    }
+    
+    // Create notification when answer is shared with all suppliers
+    if (updates.status === 'shared_with_suppliers') {
+      const question = questions.find(q => q.id === questionId);
+      if (question) {
+        // Get all suppliers who can see this RFQ (same category)
+        const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+        const rfq = userRFQs.find((r: any) => r.id === question.rfq_id);
+        
+        if (rfq) {
+          // For demo, notify the current supplier
+          this.createNotification({
+            user_id: 'supplier-1', // In real app, would notify all relevant suppliers
+            user_type: 'supplier',
+            title: 'New Q&A Available',
+            message: `New Q&A available for "${rfq.title}". Check RFQ details for updated information.`,
+            type: 'qa_shared',
+            related_id: question.rfq_id,
+            unread: true
+          });
+        }
+      }
+    }
   }
 
   static answerRFQQuestion(questionId: string, buyerAnswer: string): void {
@@ -109,6 +148,40 @@ export class DatabaseService {
   getRFQById(rfqId: string) {
     const rfqs = this.getRFQs();
     return rfqs.find((rfq: any) => rfq.id === rfqId);
+  }
+
+  // Notification system
+  createNotification(notification: {
+    user_id: string;
+    user_type: 'buyer' | 'supplier' | 'admin';
+    title: string;
+    message: string;
+    type: string;
+    related_id?: string;
+    unread: boolean;
+  }): void {
+    const newNotification = {
+      id: Date.now().toString(),
+      ...notification,
+      created_at: new Date().toISOString()
+    };
+
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    notifications.push(newNotification);
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }
+
+  getNotifications(userId: string, userType: string): any[] {
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    return notifications.filter((n: any) => n.user_id === userId && n.user_type === userType);
+  }
+
+  markNotificationAsRead(notificationId: string): void {
+    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+    const updatedNotifications = notifications.map((n: any) => 
+      n.id === notificationId ? { ...n, unread: false } : n
+    );
+    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
   }
 }
 
