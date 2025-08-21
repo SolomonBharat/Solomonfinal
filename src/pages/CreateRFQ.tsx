@@ -70,12 +70,6 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (formData.product_images.length === 0) {
-      alert('Please upload at least one product image.');
-      setLoading(false);
-      return;
-    }
-    
     if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
       alert('Please fill in all required fields');
       setLoading(false);
@@ -207,7 +201,7 @@ const CreateRFQ = () => {
                 {/* Product Images */}
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Product Images *
+                    Product Images
                   </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6">
                     <input
@@ -224,7 +218,7 @@ const CreateRFQ = () => {
                     >
                       <Upload className="h-8 w-8 text-gray-400 mb-2" />
                       <span className="text-sm text-gray-600">Click to upload product images</span>
-                      <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each (At least 1 required)</span>
+                      <span className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each</span>
                     </label>
                   </div>
                   
@@ -232,8 +226,8 @@ const CreateRFQ = () => {
                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                       {formData.product_images.map((file, index) => (
                         <div key={index} className="relative bg-gray-100 rounded-lg p-2">
-                          <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-center p-2">
-                            <span className="text-xs text-gray-600 text-center break-words">{file.name}</span>
+                          <div className="aspect-square bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-600 text-center">{file.name}</span>
                           </div>
                           <button
                             type="button"
@@ -457,7 +451,7 @@ const CreateRFQ = () => {
             <h4 className="font-semibold text-blue-900 mb-2">💡 Tips for Better Results</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• Be specific about quantities and quality requirements</li>
-              <li>• Upload clear product images (required) and detailed specifications</li>
+              <li>• Include reference images or detailed specifications if possible</li>
               <li>• Mention any compliance standards required in your target market</li>
               <li>• Our team will review and match you with the best suppliers within 24-48 hours</li>
             </ul>

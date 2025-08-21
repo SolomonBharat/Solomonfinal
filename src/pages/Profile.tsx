@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, User, Building, Globe, Phone, Mail, Save, Lock, Key } from 'lucide-react';
+import { ArrowLeft, User, Building, Globe, Phone, Mail, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
@@ -252,65 +252,6 @@ const Profile = () => {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Security Settings */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                  <Lock className="h-5 w-5 mr-2 text-blue-600" />
-                  Security Settings
-                </h3>
-              </div>
-              <div className="p-6 space-y-6">
-                {/* Change Password */}
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                    <Key className="h-4 w-4 mr-2 text-gray-600" />
-                    Change Password
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    To change your password, please contact support or use the "Forgot Password" link on the login page.
-                    In a real application, this would involve a secure password reset flow.
-                  </p>
-                  <button
-                    type="button"
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onClick={() => alert('Password change functionality is not implemented in this demo. Please contact support.')}
-                  >
-                    Request Password Change
-                  </button>
-                </div>
-
-                {/* Update Email */}
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-gray-600" />
-                    Update Email Address
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    To update your email address, a verification process is required to ensure security.
-                    In a real application, this would involve sending a confirmation email to your new address.
-                  </p>
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="email"
-                      placeholder="Enter new email address"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      onClick={() => alert('Email update functionality is not implemented in this demo. A verification email would be sent.')}
-                    >
-                      Update Email
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Note: Actual email verification and password change flows require backend support and are simulated in this demo.
-                  </p>
                 </div>
               </div>
             </div>
