@@ -121,6 +121,10 @@ function AppContent() {
         path="/supplier/orders" 
         element={user && userType === 'supplier' ? <SupplierOrders /> : <Navigate to="/supplier/login" />} 
       />
+      <Route 
+        path="/supplier/samples" 
+        element={user && userType === 'supplier' ? <SupplierSamples /> : <Navigate to="/supplier/login" />} 
+      />
 
       {/* Protected Admin Routes */}
       <Route 
@@ -134,6 +138,10 @@ function AppContent() {
       <Route 
         path="/admin/rfqs" 
         element={user && userType === 'admin' ? <AdminRFQs /> : <Navigate to="/login" replace />} 
+      />
+      <Route 
+        path="/admin/sample-requests" 
+        element={user && userType === 'admin' ? <AdminSampleRequests /> : <Navigate to="/login" replace />} 
       />
       <Route 
         path="/admin/analytics" 

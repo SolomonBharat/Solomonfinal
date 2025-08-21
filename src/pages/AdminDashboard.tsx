@@ -541,13 +541,14 @@ const AdminDashboard = () => {
         </div>
 
         {/* Alerts */}
-        {(pendingRFQs.length > 0 || pendingQuotations.length > 0 || pendingQuestions.length > 0) && (
+        {(pendingRFQs.length > 0 || pendingQuotations.length > 0 || pendingQuestions.length > 0 || pendingSampleRequests.length > 0) && (
           <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <h4 className="font-semibold text-yellow-800 mb-2">⚠️ Attention Required</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
               {pendingRFQs.length > 0 && <li>• {pendingRFQs.length} RFQs need approval</li>}
               {pendingQuotations.length > 0 && <li>• {pendingQuotations.length} quotations awaiting review</li>}
               {pendingQuestions.length > 0 && <li>• {pendingQuestions.length} supplier questions need buyer responses</li>}
+              {pendingSampleRequests.length > 0 && <li>• {pendingSampleRequests.length} sample requests need approval</li>}
             </ul>
           </div>
         )}
