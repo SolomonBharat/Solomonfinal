@@ -54,7 +54,7 @@ const AdminRFQs = () => {
       matched_suppliers: 0
     }));
     
-    setRfqs(convertedUserRFQs);
+    setRFQs(convertedUserRFQs);
     setLoading(false);
   }, []);
 
