@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRODUCT_CATEGORIES, CATEGORY_DESCRIPTIONS } from '../constants/categories';
 
@@ -20,12 +20,42 @@ const CreateRFQ = () => {
     shipping_terms: 'FOB',
     quality_standards: '',
     certifications_needed: '',
-    additional_requirements: ''
+    additional_requirements: '',
+    images: [] as string[]
   });
 
   const units = [
     'pieces', 'kg', 'tons', 'meters', 'liters', 'boxes', 'cartons', 'sets', 'pairs', 'dozens'
   ];
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newImages: string[] = [];
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            newImages.push(event.target.result as string);
+            if (newImages.length === files.length) {
+              setFormData(prev => ({
+                ...prev,
+                images: [...prev.images, ...newImages]
+              }));
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -326,6 +356,51 @@ const CreateRFQ = () => {
                   placeholder="Any other specific requirements, packaging details, special instructions..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Product Images (Optional)
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Upload reference images, specifications, or samples to help suppliers understand your requirements better
+                </p>
+                
+                          PNG, JPG, GIF up to 10MB each
+                        </p>
+                      </label>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                      💡 <strong>Helpful:</strong> Product images help suppliers understand your exact requirements and provide more accurate quotes
+                    </p>
+                  </div>
+
+                  {/* Image Preview */}
+                  {formData.images.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-3">Uploaded Images:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {formData.images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image}
+                              alt={`Product ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

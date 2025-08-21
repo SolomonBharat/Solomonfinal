@@ -36,7 +36,8 @@ const SupplierDashboard = () => {
     price_per_unit: '',
     moq: '',
     lead_time: '',
-    notes: ''
+    notes: '',
+    images: [] as string[]
   });
 
   useEffect(() => {
@@ -156,10 +157,40 @@ const SupplierDashboard = () => {
         validity_days: '',
         quality_guarantee: true,
         sample_available: true,
-        notes: ''
+        notes: '',
+        images: []
       });
       alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
     }
+  };
+
+  const handleQuoteImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newImages: string[] = [];
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            newImages.push(event.target.result as string);
+            if (newImages.length === files.length) {
+              setQuoteForm(prev => ({
+                ...prev,
+                images: [...prev.images, ...newImages]
+              }));
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeQuoteImage = (index: number) => {
+    setQuoteForm(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const getStatusBadge = (status: string) => {
@@ -321,6 +352,28 @@ const SupplierDashboard = () => {
                       {rfq.status}
                     </span>
                   </div>
+
+                  {/* Product Images */}
+                  {rfq.images && rfq.images.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">📸 Product Images:</p>
+                      <div className="flex space-x-2 overflow-x-auto">
+                        {rfq.images.slice(0, 3).map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Product ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                          />
+                        ))}
+                        {rfq.images.length > 3 && (
+                          <div className="w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs text-gray-600">+{rfq.images.length - 3}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Key Details */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
