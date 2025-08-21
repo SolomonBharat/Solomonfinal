@@ -45,7 +45,15 @@ const QuotationComparison = () => {
         email: q.supplier_email || 'supplier@example.com',
         phone: q.supplier_phone || '+91 XXXXXXXXXX',
         rating: 4.5,
-        verified: true
+        verified: true,
+        about_company: 'Global Textiles Pvt Ltd is a leading manufacturer and exporter of high-quality organic cotton textiles. With over 15 years of experience, we specialize in sustainable fashion and eco-friendly textile production.',
+        factory_photos: [
+          'https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg',
+          'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg',
+          'https://images.pexels.com/photos/3760264/pexels-photo-3760264.jpeg',
+          'https://images.pexels.com/photos/3760265/pexels-photo-3760265.jpeg'
+        ],
+        factory_video: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4'
       },
       price_per_unit: q.quoted_price,
       total_price: q.total_value,
@@ -327,6 +335,17 @@ const QuotationComparison = () => {
                       </p>
                     </div>
                   )}
+
+                  {/* View Supplier Details Button */}
+                  <div className="mt-4">
+                    <button
+                      onClick={() => handleViewQuotationDetails(quote)}
+                      className="w-full bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100 flex items-center justify-center space-x-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span>View Supplier Details</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -385,8 +404,71 @@ const QuotationComparison = () => {
                     <MapPin className="h-4 w-4 mr-1" />
                     {selectedQuotation.supplier.location}
                   </p>
+                  
+                  {/* About Company */}
+                  {selectedQuotation.supplier.about_company && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h6 className="font-semibold text-blue-900 mb-2">About Company</h6>
+                      <p className="text-sm text-blue-800 leading-relaxed">{selectedQuotation.supplier.about_company}</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Factory Media */}
+              {(selectedQuotation.supplier.factory_photos?.length > 0 || selectedQuotation.supplier.factory_video) && (
+                <div className="mb-8 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200 shadow-sm">
+                  <h4 className="text-xl font-bold text-green-900 mb-4 flex items-center">
+                    <Building className="h-5 w-5 mr-2" />
+                    🏭 Factory & Production Facility
+                  </h4>
+                  
+                  {/* Factory Photos */}
+                  {selectedQuotation.supplier.factory_photos?.length > 0 && (
+                    <div className="mb-6">
+                      <h5 className="text-lg font-semibold text-green-900 mb-3">📸 Factory Photos</h5>
+                      <div className="bg-white p-4 rounded-lg border-2 border-green-300 shadow-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {selectedQuotation.supplier.factory_photos.map((photo, index) => (
+                            <div key={index} className="group relative">
+                              <img
+                                src={photo}
+                                alt={`Factory view ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg border-2 border-green-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => window.open(photo, '_blank')}
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all flex items-center justify-center">
+                                <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-sm text-green-700 mt-3 font-medium">
+                          💡 Click on any photo to view full size. These show the supplier's actual manufacturing facility.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Factory Video */}
+                  {selectedQuotation.supplier.factory_video && (
+                    <div>
+                      <h5 className="text-lg font-semibold text-green-900 mb-3">🎥 Factory Video Tour</h5>
+                      <div className="bg-white p-4 rounded-lg border-2 border-green-300 shadow-sm">
+                        <video
+                          src={selectedQuotation.supplier.factory_video}
+                          className="w-full h-64 object-cover rounded-lg border-2 border-green-200 shadow-sm"
+                          controls
+                          poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f0f9ff'/%3E%3Ctext x='50' y='50' text-anchor='middle' dy='.3em' font-family='Arial' font-size='12' fill='%23374151'%3EFactory Video%3C/text%3E%3C/svg%3E"
+                        />
+                        <p className="text-sm text-green-700 mt-3 font-medium">
+                          🎬 Factory video tour showing production capabilities and quality control processes
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Pricing Breakdown */}
               <div className="mb-8 bg-green-50 rounded-lg p-6 border border-green-200">

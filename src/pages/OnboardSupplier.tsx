@@ -42,7 +42,9 @@ const OnboardSupplier = () => {
     // Additional
     about_company: '',
     bank_details: '',
-    references: ''
+    references: '',
+    factory_photos: [] as string[],
+    factory_video: ''
   });
 
   const businessTypes = [
@@ -68,6 +70,54 @@ const OnboardSupplier = () => {
         ? prev.certifications.filter(c => c !== certification)
         : [...prev.certifications, certification]
     }));
+  };
+
+  const handleFactoryPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && formData.factory_photos.length < 4) {
+      const remainingSlots = 4 - formData.factory_photos.length;
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      
+      const newPhotos: string[] = [];
+      filesToProcess.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            newPhotos.push(event.target.result as string);
+            if (newPhotos.length === filesToProcess.length) {
+              setFormData(prev => ({
+                ...prev,
+                factory_photos: [...prev.factory_photos, ...newPhotos]
+              }));
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeFactoryPhoto = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      factory_photos: prev.factory_photos.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleFactoryVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setFormData(prev => ({
+            ...prev,
+            factory_video: event.target.result as string
+          }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -536,7 +586,10 @@ const OnboardSupplier = () => {
             {/* About Company */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Company Description</h3>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Building className="h-5 w-5 mr-2 text-blue-600" />
+                  Company Description & Factory Media
+                </h3>
               </div>
               <div className="p-6">
                 <div>
@@ -554,6 +607,121 @@ const OnboardSupplier = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+
+                {/* Factory Photos Upload */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factory Photos (Max 4 photos) *
+                  </label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Upload photos of your manufacturing facility, production lines, quality control areas, etc.
+                  </p>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <input
+                      type="file"
+                      id="factory_photos"
+                      multiple
+                      accept="image/*"
+                      onChange={handleFactoryPhotoUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="factory_photos" className="cursor-pointer">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Click to upload factory photos
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          PNG, JPG up to 10MB each (Max 4 photos)
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    💡 <strong>Helpful:</strong> Factory photos build buyer confidence and showcase your production capabilities
+                  </p>
+
+                  {/* Factory Photos Preview */}
+                  {formData.factory_photos && formData.factory_photos.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Factory Photos:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {formData.factory_photos.map((photo, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={photo}
+                              alt={`Factory ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeFactoryPhoto(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Factory Video Upload */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Factory Video (Max 1 video) *
+                  </label>
+                  <p className="text-xs text-gray-500 mb-3">
+                    Upload a video tour of your factory, production process, or quality control procedures
+                  </p>
+                  
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                    <input
+                      type="file"
+                      id="factory_video"
+                      accept="video/*"
+                      onChange={handleFactoryVideoUpload}
+                      className="hidden"
+                    />
+                    <label htmlFor="factory_video" className="cursor-pointer">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <span className="text-sm font-medium text-gray-700">
+                          Click to upload factory video
+                        </span>
+                        <p className="text-xs text-gray-500">
+                          MP4, MOV, AVI up to 50MB
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    💡 <strong>Helpful:</strong> Factory videos significantly increase buyer trust and order conversion rates
+                  </p>
+
+                  {/* Factory Video Preview */}
+                  {formData.factory_video && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Factory Video:</p>
+                      <div className="relative group">
+                        <video
+                          src={formData.factory_video}
+                          className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                          controls
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, factory_video: '' }))}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -567,7 +735,7 @@ const OnboardSupplier = () => {
               </Link>
               <button
                 type="submit"
-                disabled={loading || !formData.product_category}
+                disabled={loading || !formData.product_category || !formData.about_company || formData.factory_photos.length === 0 || !formData.factory_video}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
@@ -583,11 +751,11 @@ const OnboardSupplier = () => {
               <div>
                 <h5 className="font-semibold mb-2">🏢 Company Documents:</h5>
                 <ul className="space-y-1">
-                  <li>• GST Registration Certificate</li>
-                  <li>• IEC (Import Export Code)</li>
-                  <li>• PAN Card</li>
-                  <li>• Company Registration Certificate</li>
-                  <li>• Bank Account Details</li>
+                  <li>• Factory photos (Max 4)</li>
+                  <li>• Factory video tour (Max 1)</li>
+                  <li>• Production line images</li>
+                  <li>• Quality control areas</li>
+                  <li>• Warehouse facilities</li>
                 </ul>
               </div>
               <div>
@@ -602,10 +770,10 @@ const OnboardSupplier = () => {
               </div>
             </div>
             <div className="mt-4 p-4 bg-white rounded-lg border border-blue-300">
-              <h5 className="font-semibold text-blue-900 mb-2">📦 Category Selection:</h5>
+              <h5 className="font-semibold text-blue-900 mb-2">📋 Required Information:</h5>
               <p className="text-sm text-blue-800">
-                Suppliers must select ONE primary category that best represents their core expertise. 
-                This ensures accurate matching with relevant buyer RFQs and maintains quality standards.
+                <strong>Factory Media:</strong> Photos and video are mandatory to build buyer trust and showcase production capabilities. 
+                <strong>Company Description:</strong> Detailed about section helps buyers understand your expertise and specializations.
               </p>
             </div>
           </div>
