@@ -185,7 +185,6 @@ const AdminDashboard = () => {
 
   const pendingRFQs = rfqs.filter(rfq => rfq.status === 'pending_approval');
   const pendingQuotations = quotations.filter(q => q.status === 'pending_review');
-  const pendingQueries = queries.filter(q => q.status === 'pending_admin_review');
 
   const handleViewRFQDetails = (rfq: RFQ) => {
     // Load full RFQ details from localStorage
@@ -306,7 +305,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid lg:grid-cols-3 gap-8 mb-8">
           {/* Pending RFQs */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
