@@ -130,7 +130,7 @@ const AdminDashboard = () => {
       rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
     );
     localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
-    alert('RFQ rejected.');
+    alert('❌ RFQ rejected.\n\n📋 The buyer will be notified and can resubmit with corrections if needed.');
   };
 
   const handleApproveQuotation = (quotationId: string) => {

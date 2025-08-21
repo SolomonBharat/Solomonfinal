@@ -238,6 +238,22 @@ const BuyerDashboard = () => {
                       {new Date(rfq.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-sm">
+                      {rfq.status === 'pending' && (
+                        <div className="text-yellow-600 font-medium">
+                          ⏳ Pending Admin Approval
+                          <p className="text-xs text-gray-500">
+                            Will be visible to suppliers once approved
+                          </p>
+                        </div>
+                      )}
+                      {rfq.status === 'pending_approval' && (
+                        <div className="text-yellow-600 font-medium">
+                          ⏳ Pending Admin Approval
+                          <p className="text-xs text-gray-500">
+                            Will be visible to suppliers once approved
+                          </p>
+                        </div>
+                      )}
                       {rfq.status === 'matched' && (
                         <Link 
                           to={`/rfq/${rfq.id}/suppliers`}
