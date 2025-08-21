@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock, CheckCircle, X, Eye, Plus, Edit } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import QASystem from '../components/QASystem';
 
 interface RFQ {
@@ -35,76 +34,35 @@ const MyRFQs = () => {
   const [editFormData, setEditFormData] = useState<any>(null);
 
   useEffect(() => {
-    loadUserRFQs();
+    // Load user's RFQs from localStorage
+    const allRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    
+    // Filter RFQs to show only the current user's RFQs
+    const userRFQs = allRFQs.filter((rfq: any) => 
+      rfq.buyer_id === user?.id || rfq.buyer_email === user?.email
+    ).map((rfq: any) => {
+      // Check if this RFQ has quotations
+      const rfqQuotations = supplierQuotations.filter((q: any) => q.rfq_id === rfq.id && q.status === 'sent_to_buyer');
+      
+      // Ensure all numeric fields are properly converted
+      const convertedRFQ = {
+        ...rfq,
+        quantity: parseInt(rfq.quantity) || 0,
+        target_price: parseFloat(rfq.target_price) || 0,
+        quotations_count: rfqQuotations.length
+      };
+      
+      // Update status based on quotations
+      if (rfqQuotations.length > 0) {
+        convertedRFQ.status = 'quoted';
+      }
+      
+      return convertedRFQ;
+    });
+    
+    setRfqs(userRFQs);
   }, [user?.id]);
-
-  const loadUserRFQs = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { data: rfqsData, error } = await supabase
-        .from('rfqs')
-        .select('*')
-        .eq('buyer_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading RFQs:', error);
-        return;
-      }
-
-      // Get quotation counts for each RFQ
-      const rfqsWithQuotations = await Promise.all(
-        (rfqsData || []).map(async (rfq) => {
-          const { count } = await supabase
-            .from('supplier_quotations')
-            .select('*', { count: 'exact', head: true })
-            .eq('rfq_id', rfq.id)
-            .eq('status', 'approved_for_buyer');
-
-          return {
-            ...rfq,
-            quotations_count: count || 0,
-            status: count && count > 0 ? 'quoted' : rfq.status
-          };
-        })
-      );
-
-      setRfqs(rfqsWithQuotations);
-    } catch (error) {
-      console.error('Error in loadUserRFQs:', error);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!selectedRfq?.id) return;
-
-    try {
-      const { error } = await supabase
-        .from('rfqs')
-        .update({
-          title: editFormData.title,
-          category: editFormData.category,
-          description: editFormData.description,
-          quantity: parseInt(editFormData.quantity),
-          unit: editFormData.unit,
-          target_price: parseFloat(editFormData.target_price),
-          delivery_timeline: editFormData.delivery_timeline,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedRfq.id);
-
-      if (error) {
-        console.error('Error updating RFQ:', error);
-        alert('Failed to update RFQ. Please try again.');
-        return;
-      }
-
-      // Reload RFQs
-      await loadUserRFQs();
-      setEditMode(false);
-      alert('RFQ updated successfully!');
-    } catch (error) {
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
@@ -594,23 +552,6 @@ const MyRFQs = () => {
                       <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Description</h4>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-700">{selectedRfq.description}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Product Images */}
-                  {selectedRfq.product_images && selectedRfq.product_images.length > 0 && (
-                    <div className="mb-8">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Images</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {selectedRfq.product_images.map((imageName, index) => (
-                          <div key={index} className="bg-gray-100 rounded-lg p-3 text-center">
-                            <div className="aspect-square bg-gray-200 rounded flex items-center justify-center mb-2">
-                              <span className="text-xs text-gray-600">📷</span>
-                            </div>
-                            <span className="text-xs text-gray-700 break-words">{imageName}</span>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}

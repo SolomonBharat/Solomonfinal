@@ -4,7 +4,6 @@ import { Globe, Eye, EyeOff, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
-  const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,6 +18,7 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
@@ -29,8 +29,8 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.company || !formData.country || !formData.phone) {
@@ -53,9 +53,7 @@ const RegisterPage = () => {
 
     // Check if email already exists
     const existingBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
-    const emailExists = existingBuyers.some((buyer: any) => buyer.email === formData.email);
-    
-    if (emailExists) {
+    if (existingBuyers.some((buyer: any) => buyer.email === formData.email)) {
       setError('An account with this email already exists');
       setLoading(false);
       return;
@@ -91,8 +89,6 @@ const RegisterPage = () => {
       navigate('/login');
     }, 1000);
   };
-
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -230,6 +226,7 @@ const RegisterPage = () => {
                 Country *
               </label>
               <input
+                type="text"
                 type="text"
                 id="country"
                 name="country"
