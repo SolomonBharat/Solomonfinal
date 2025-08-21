@@ -73,6 +73,22 @@ const BuyerDashboard = () => {
     setSelectedRfq(rfq);
     setShowRfqModal(true);
   };
+
+  const handleRespondToQuery = () => {
+    if (!buyerResponse.trim() || !selectedQuery) return;
+    
+    const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+    const updatedQueries = queries.map((query: any) => 
+      query.id === selectedQuery.id 
+        ? { ...query, status: 'buyer_responded', buyer_response: buyerResponse }
+        : query
+    );
+    localStorage.setItem('supplier_queries', JSON.stringify(updatedQueries));
+    setQueries(updatedQueries);
+    setShowQueryModal(false);
+    setBuyerResponse('');
+    alert('✅ Response sent!\n\n📋 Your clarification has been sent to admin.\n⏰ Admin will review and forward to the supplier.\n📧 Supplier will be notified of your response.');
+  };
   const getStatusBadge = (status: string) => {
     const badges = {
       pending: 'bg-yellow-100 text-yellow-800',

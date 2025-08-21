@@ -986,6 +986,105 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Query Review Modal */}
+      {showQueryModal && selectedQuery && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Review Supplier Query</h3>
+                <p className="text-sm text-gray-600">{selectedQuery.rfq_title}</p>
+              </div>
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Supplier Info */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">Supplier Information</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Company:</span>
+                    <p className="font-medium text-blue-900">{selectedQuery.supplier_company}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Contact:</span>
+                    <p className="font-medium text-blue-900">{selectedQuery.supplier_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Email:</span>
+                    <p className="font-medium text-blue-900">{selectedQuery.supplier_email}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Phone:</span>
+                    <p className="font-medium text-blue-900">{selectedQuery.supplier_phone}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Query Details */}
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-2">Supplier's Question</h4>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <p className="text-gray-800 leading-relaxed">{selectedQuery.query_text}</p>
+                </div>
+              </div>
+
+              {/* Admin Response */}
+              <div className="mb-6">
+                <label htmlFor="admin_response" className="block text-sm font-medium text-gray-700 mb-2">
+                  Forward to Buyer with Note (Optional)
+                </label>
+                <textarea
+                  id="admin_response"
+                  rows={3}
+                  value={queryResponse}
+                  onChange={(e) => setQueryResponse(e.target.value)}
+                  placeholder="Add any context or notes for the buyer..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-900 mb-2">Review Options</h4>
+                <ul className="text-sm text-yellow-800 space-y-1">
+                  <li>• <strong>Forward to Buyer:</strong> Send query to buyer for clarification</li>
+                  <li>• <strong>Reject:</strong> Query is not relevant or inappropriate</li>
+                  <li>• Buyer will respond with additional details or clarifications</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleRejectQuery(selectedQuery.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Reject Query
+              </button>
+              <button
+                onClick={() => handleApproveQuery(selectedQuery.id)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Send className="h-4 w-4" />
+                <span>Forward to Buyer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
