@@ -386,7 +386,7 @@ export class DatabaseService {
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
             matched_suppliers: [],
             quotations_count: 0,
-            status: 'pending_approval'
+            status: 'pending_approval' as const
           }])
           .select()
           .single();
