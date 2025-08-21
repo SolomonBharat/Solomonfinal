@@ -62,6 +62,20 @@ interface Quotation {
   total_value: number;
 }
 
+export interface RFQQuestion {
+  id: string;
+  rfq_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  supplier_company: string;
+  question: string;
+  buyer_answer?: string;
+  status: 'pending_admin_review' | 'answered_by_buyer' | 'shared_with_suppliers';
+  created_at: string;
+  answered_at?: string;
+  shared_at?: string;
+}
+
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
@@ -106,20 +120,6 @@ const AdminDashboard = () => {
     pending_rfqs: 12,
     active_suppliers: 847,
     monthly_gmv: 2450000,
-export interface RFQQuestion {
-  id: string;
-  rfq_id: string;
-  supplier_id: string;
-  supplier_name: string;
-  supplier_company: string;
-  question: string;
-  buyer_answer?: string;
-  status: 'pending_admin_review' | 'answered_by_buyer' | 'shared_with_suppliers';
-  created_at: string;
-  answered_at?: string;
-  shared_at?: string;
-}
-
     quotations_pending: 23,
     monthly_growth: 18.5
   });
