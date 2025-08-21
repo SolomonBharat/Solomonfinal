@@ -23,7 +23,8 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/database';
+
+const demoRFQs: RFQ[] = [];
 
 interface RFQ {
   id: string;
@@ -70,46 +71,32 @@ const AdminDashboard = () => {
   const [showRFQModal, setShowRFQModal] = useState(false);
 
   useEffect(() => {
-    // Load data from Supabase
-    const loadData = async () => {
-      try {
-        // Load RFQs with buyer information
-        const allRFQs = await db.getRFQs();
-        const rfqsWithBuyerInfo = await Promise.all(
-          allRFQs.map(async (rfq) => {
-            const buyer = await db.getUserById(rfq.buyer_id);
-            return {
-              id: rfq.id,
-              title: rfq.title,
-              buyer: {
-                name: buyer?.name || 'Unknown',
-                company: buyer?.company || 'Unknown Company',
-                country: buyer?.country || 'Unknown'
-              },
-              category: rfq.category,
-              quantity: rfq.quantity,
-              unit: rfq.unit,
-              budget: rfq.target_price * rfq.quantity,
-              status: rfq.status,
-              created_at: rfq.created_at,
-              urgency: 'medium',
-              matched_suppliers: rfq.matched_suppliers?.length || 0,
-              fullDetails: rfq
-            };
-          })
-        );
-        
-        setRFQs(rfqsWithBuyerInfo);
-        
-        // Load Quotations
-        const allQuotations = await db.getQuotations();
-        setQuotations(allQuotations);
-      } catch (error) {
-        console.error('Error loading admin data:', error);
-      }
-    };
-
-    loadData();
+    // Load RFQs
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    
+    const convertedUserRFQs = userRFQs.map((rfq: any) => ({
+      id: rfq.id,
+      title: rfq.title,
+      buyer: {
+        name: rfq.buyer_name || 'User',
+        company: rfq.buyer_company || 'Company',
+        country: rfq.buyer_country || 'Country'
+      },
+      category: rfq.category,
+      quantity: parseInt(rfq.quantity) || 0,
+      unit: rfq.unit,
+      budget: (parseFloat(rfq.target_price) || 0) * (parseInt(rfq.quantity) || 0),
+      status: rfq.status || 'pending_approval',
+      created_at: rfq.created_at,
+      urgency: 'medium',
+      matched_suppliers: 0
+    }));
+    
+    setRFQs([...demoRFQs, ...convertedUserRFQs]);
+    // Load Quotations
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    
+    setQuotations(supplierQuotations);
   }, []);
 
   const [stats] = useState({
@@ -122,55 +109,55 @@ const AdminDashboard = () => {
   });
 
   const handleApproveRFQ = (rfqId: string) => {
-    const updateRFQStatus = async () => {
-      const updatedRFQ = await db.updateRFQ(rfqId, { status: 'approved' });
-      if (updatedRFQ) {
-        setRFQs(prev => prev.map(rfq => 
-          rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
-        ));
-        alert('RFQ approved successfully!');
-      }
-    };
-    updateRFQStatus();
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === rfqId ? { ...rfq, status: 'approved' as const } : rfq
+    ));
+    
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const updatedUserRFQs = userRFQs.map((rfq: any) => 
+      rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
+    );
+    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    alert('RFQ approved successfully!');
   };
 
   const handleRejectRFQ = (rfqId: string) => {
-    const updateRFQStatus = async () => {
-      const updatedRFQ = await db.updateRFQ(rfqId, { status: 'rejected' });
-      if (updatedRFQ) {
-        setRFQs(prev => prev.map(rfq => 
-          rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
-        ));
-        alert('RFQ rejected.');
-      }
-    };
-    updateRFQStatus();
+    setRFQs(prev => prev.map(rfq => 
+      rfq.id === rfqId ? { ...rfq, status: 'rejected' as const } : rfq
+    ));
+    
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const updatedUserRFQs = userRFQs.map((rfq: any) => 
+      rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
+    );
+    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    alert('RFQ rejected.');
   };
 
   const handleApproveQuotation = (quotationId: string) => {
-    const updateQuotationStatus = async () => {
-      const updatedQuotation = await db.updateQuotation(quotationId, { status: 'sent_to_buyer' });
-      if (updatedQuotation) {
-        setQuotations(prev => prev.map(quote => 
-          quote.id === quotationId ? { ...quote, status: 'sent_to_buyer' } : quote
-        ));
-        alert('Quotation approved and sent to buyer!');
-      }
-    };
-    updateQuotationStatus();
+    setQuotations(prev => prev.map(quote => 
+      quote.id === quotationId ? { ...quote, status: 'sent_to_buyer' as const } : quote
+    ));
+    
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    const updatedQuotations = supplierQuotations.map((quote: any) => 
+      quote.id === quotationId ? { ...quote, status: 'sent_to_buyer' } : quote
+    );
+    localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
+    alert('Quotation approved and sent to buyer!');
   };
 
   const handleRejectQuotation = (quotationId: string) => {
-    const updateQuotationStatus = async () => {
-      const updatedQuotation = await db.updateQuotation(quotationId, { status: 'rejected' });
-      if (updatedQuotation) {
-        setQuotations(prev => prev.map(quote => 
-          quote.id === quotationId ? { ...quote, status: 'rejected' } : quote
-        ));
-        alert('Quotation rejected.');
-      }
-    };
-    updateQuotationStatus();
+    setQuotations(prev => prev.map(quote => 
+      quote.id === quotationId ? { ...quote, status: 'rejected' as const } : quote
+    ));
+    
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    const updatedQuotations = supplierQuotations.map((quote: any) => 
+      quote.id === quotationId ? { ...quote, status: 'rejected' } : quote
+    );
+    localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
+    alert('Quotation rejected.');
   };
 
   const getStatusBadge = (status: string) => {
@@ -200,7 +187,18 @@ const AdminDashboard = () => {
   const pendingQuotations = quotations.filter(q => q.status === 'pending_review');
 
   const handleViewRFQDetails = (rfq: RFQ) => {
-    setSelectedRFQ(rfq);
+    // Load full RFQ details from localStorage
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const fullRFQ = userRFQs.find((r: any) => r.id === rfq.id);
+    
+    if (fullRFQ) {
+      setSelectedRFQ({
+        ...rfq,
+        fullDetails: fullRFQ
+      });
+    } else {
+      setSelectedRFQ(rfq);
+    }
     setShowRFQModal(true);
   };
   return (

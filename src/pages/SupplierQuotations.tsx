@@ -2,7 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock, CheckCircle, Eye, Edit, DollarSign, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, Quotation } from '../lib/database';
+
+interface Quotation {
+  id: string;
+  rfq_id: string;
+  rfq_title: string;
+  buyer_company: string;
+  buyer_country: string;
+  quoted_price: number;
+  moq: number;
+  lead_time: string;
+  status: 'pending_review' | 'approved' | 'rejected' | 'sent_to_buyer';
+  submitted_at: string;
+  notes: string;
+  total_value: number;
+  payment_terms?: string;
+  shipping_terms?: string;
+  validity_days?: number;
+  quality_guarantee?: boolean;
+  sample_available?: boolean;
+}
 
 const SupplierQuotations = () => {
   const { user } = useAuth();
@@ -11,15 +30,9 @@ const SupplierQuotations = () => {
   const [showQuotationModal, setShowQuotationModal] = useState(false);
 
   useEffect(() => {
-    // Load quotations from Supabase
-    const loadQuotations = async () => {
-      if (user?.id) {
-        const supplierQuotations = await db.getQuotationsBySupplier(user.id);
-        setQuotations(supplierQuotations);
-      }
-    };
-
-    loadQuotations();
+    // Load quotations from localStorage
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    setQuotations(supplierQuotations);
   }, []);
 
   const [filterStatus, setFilterStatus] = useState<string>('all');

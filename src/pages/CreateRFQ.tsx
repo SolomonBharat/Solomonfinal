@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/database';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -53,37 +52,32 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    try {
-      // Create new RFQ with Supabase
-      const newRFQ = await db.createRFQ({
-        buyer_id: user?.id,
-        title: formData.title,
-        category: formData.category,
-        description: formData.description,
-        quantity: parseInt(formData.quantity),
-        target_price: parseFloat(formData.target_price),
-        max_price: formData.max_price ? parseFloat(formData.max_price) : undefined,
-        delivery_timeline: formData.delivery_timeline,
-        shipping_terms: formData.shipping_terms,
-        quality_standards: formData.quality_standards,
-        certifications_needed: formData.certifications_needed,
-        additional_requirements: formData.additional_requirements,
-        unit: formData.unit
-      });
-
-      if (newRFQ) {
-        setLoading(false);
-        alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
-        navigate('/dashboard');
-      } else {
-        setLoading(false);
-        alert('Failed to submit RFQ. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error submitting RFQ:', error);
+    // Create new RFQ with pending status
+    const newRFQ = {
+      id: `rfq-${Date.now()}`,
+      ...formData,
+      quantity: parseInt(formData.quantity),
+      target_price: parseFloat(formData.target_price),
+      max_price: formData.max_price ? parseFloat(formData.max_price) : null,
+      status: 'pending_approval',
+      created_at: new Date().toISOString().split('T')[0],
+      quotations_count: 0,
+      buyer_id: user?.id,
+      buyer_name: user?.name,
+      buyer_company: user?.company,
+      buyer_country: user?.country
+    };
+    
+    // Add to localStorage for demo (in production, this would be Supabase)
+    const existingRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    existingRFQs.push(newRFQ);
+    localStorage.setItem('user_rfqs', JSON.stringify(existingRFQs));
+    
+    setTimeout(() => {
       setLoading(false);
-      alert('Failed to submit RFQ. Please try again.');
-    }
+      alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
+      navigate('/dashboard');
+    }, 1000);
   };
 
   return (

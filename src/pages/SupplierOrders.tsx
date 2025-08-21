@@ -3,22 +3,48 @@ import DashboardLayout from '../components/DashboardLayout';
 import DataTable from '../components/DataTable';
 import { Package, Truck, CheckCircle, Clock, Eye, Upload, MapPin, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, Order } from '../lib/database';
+
+interface Order {
+  id: string;
+  rfq_title: string;
+  buyer_company: string;
+  buyer_contact: string;
+  buyer_country: string;
+  quantity: number;
+  unit_price: number;
+  total_value: number;
+  status: 'confirmed' | 'in_production' | 'shipped' | 'delivered' | 'completed';
+  order_date: string;
+  expected_delivery: string;
+  tracking_number?: string;
+  payment_received: number;
+  payment_pending: number;
+}
 
 const SupplierOrders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Load supplier's orders from Supabase
-    const loadOrders = async () => {
-      if (user?.id) {
-        const supplierOrders = await db.getOrdersBySupplier(user.id);
-        setOrders(supplierOrders);
+    // Load supplier's orders
+    const mockOrders: Order[] = [
+      {
+        id: 'ORD-001',
+        rfq_title: 'Organic Cotton T-Shirts',
+        buyer_company: 'Global Trade Corp',
+        buyer_contact: 'John Smith',
+        buyer_country: 'United States',
+        quantity: 5000,
+        unit_price: 8.25,
+        total_value: 41250,
+        status: 'in_production',
+        order_date: '2025-01-15',
+        expected_delivery: '2025-02-15',
+        payment_received: 12375, // 30% advance
+        payment_pending: 28875
       }
-    };
-
-    loadOrders();
+    ];
+    setOrders(mockOrders);
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -33,15 +59,9 @@ const SupplierOrders = () => {
   };
 
   const updateOrderStatus = (orderId: string, newStatus: string) => {
-    const updateStatus = async () => {
-      const updatedOrder = await db.updateOrder(orderId, { status: newStatus as any });
-      if (updatedOrder) {
-        setOrders(prev => prev.map(order => 
-          order.id === orderId ? { ...order, status: newStatus as any } : order
-        ));
-      }
-    };
-    updateStatus();
+    setOrders(prev => prev.map(order => 
+      order.id === orderId ? { ...order, status: newStatus as any } : order
+    ));
   };
 
   const columns = [

@@ -35,60 +35,48 @@ const AdminAnalytics = () => {
   });
 
   useEffect(() => {
-    // Load analytics from Supabase
-    const loadAnalytics = async () => {
-      try {
-        const data = await db.getAnalytics();
-        
-        // Generate monthly stats for the last 6 months
-        const monthlyStats = [];
-        const allRFQs = await db.getRFQs();
-        const allOrders = await db.getOrders();
-        
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date();
-          date.setMonth(date.getMonth() - i);
-          
-          const monthRFQs = allRFQs.filter(rfq => {
-            const rfqDate = new Date(rfq.created_at);
-            return rfqDate.getMonth() === date.getMonth() && 
-                   rfqDate.getFullYear() === date.getFullYear();
-          });
-          
-          const monthOrders = allOrders.filter(order => {
-            const orderDate = new Date(order.created_at);
-            return orderDate.getMonth() === date.getMonth() && 
-                   orderDate.getFullYear() === date.getFullYear();
-          });
-          
-          monthlyStats.push({
-            month: date.toLocaleDateString('en-US', { month: 'short' }),
-            rfqs: monthRFQs.length,
-            orders: monthOrders.length,
-            gmv: monthOrders.reduce((sum, order) => sum + order.order_value, 0)
-          });
-        }
+    const data = db.getAnalytics();
+    
+    // Generate monthly stats for the last 6 months
+    const monthlyStats = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(date.getMonth() - i);
+      
+      const monthRFQs = db.getRFQs().filter(rfq => {
+        const rfqDate = new Date(rfq.created_at);
+        return rfqDate.getMonth() === date.getMonth() && 
+               rfqDate.getFullYear() === date.getFullYear();
+      });
+      
+      const monthOrders = db.getOrders().filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate.getMonth() === date.getMonth() && 
+               orderDate.getFullYear() === date.getFullYear();
+      });
+      
+      monthlyStats.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        rfqs: monthRFQs.length,
+        orders: monthOrders.length,
+        gmv: monthOrders.reduce((sum, order) => sum + order.order_value, 0)
+      });
+    }
 
-        // Recent activity
-        const recentActivity = [
-          { type: 'RFQ', action: 'New RFQ created', user: 'Global Trade Corp', time: '2 min ago' },
-          { type: 'Quote', action: 'Quote submitted', user: 'Textile Supplier Ltd', time: '5 min ago' },
-          { type: 'Order', action: 'Order completed', user: 'Health Foods Inc', time: '1 hour ago' },
-          { type: 'User', action: 'New supplier registered', user: 'Spice Exports Pvt', time: '2 hours ago' },
-          { type: 'Quote', action: 'Quote accepted', user: 'Fashion Forward', time: '3 hours ago' }
-        ];
+    // Recent activity
+    const recentActivity = [
+      { type: 'RFQ', action: 'New RFQ created', user: 'Global Trade Corp', time: '2 min ago' },
+      { type: 'Quote', action: 'Quote submitted', user: 'Textile Supplier Ltd', time: '5 min ago' },
+      { type: 'Order', action: 'Order completed', user: 'Health Foods Inc', time: '1 hour ago' },
+      { type: 'User', action: 'New supplier registered', user: 'Spice Exports Pvt', time: '2 hours ago' },
+      { type: 'Quote', action: 'Quote accepted', user: 'Fashion Forward', time: '3 hours ago' }
+    ];
 
-        setAnalytics({
-          ...data,
-          monthlyStats,
-          recentActivity
-        });
-      } catch (error) {
-        console.error('Error loading analytics:', error);
-      }
-    };
-
-    loadAnalytics();
+    setAnalytics({
+      ...data,
+      monthlyStats,
+      recentActivity
+    });
   }, []);
 
   const tableColumns = [

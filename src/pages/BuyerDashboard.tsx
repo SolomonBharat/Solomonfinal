@@ -2,7 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, Clock, CheckCircle, X, User, LogOut, Bell, Eye, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, RFQ } from '../lib/database';
+
+interface RFQ {
+  id: string;
+  title: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  target_price: number;
+  status: 'pending' | 'approved' | 'matched' | 'quoted' | 'closed';
+  created_at: string;
+  quotations_count: number;
+  description?: string;
+  delivery_timeline?: string;
+  shipping_terms?: string;
+  quality_standards?: string;
+  certifications_needed?: string;
+  additional_requirements?: string;
+  max_price?: number;
+}
 
 const BuyerDashboard = () => {
   const { user, logout } = useAuth();
@@ -11,29 +29,35 @@ const BuyerDashboard = () => {
   const [showRfqModal, setShowRfqModal] = useState(false);
 
   useEffect(() => {
-    // Load user's RFQs from Supabase
-    const loadRFQs = async () => {
-      if (user?.id) {
-        const userRFQs = await db.getRFQsByBuyer(user.id);
-        
-        // Update quotations count for each RFQ
-        const rfqsWithQuotations = await Promise.all(
-          userRFQs.map(async (rfq) => {
-            const quotations = await db.getQuotationsByRFQ(rfq.id);
-            const sentQuotations = quotations.filter(q => q.status === 'sent_to_buyer');
-            return {
-              ...rfq,
-              quotations_count: sentQuotations.length,
-              status: sentQuotations.length > 0 ? 'quoted' : rfq.status
-            };
-          })
-        );
-        
-        setRfqs(rfqsWithQuotations);
+    // Load user's RFQs from localStorage and demo RFQs
+    const allRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    
+    // Check for quotations that have been sent to buyer
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+    const sentQuotations = supplierQuotations.filter((q: any) => q.status === 'sent_to_buyer');
+    
+    // Filter RFQs to show only the current user's RFQs
+    const userRFQs = allRFQs.filter((rfq: any) => rfq.buyer_id === user?.id).map((rfq: any) => {
+      // Check if this RFQ has quotations
+      const rfqQuotations = sentQuotations.filter((q: any) => q.rfq_id === rfq.id);
+      
+      // Ensure all numeric fields are properly converted
+      const convertedRFQ = {
+        ...rfq,
+        quantity: parseInt(rfq.quantity) || 0,
+        target_price: parseFloat(rfq.target_price) || 0,
+        quotations_count: rfqQuotations.length
+      };
+      
+      // Update status based on quotations
+      if (rfqQuotations.length > 0) {
+        convertedRFQ.status = 'quoted';
       }
-    };
-
-    loadRFQs();
+      
+      return convertedRFQ;
+    });
+    
+    setRfqs(userRFQs);
   }, [user?.id]);
 
   const handleViewRfqDetails = (rfq: RFQ) => {

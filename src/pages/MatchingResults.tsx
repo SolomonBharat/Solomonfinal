@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Clock, Award, Star, MessageCircle, CheckCircle } from 'lucide-react';
-import { db } from '../lib/database';
 
 interface Supplier {
   id: string;
@@ -20,37 +19,8 @@ interface Supplier {
 const MatchingResults = () => {
   const { rfqId } = useParams();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Load matched suppliers from Supabase
-    const loadSuppliers = async () => {
-      try {
-        const allSuppliers = await db.getSuppliers();
-        
-        // Mock matching logic - in real app this would be AI-powered
-        const matchedSuppliers = allSuppliers.slice(0, 3).map(supplier => ({
-          id: supplier.id,
-          name: supplier.company_name,
-          location: 'India',
-          rating: supplier.rating || 4.5,
-          years_experience: supplier.years_in_business || 10,
-          moq: supplier.minimum_order_quantity || '1,000 pieces',
-          lead_time: '25-30 days',
-          specialization: supplier.product_categories || ['Textiles & Apparel'],
-          certifications: supplier.certifications || ['ISO 9001', 'GOTS'],
-          match_score: 90,
-          verified: supplier.verified
-        }));
-
-        setSuppliers(matchedSuppliers);
-      } catch (error) {
-        console.error('Error loading suppliers:', error);
-      }
-    };
-
-    loadSuppliers();
-  }, [rfqId]);
 
   const handleSupplierSelect = (supplierId: string) => {
     setSelectedSuppliers(prev => 
@@ -60,26 +30,21 @@ const MatchingResults = () => {
     );
   };
 
-  const handleRequestQuotes = async () => {
+  const handleRequestQuotes = () => {
+    // In real app, this would send quote requests to selected suppliers
     if (selectedSuppliers.length === 0) {
       alert('Please select at least one supplier to request quotes from.');
       return;
     }
     
-    try {
-      // Update RFQ status to show quotations are being requested
-      if (rfqId) {
-        await db.updateRFQ(rfqId, { 
-          status: 'matched',
-          matched_suppliers: selectedSuppliers
-        });
-      }
-      
-      alert(`Quote requests sent to ${selectedSuppliers.length} supplier${selectedSuppliers.length > 1 ? 's' : ''}! You'll receive quotations within 2-3 business days.`);
-    } catch (error) {
-      console.error('Error requesting quotes:', error);
-      alert('Failed to send quote requests. Please try again.');
-    }
+    // Update RFQ status to show quotations are being requested
+    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
+    const updatedRFQs = userRFQs.map((rfq: any) => 
+      rfq.id === rfqId ? { ...rfq, status: 'quoted', quotations_count: selectedSuppliers.length } : rfq
+    );
+    localStorage.setItem('user_rfqs', JSON.stringify(updatedRFQs));
+    
+    alert(`Quote requests sent to ${selectedSuppliers.length} supplier${selectedSuppliers.length > 1 ? 's' : ''}! You'll receive quotations within 2-3 business days.`);
   };
 
   return (
@@ -107,7 +72,7 @@ const MatchingResults = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Matched Suppliers</h1>
             <p className="text-gray-600">
-              We found {suppliers.length} verified suppliers that match your requirements
+              We found {suppliers.length} verified suppliers that match your requirements for <strong>Organic Cotton T-Shirts</strong>
             </p>
           </div>
 
@@ -117,19 +82,19 @@ const MatchingResults = () => {
             <div className="grid md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Product:</span>
-                <p className="font-medium">Product Request</p>
+                <p className="font-medium">Organic Cotton T-Shirts</p>
               </div>
               <div>
                 <span className="text-gray-500">Quantity:</span>
-                <p className="font-medium">As specified</p>
+                <p className="font-medium">5,000 pieces</p>
               </div>
               <div>
                 <span className="text-gray-500">Target Price:</span>
-                <p className="font-medium">Competitive</p>
+                <p className="font-medium">$8.50 per piece</p>
               </div>
               <div>
                 <span className="text-gray-500">Delivery:</span>
-                <p className="font-medium">As required</p>
+                <p className="font-medium">30 days</p>
               </div>
             </div>
           </div>

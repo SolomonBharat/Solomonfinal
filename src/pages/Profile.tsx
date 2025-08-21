@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, User, Building, Globe, Phone, Mail, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/database';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -56,28 +55,11 @@ const Profile = () => {
     e.preventDefault();
     setLoading(true);
     
-    try {
-      if (user?.id) {
-        const updatedUser = await db.updateUser(user.id, {
-          name: formData.name,
-          phone: formData.phone,
-          company: formData.company,
-          country: formData.country
-        });
-        
-        if (updatedUser) {
-          setLoading(false);
-          alert('Profile updated successfully!');
-        } else {
-          setLoading(false);
-          alert('Failed to update profile. Please try again.');
-        }
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    // Simulate API call
+    setTimeout(() => {
       setLoading(false);
-      alert('Failed to update profile. Please try again.');
-    }
+      alert('Profile updated successfully!');
+    }, 1000);
   };
 
   return (

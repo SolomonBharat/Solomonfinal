@@ -17,7 +17,6 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register } = useAuth();
   const navigate = useNavigate();
 
   const countries = [
@@ -57,27 +56,38 @@ const RegisterPage = () => {
       return;
     }
 
-    // Register with Supabase
-    const result = await register({
+    // Check if email already exists
+    const existingBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
+    if (existingBuyers.some((buyer: any) => buyer.email === formData.email)) {
+      setError('An account with this email already exists');
+      setLoading(false);
+      return;
+    }
+
+    // Create new buyer account
+    const newBuyer = {
+      id: `buyer-${Date.now()}`,
       name: formData.name,
       email: formData.email,
-      password: formData.password,
+      password: formData.password, // Store the actual password they set
       company: formData.company,
       country: formData.country,
       phone: formData.phone,
       user_type: 'buyer',
+      created_at: new Date().toISOString(),
       profile_completed: true,
       verification_status: 'verified'
-    });
+    };
 
-    if (result.success) {
+    // Save to localStorage
+    existingBuyers.push(newBuyer);
+    localStorage.setItem('registered_buyers', JSON.stringify(existingBuyers));
+
+    setTimeout(() => {
       setLoading(false);
-      alert(`✅ Account created successfully!\n\nYou can now login with your credentials.`);
+      alert(`✅ Account created successfully!\n\n📧 Email: ${formData.email}\n🔑 Password: ${formData.password}\n\nYou can now login with these credentials.`);
       navigate('/login');
-    } else {
-      setError(result.error || 'Registration failed');
-      setLoading(false);
-    }
+    }, 1000);
   };
 
   return (
