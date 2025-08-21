@@ -605,135 +605,10 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* Complete Supplier Profile from Onboarding */}
-              <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-2">Complete Supplier Profile</h4>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Business Type</label>
-                      <p className="mt-1 text-sm text-blue-900 font-medium">Manufacturer</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Years in Business</label>
-                      <p className="mt-1 text-sm text-blue-900">15 years</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Annual Turnover</label>
-                      <p className="mt-1 text-sm text-blue-900">5-10 Million USD</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Employee Count</label>
-                      <p className="mt-1 text-sm text-blue-900">100-500</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">GST Number</label>
-                      <p className="mt-1 text-sm text-blue-900 font-mono">33AABCG1234M1Z5</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">IEC Code</label>
-                      <p className="mt-1 text-sm text-blue-900 font-mono">AABCG1234M</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Production Capacity</label>
-                      <p className="mt-1 text-sm text-blue-900">50,000 pieces per month</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-blue-700">Export Countries</label>
-                      <p className="mt-1 text-sm text-blue-900">USA, UK, Canada, Australia, Germany</p>
-                    </div>
-                  </div>
-                  
-                  {/* About Company */}
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-2">About Company</label>
-                    <div className="bg-white p-3 rounded border">
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        Global Textiles Pvt Ltd is a leading manufacturer and exporter of high-quality organic cotton textiles. 
-                        With over 15 years of experience, we specialize in sustainable fashion and eco-friendly textile production. 
-                        Our state-of-the-art facility in Tirupur ensures consistent quality and timely delivery to global markets.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Certifications */}
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-blue-700 mb-2">Certifications</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['GOTS', 'OEKO-TEX', 'ISO 9001', 'ISO 14001', 'BIS'].map(cert => (
-                        <span key={cert} className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                          {cert}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Factory Photos */}
-              <div className="mb-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200 shadow-sm">
-                <h4 className="text-xl font-bold text-purple-900 mb-4 flex items-center">
-                  <Building className="h-5 w-5 mr-2" />
-                  🏭 Factory Photos & Video
-                </h4>
-                
-                {/* Factory Photos */}
-                <div className="mb-6">
-                  <h5 className="text-lg font-semibold text-purple-900 mb-3">📸 Factory Photos</h5>
-                  <div className="bg-white p-4 rounded-lg border-2 border-purple-300 shadow-sm">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {[
-                        'https://images.pexels.com/photos/3760067/pexels-photo-3760067.jpeg',
-                        'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg',
-                        'https://images.pexels.com/photos/3760264/pexels-photo-3760264.jpeg',
-                        'https://images.pexels.com/photos/3760265/pexels-photo-3760265.jpeg'
-                      ].map((photo, index) => (
-                        <div key={index} className="group relative">
-                          <img
-                            src={photo}
-                            alt={`Factory view ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border-2 border-purple-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => window.open(photo, '_blank')}
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all flex items-center justify-center">
-                            <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-sm text-purple-700 mt-3 font-medium">
-                      🏭 Click on any photo to view full size. These show the supplier's actual manufacturing facility.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Factory Video */}
-                <div>
-                  <h5 className="text-lg font-semibold text-purple-900 mb-3">🎥 Factory Video Tour</h5>
-                  <div className="bg-white p-4 rounded-lg border-2 border-purple-300 shadow-sm">
-                    <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border-2 border-purple-200">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <span className="text-white text-2xl">▶</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">Factory Video Tour</h3>
-                        <p className="text-gray-600">Production process and quality control</p>
-                        <button className="mt-3 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                          Play Video
-                        </button>
-                      </div>
-                    </div>
-                    <p className="text-sm text-purple-700 mt-3 font-medium">
-                      🎬 Factory video tour showing production capabilities and quality control processes
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Quote Details */}
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-3">Quotation Details</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="bg-green-50 p-3 rounded">
                     <span className="text-gray-500 text-sm">Price per Unit</span>
                     <p className="text-xl font-bold text-green-600">${selectedQuotation.quoted_price.toFixed(2)}</p>
@@ -742,64 +617,13 @@ const AdminDashboard = () => {
                     <span className="text-gray-500 text-sm">Total Value</span>
                     <p className="text-xl font-bold text-blue-600">${selectedQuotation.total_value.toLocaleString()}</p>
                   </div>
-                  <div className="bg-purple-50 p-3 rounded">
-                    <span className="text-gray-500 text-sm">MOQ</span>
-                    <p className="text-xl font-bold text-purple-600">{selectedQuotation.moq.toLocaleString()}</p>
-                  </div>
-                </div>
-                
-                {/* Terms & Conditions */}
-                <div className="mt-4 grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
-                    <div className="bg-yellow-50 p-3 rounded border border-yellow-200">
-                      <p className="text-sm text-gray-900 font-medium">{selectedQuotation.payment_terms || '30% advance, 70% on shipment'}</p>
-                    </div>
+                    <span className="text-gray-500 text-sm">MOQ:</span>
+                    <p className="font-medium">{selectedQuotation.moq.toLocaleString()}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Shipping Terms</label>
-                    <div className="bg-blue-50 p-3 rounded border border-blue-200">
-                      <p className="text-sm text-gray-900 font-medium">{selectedQuotation.shipping_terms || 'FOB'}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lead Time</label>
-                    <div className="bg-green-50 p-3 rounded border border-green-200">
-                      <p className="text-sm text-gray-900 font-medium">{selectedQuotation.lead_time}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quote Validity</label>
-                    <div className="bg-orange-50 p-3 rounded border border-orange-200">
-                      <p className="text-sm text-gray-900 font-medium">{selectedQuotation.validity_days || 15} days</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Quality Guarantees */}
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="bg-white p-3 rounded border">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 rounded-full ${selectedQuotation.quality_guarantee !== false ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Quality Guarantee</span>
-                        <p className={`text-sm font-bold ${selectedQuotation.quality_guarantee !== false ? 'text-green-600' : 'text-red-600'}`}>
-                          {selectedQuotation.quality_guarantee !== false ? 'Included' : 'Not Included'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 rounded border">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-5 h-5 rounded-full ${selectedQuotation.sample_available !== false ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <div>
-                        <span className="text-sm font-medium text-gray-700">Sample Available</span>
-                        <p className={`text-sm font-bold ${selectedQuotation.sample_available !== false ? 'text-green-600' : 'text-red-600'}`}>
-                          {selectedQuotation.sample_available !== false ? 'Yes' : 'No'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                    <span className="text-gray-500 text-sm">Lead Time:</span>
+                    <p className="font-medium">{selectedQuotation.lead_time}</p>
                   </div>
                 </div>
               </div>
