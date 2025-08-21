@@ -336,6 +336,57 @@ const SupplierQuote = () => {
                     />
                   </div>
                 </div>
+                  {/* Product Images Upload */}
+                  <div>
+                    <label htmlFor="images" className="block text-sm font-medium text-gray-700 mb-2">
+                      Product Images (Optional)
+                    </label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                      <input
+                        type="file"
+                        id="images"
+                        multiple
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                      <label htmlFor="images" className="cursor-pointer">
+                        <Upload className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">
+                          Upload product photos, samples, or quality certificates
+                        </p>
+                      </label>
+                    </div>
+                    <p className="text-xs text-green-600 mt-2">
+                      💡 <strong>Helpful:</strong> Product images increase quote acceptance by 40%. Show actual products, quality, packaging, or certifications to build buyer confidence.
+                    </p>
+
+                    {/* Image Preview */}
+                    {formData.images.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Uploaded Images:</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {formData.images.map((image, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={image}
+                                alt={`Product ${index + 1}`}
+                                className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
 
                 {/* Form Actions */}
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">

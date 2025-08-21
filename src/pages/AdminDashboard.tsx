@@ -637,6 +637,36 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* Quotation Images */}
+              {selectedQuotation.images && selectedQuotation.images.length > 0 && (
+                <div className="mb-8 bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200 shadow-sm">
+                  <h4 className="text-xl font-bold text-green-900 mb-4 flex items-center">
+                    <Image className="h-5 w-5 mr-2" />
+                    📸 Product Images from Supplier
+                  </h4>
+                  <div className="bg-white p-4 rounded-lg border-2 border-green-300 shadow-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {selectedQuotation.images.map((image, index) => (
+                        <div key={index} className="group relative">
+                          <img
+                            src={image}
+                            alt={`Supplier product ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border-2 border-green-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => window.open(image, '_blank')}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all flex items-center justify-center">
+                            <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-sm text-green-700 mt-3 font-medium">
+                      💡 Supplier's actual product photos, samples, and quality demonstrations
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
             
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">

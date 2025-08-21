@@ -437,6 +437,36 @@ const MyRFQs = () => {
                 </div>
               )}
 
+              {/* Product Images */}
+              {selectedRfq.images && selectedRfq.images.length > 0 && (
+                <div className="mb-8 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200 shadow-sm">
+                  <h4 className="text-xl font-bold text-blue-900 mb-4 flex items-center">
+                    <Image className="h-5 w-5 mr-2" />
+                    📸 Your Product Images
+                  </h4>
+                  <div className="bg-white p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {selectedRfq.images.map((image, index) => (
+                        <div key={index} className="group relative">
+                          <img
+                            src={image}
+                            alt={`Product requirement ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border-2 border-blue-200 shadow-sm group-hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => window.open(image, '_blank')}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 rounded-lg transition-all flex items-center justify-center">
+                            <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-sm text-blue-700 mt-3 font-medium">
+                      💡 These images help suppliers understand your exact requirements
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Timeline */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h4>
