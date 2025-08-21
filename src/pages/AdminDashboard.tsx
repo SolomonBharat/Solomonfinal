@@ -556,6 +556,7 @@ const AdminDashboard = () => {
             <ul className="text-sm text-yellow-700 space-y-1">
               {pendingRFQs.length > 0 && <li>• {pendingRFQs.length} RFQs need approval</li>}
               {pendingQuotations.length > 0 && <li>• {pendingQuotations.length} quotations awaiting review</li>}
+              {pendingQueries.length > 0 && <li>• {pendingQueries.length} supplier queries need review</li>}
             </ul>
           </div>
         )}

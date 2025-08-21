@@ -962,6 +962,89 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Query Modal */}
+      {showQueryModal && selectedRfq && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">❓ Raise Query</h3>
+                <p className="text-sm text-gray-500 mt-1">Ask questions about this RFQ</p>
+              </div>
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* RFQ Info */}
+              <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">📋 RFQ: {selectedRfq.title}</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Category:</span>
+                    <p className="font-medium text-blue-900">{selectedRfq.category}</p>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Quantity:</span>
+                    <p className="font-medium text-blue-900">{selectedRfq.quantity.toLocaleString()} {selectedRfq.unit}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Query Input */}
+              <div className="mb-6">
+                <label htmlFor="query_text" className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Question *
+                </label>
+                <textarea
+                  id="query_text"
+                  rows={4}
+                  value={queryText}
+                  onChange={(e) => setQueryText(e.target.value)}
+                  placeholder="Ask specific questions about product specifications, quality requirements, delivery terms, etc..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Be specific about what you need clarification on. This will be reviewed by admin before being sent to the buyer.
+                </p>
+              </div>
+
+              {/* Process Info */}
+              <div className="bg-yellow-50 rounded-lg p-4 mb-6 border border-yellow-200">
+                <h5 className="font-semibold text-yellow-900 mb-2">📋 Query Process</h5>
+                <div className="text-sm text-yellow-800 space-y-1">
+                  <p>1. ✍️ You submit your question</p>
+                  <p>2. 👨‍💼 Admin reviews and forwards to buyer</p>
+                  <p>3. 🛒 Buyer provides clarification</p>
+                  <p>4. 📨 Admin sends buyer's response back to you</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowQueryModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitQuery}
+                disabled={!queryText.trim() || queryLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+              >
+                <Send className="h-4 w-4" />
+                <span>{queryLoading ? 'Submitting...' : 'Submit Query'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
