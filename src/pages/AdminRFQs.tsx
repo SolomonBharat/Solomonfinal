@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users, MessageCircle, Send } from 'lucide-react';
+import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users } from 'lucide-react';
 
 interface RFQ {
   id: string;
@@ -50,10 +50,6 @@ const AdminRFQs = () => {
     
     setRfqs(convertedUserRFQs);
     setLoading(false);
-    
-    // Load supplier queries
-    const supplierQueries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
-    setQueries(supplierQueries);
   }, []);
 
   const [originalRFQs] = useState<RFQ[]>([
@@ -130,10 +126,6 @@ const AdminRFQs = () => {
   const [selectedRFQs, setSelectedRFQs] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [queries, setQueries] = useState<any[]>([]);
-  const [selectedQuery, setSelectedQuery] = useState<any>(null);
-  const [showQueryModal, setShowQueryModal] = useState(false);
-  const [queryResponse, setQueryResponse] = useState('');
 
   const handleRFQSelect = (rfqId: string) => {
     setSelectedRFQs(prev => 
@@ -459,82 +451,6 @@ const AdminRFQs = () => {
           </div>
         </div>
       </div>
-
-      {/* Query Review Modal */}
-      {showQueryModal && selectedQuery && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900">Supplier Query</h3>
-              <button
-                onClick={() => setShowQueryModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="mb-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <h4 className="font-semibold text-blue-900 mb-2">RFQ Information</h4>
-                  <p className="text-sm text-blue-800">
-                    <strong>Title:</strong> {selectedQuery.rfq_title}
-                  </p>
-                  <p className="text-sm text-blue-800">
-                    <strong>Supplier:</strong> {selectedQuery.supplier_name} ({selectedQuery.supplier_company})
-                  </p>
-                </div>
-                
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-orange-900 mb-2">Supplier's Question</h4>
-                  <p className="text-gray-700">{selectedQuery.question}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Asked on: {new Date(selectedQuery.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="admin_response" className="block text-sm font-medium text-gray-700 mb-2">
-                  Admin Notes (Optional)
-                </label>
-                <textarea
-                  id="admin_response"
-                  rows={3}
-                  value={queryResponse}
-                  onChange={(e) => setQueryResponse(e.target.value)}
-                  placeholder="Add any notes or context before forwarding to buyer..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                <p className="text-sm text-green-800">
-                  <strong>Action:</strong> This query will be forwarded to the buyer for clarification. 
-                  The buyer can respond with additional details.
-                </p>
-              </div>
-            </div>
-            
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={() => setShowQueryModal(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleForwardToBuyer}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
-              >
-                <Send className="h-4 w-4" />
-                <span>Forward to Buyer</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
