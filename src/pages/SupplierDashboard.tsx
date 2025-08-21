@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRODUCT_CATEGORIES } from '../constants/categories';
+import { db } from '../lib/database';
 
 interface RFQ {
   id: string;
@@ -32,6 +34,9 @@ const SupplierDashboard = () => {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showRfqDetailsModal, setShowRfqDetailsModal] = useState(false);
+  const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [rfqQuestions, setRfqQuestions] = useState<any[]>([]);
   const [quoteForm, setQuoteForm] = useState({
     price_per_unit: '',
     moq: '',
@@ -94,6 +99,9 @@ const SupplierDashboard = () => {
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
+    // Load Q&A for this RFQ
+    const questions = db.getSharedRFQQuestions(rfq.id);
+    setRfqQuestions(questions);
     setShowRfqDetailsModal(true);
   };
   
@@ -192,6 +200,33 @@ const SupplierDashboard = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
+  };
+
+  const handleAskQuestion = (rfq: RFQ) => {
+    setSelectedRfq(rfq);
+    setQuestionText('');
+    setShowQuestionModal(true);
+  };
+
+  const submitQuestion = () => {
+    if (!questionText.trim() || !selectedRfq) {
+      alert('Please enter a question');
+      return;
+    }
+
+    const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
+    
+    db.createRFQQuestion({
+      rfq_id: selectedRfq.id,
+      supplier_id: currentUser.id,
+      supplier_name: currentUser.name || 'Supplier User',
+      supplier_company: currentUser.company || 'Supplier Company',
+      question: questionText.trim()
+    });
+
+    setShowQuestionModal(false);
+    setQuestionText('');
+    alert('Question submitted successfully! Admin will review and get back to you with the buyer\'s response.');
   };
 
   const getStatusBadge = (status: string) => {
@@ -438,6 +473,15 @@ const SupplierDashboard = () => {
                       >
                         <Send className="h-4 w-4" />
                         <span>Submit Quote</span>
+                      </button>
+                    )}
+                    {rfq.status === 'new' && (
+                      <button
+                        onClick={() => handleAskQuestion(rfq)}
+                        className="bg-yellow-600 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-yellow-700 flex items-center justify-center space-x-1"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span>Ask Question</span>
                       </button>
                     )}
                     {rfq.status === 'quoted' && (
@@ -862,6 +906,45 @@ const SupplierDashboard = () => {
                 </div>
               )}
 
+              {/* Questions & Answers Section */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h4>
+                {rfqQuestions.length > 0 ? (
+                  <div className="space-y-4">
+                    {rfqQuestions.map((qa, index) => (
+                      <div key={index} className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-blue-900">Question from {qa.supplier_company}</span>
+                            <span className="text-xs text-blue-600">{new Date(qa.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm text-blue-800 bg-white p-3 rounded border border-blue-300">
+                            <strong>Q:</strong> {qa.question}
+                          </p>
+                        </div>
+                        {qa.buyer_answer && (
+                          <div>
+                            <span className="text-sm font-medium text-green-900">Buyer's Answer:</span>
+                            <p className="text-sm text-green-800 bg-green-50 p-3 rounded border border-green-300 mt-1">
+                              <strong>A:</strong> {qa.buyer_answer}
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              Answered on {qa.answered_at ? new Date(qa.answered_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <MessageCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-600">No questions have been asked yet</p>
+                    <p className="text-sm text-gray-500">Be the first to ask for clarification</p>
+                  </div>
+                )}
+              </div>
+
               {/* Timeline */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h4>
@@ -887,6 +970,17 @@ const SupplierDashboard = () => {
               >
                 Close
               </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowRfqDetailsModal(false);
+                    handleAskQuestion(selectedRfq);
+                  }}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center space-x-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Ask Question</span>
+                </button>
               {selectedRfq.status === 'new' && (
                 <button
                   onClick={() => {
@@ -899,6 +993,60 @@ const SupplierDashboard = () => {
                   <span>Submit Quote</span>
                 </button>
               )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ask Question Modal */}
+      {showQuestionModal && selectedRfq && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Ask Question about RFQ</h3>
+              <p className="text-sm text-gray-600">{selectedRfq.title}</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Question *
+                </label>
+                <textarea
+                  rows={4}
+                  value={questionText}
+                  onChange={(e) => setQuestionText(e.target.value)}
+                  placeholder="Ask for clarification about specifications, requirements, or any other details..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">How it works:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Your question will be sent to admin for review</li>
+                  <li>• Admin will get the answer from the buyer</li>
+                  <li>• The answer will be shared with all suppliers who can quote</li>
+                  <li>• You'll see the answer in the "Questions & Answers" section</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowQuestionModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitQuestion}
+                disabled={!questionText.trim()}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Submit Question
+              </button>
             </div>
           </div>
         </div>

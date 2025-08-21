@@ -130,6 +130,20 @@ export interface Analytics {
   top_countries: { country: string; count: number }[];
 }
 
+export interface RFQQuestion {
+  id: string;
+  rfq_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  supplier_company: string;
+  question: string;
+  buyer_answer?: string;
+  status: 'pending_admin_review' | 'answered_by_buyer' | 'shared_with_suppliers';
+  created_at: string;
+  answered_at?: string;
+  shared_at?: string;
+}
+
 // Database Service Class
 export class DatabaseService {
   private static instance: DatabaseService;
@@ -375,6 +389,57 @@ export class DatabaseService {
     return notifications.filter((n: any) => n.user_id === userId).sort((a: any, b: any) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
+  }
+
+  // RFQ Questions Management
+  createRFQQuestion(questionData: Partial<RFQQuestion>): RFQQuestion {
+    const question: RFQQuestion = {
+      id: `rfq_question_${Date.now()}`,
+      created_at: new Date().toISOString(),
+      status: 'pending_admin_review',
+      ...questionData
+    } as RFQQuestion;
+
+    const questions = this.getRFQQuestions();
+    questions.push(question);
+    localStorage.setItem('rfq_questions', JSON.stringify(questions));
+    return question;
+  }
+
+  getRFQQuestions(): RFQQuestion[] {
+    return JSON.parse(localStorage.getItem('rfq_questions') || '[]');
+  }
+
+  getRFQQuestionsByRFQId(rfqId: string): RFQQuestion[] {
+    const questions = this.getRFQQuestions();
+    return questions.filter(q => q.rfq_id === rfqId);
+  }
+
+  updateRFQQuestion(id: string, updates: Partial<RFQQuestion>): RFQQuestion | null {
+    const questions = this.getRFQQuestions();
+    const index = questions.findIndex(q => q.id === id);
+    if (index !== -1) {
+      questions[index] = { ...questions[index], ...updates };
+      if (updates.status === 'answered_by_buyer') {
+        questions[index].answered_at = new Date().toISOString();
+      }
+      if (updates.status === 'shared_with_suppliers') {
+        questions[index].shared_at = new Date().toISOString();
+      }
+      localStorage.setItem('rfq_questions', JSON.stringify(questions));
+      return questions[index];
+    }
+    return null;
+  }
+
+  getPendingRFQQuestions(): RFQQuestion[] {
+    const questions = this.getRFQQuestions();
+    return questions.filter(q => q.status === 'pending_admin_review');
+  }
+
+  getSharedRFQQuestions(rfqId: string): RFQQuestion[] {
+    const questions = this.getRFQQuestions();
+    return questions.filter(q => q.rfq_id === rfqId && q.status === 'shared_with_suppliers');
   }
 }
 

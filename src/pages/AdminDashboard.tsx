@@ -23,6 +23,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/database';
 
 const demoRFQs: RFQ[] = [];
 
@@ -69,6 +70,7 @@ const AdminDashboard = () => {
   const [showQuotationModal, setShowQuotationModal] = useState(false);
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
   const [showRFQModal, setShowRFQModal] = useState(false);
+  const [pendingQuestions, setPendingQuestions] = useState(0);
 
   useEffect(() => {
     // Load RFQs

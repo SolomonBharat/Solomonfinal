@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users } from 'lucide-react';
+import { MessageCircle, Send } from 'lucide-react';
+import { db } from '../lib/database';
 
 interface RFQ {
   id: string;
@@ -24,6 +26,10 @@ interface RFQ {
 const AdminRFQs = () => {
   const [rfqs, setRFQs] = useState<RFQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRfqForQuestions, setSelectedRfqForQuestions] = useState<RFQ | null>(null);
+  const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+  const [rfqQuestions, setRfqQuestions] = useState<any[]>([]);
+  const [buyerAnswerForm, setBuyerAnswerForm] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     // Load all RFQs including user submitted ones
@@ -174,6 +180,53 @@ const AdminRFQs = () => {
       rfq.id === rfqId ? { ...rfq, status: 'matched' } : rfq
     );
     localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+  };
+
+  const handleViewQuestions = (rfq: RFQ) => {
+    setSelectedRfqForQuestions(rfq);
+    const questions = db.getRFQQuestionsByRFQId(rfq.id);
+    setRfqQuestions(questions);
+    setShowQuestionsModal(true);
+  };
+
+  const handleAnswerQuestion = (questionId: string, answer: string) => {
+    if (!answer.trim()) {
+      alert('Please provide an answer');
+      return;
+    }
+
+    db.updateRFQQuestion(questionId, {
+      buyer_answer: answer.trim(),
+      status: 'answered_by_buyer'
+    });
+
+    // Refresh questions
+    if (selectedRfqForQuestions) {
+      const updatedQuestions = db.getRFQQuestionsByRFQId(selectedRfqForQuestions.id);
+      setRfqQuestions(updatedQuestions);
+    }
+
+    // Clear the answer form
+    setBuyerAnswerForm(prev => ({
+      ...prev,
+      [questionId]: ''
+    }));
+
+    alert('Answer saved! You can now share it with suppliers.');
+  };
+
+  const handleShareAnswer = (questionId: string) => {
+    db.updateRFQQuestion(questionId, {
+      status: 'shared_with_suppliers'
+    });
+
+    // Refresh questions
+    if (selectedRfqForQuestions) {
+      const updatedQuestions = db.getRFQQuestionsByRFQId(selectedRfqForQuestions.id);
+      setRfqQuestions(updatedQuestions);
+    }
+
+    alert('Answer shared with all suppliers! They can now see this Q&A in the RFQ details.');
   };
 
   const getStatusBadge = (status: string) => {
@@ -394,6 +447,13 @@ const AdminRFQs = () => {
                             <Eye className="h-3 w-3" />
                             <span>View Details</span>
                           </button>
+                          <button 
+                            onClick={() => handleViewQuestions(rfq)}
+                            className="flex items-center space-x-1 text-purple-600 hover:text-purple-800 text-sm"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                            <span>Q&A ({db.getRFQQuestionsByRFQId(rfq.id).length})</span>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -451,6 +511,117 @@ const AdminRFQs = () => {
           </div>
         </div>
       </div>
+
+      {/* RFQ Questions Management Modal */}
+      {showQuestionsModal && selectedRfqForQuestions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">RFQ Questions & Answers</h3>
+                <p className="text-sm text-gray-600">{selectedRfqForQuestions.title}</p>
+              </div>
+              <button
+                onClick={() => setShowQuestionsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {rfqQuestions.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">No Questions Yet</h4>
+                  <p className="text-gray-600">Suppliers haven't asked any questions about this RFQ</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {rfqQuestions.map((question) => (
+                    <div key={question.id} className="border border-gray-200 rounded-lg p-4">
+                      {/* Question */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-900">
+                            Question from {question.supplier_company}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(question.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                          <p className="text-sm text-blue-900">
+                            <strong>Q:</strong> {question.question}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Answer Section */}
+                      {question.status === 'pending_admin_review' && (
+                        <div className="bg-yellow-50 p-4 rounded border border-yellow-200">
+                          <h5 className="font-medium text-yellow-900 mb-2">Provide Buyer's Answer</h5>
+                          <textarea
+                            rows={3}
+                            value={buyerAnswerForm[question.id] || ''}
+                            onChange={(e) => setBuyerAnswerForm(prev => ({
+                              ...prev,
+                              [question.id]: e.target.value
+                            }))}
+                            placeholder="Enter the buyer's response to this question..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                          />
+                          <button
+                            onClick={() => handleAnswerQuestion(question.id, buyerAnswerForm[question.id] || '')}
+                            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                          >
+                            Save Buyer's Answer
+                          </button>
+                        </div>
+                      )}
+
+                      {question.status === 'answered_by_buyer' && (
+                        <div className="space-y-3">
+                          <div className="bg-green-50 p-3 rounded border border-green-200">
+                            <p className="text-sm text-green-900">
+                              <strong>Buyer's Answer:</strong> {question.buyer_answer}
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              Answered on {question.answered_at ? new Date(question.answered_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleShareAnswer(question.id)}
+                            className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 flex items-center space-x-2"
+                          >
+                            <Send className="h-4 w-4" />
+                            <span>Share Answer with All Suppliers</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {question.status === 'shared_with_suppliers' && (
+                        <div className="space-y-3">
+                          <div className="bg-green-50 p-3 rounded border border-green-200">
+                            <p className="text-sm text-green-900">
+                              <strong>Buyer's Answer:</strong> {question.buyer_answer}
+                            </p>
+                          </div>
+                          <div className="bg-purple-50 p-2 rounded border border-purple-200">
+                            <p className="text-xs text-purple-800 font-medium">
+                              ✅ Shared with all suppliers on {question.shared_at ? new Date(question.shared_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
