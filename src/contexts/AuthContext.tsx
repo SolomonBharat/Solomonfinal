@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   register: (userData: Partial<User> & { password: string }) => Promise<{ success: boolean; user?: User; error?: string }>;
+  updateUser: (userId: string, userData: Partial<User>) => Promise<{ success: boolean; user?: User; error?: string }>;
   loading: boolean;
 }
 
@@ -112,12 +113,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUserType(null);
   };
 
+  const updateUser = async (userId: string, userData: Partial<User>): Promise<{ success: boolean; user?: User; error?: string }> => {
+    try {
+      const users = storage.get('users');
+      const userIndex = users.findIndex((u: User) => u.id === userId);
+      
+      if (userIndex === -1) {
+        return { success: false, error: 'User not found' };
+      }
+
+      const updatedUser = { ...users[userIndex], ...userData };
+      users[userIndex] = updatedUser;
+      storage.set('users', users);
+
+      // Update current user if it's the same user
+      if (user?.id === userId) {
+        setUser(updatedUser);
+        localStorage.setItem('solomon_current_user', JSON.stringify(updatedUser));
+      }
+
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      console.error('Update user error:', error);
+      return { success: false, error: 'Failed to update user' };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     userType,
     login,
     logout,
     register,
+    updateUser,
     loading
   };
 
