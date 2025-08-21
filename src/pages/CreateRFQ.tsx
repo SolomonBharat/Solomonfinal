@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { storage } from '../lib/mockData';
-import type { RFQ } from '../lib/mockData';
+import { db } from '../lib/database';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -52,33 +51,16 @@ const CreateRFQ = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    
-    if (!user?.id) {
-      alert('Please login to submit RFQ');
-      return;
-    }
-    
     setLoading(true);
     
     try {
-      // Get existing RFQs
-      const rfqs = storage.get('rfqs');
-      
-      // Create new RFQ
-      const newRFQ: RFQ = {
-        id: storage.generateId(),
-        buyer_id: user.id,
+      // Create new RFQ with Supabase
+      const newRFQ = await db.createRFQ({
+        buyer_id: user?.id,
         title: formData.title,
         category: formData.category,
         description: formData.description,
         quantity: parseInt(formData.quantity),
-        unit: formData.unit,
         target_price: parseFloat(formData.target_price),
         max_price: formData.max_price ? parseFloat(formData.max_price) : undefined,
         delivery_timeline: formData.delivery_timeline,
@@ -86,22 +68,21 @@ const CreateRFQ = () => {
         quality_standards: formData.quality_standards,
         certifications_needed: formData.certifications_needed,
         additional_requirements: formData.additional_requirements,
-        status: 'pending_approval',
-        created_at: new Date().toISOString(),
-        quotations_count: 0
-      };
+        unit: formData.unit
+      });
 
-      // Save to localStorage
-      rfqs.push(newRFQ);
-      storage.set('rfqs', rfqs);
-      
-      setLoading(false);
-      alert('✅ RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
-      navigate('/dashboard');
+      if (newRFQ) {
+        setLoading(false);
+        alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
+        navigate('/dashboard');
+      } else {
+        setLoading(false);
+        alert('Failed to submit RFQ. Please try again.');
+      }
     } catch (error) {
       console.error('Error submitting RFQ:', error);
       setLoading(false);
-      alert('❌ Failed to submit RFQ. Please try again.');
+      alert('Failed to submit RFQ. Please try again.');
     }
   };
 
@@ -281,11 +262,11 @@ const CreateRFQ = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Timeline</option>
-                      <option value="30 days">30 days</option>
-                      <option value="45 days">45 days</option>
-                      <option value="60 days">60 days</option>
-                      <option value="90 days">90 days</option>
-                      <option value="Negotiable">Negotiable</option>
+                      <option value="30-days">30 days</option>
+                      <option value="45-days">45 days</option>
+                      <option value="60-days">60 days</option>
+                      <option value="90-days">90 days</option>
+                      <option value="negotiable">Negotiable</option>
                     </select>
                   </div>
                 </div>

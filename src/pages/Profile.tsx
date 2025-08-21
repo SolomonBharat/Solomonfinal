@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, User, Building, Globe, Phone, Mail, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { db } from '../lib/database';
 
 const Profile = () => {
-  const { user, updateUser } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -57,19 +58,19 @@ const Profile = () => {
     
     try {
       if (user?.id) {
-        const result = await updateUser(user.id, {
+        const updatedUser = await db.updateUser(user.id, {
           name: formData.name,
           phone: formData.phone,
           company: formData.company,
           country: formData.country
         });
         
-        if (result.success) {
+        if (updatedUser) {
           setLoading(false);
           alert('Profile updated successfully!');
         } else {
           setLoading(false);
-          alert(result.error || 'Failed to update profile. Please try again.');
+          alert('Failed to update profile. Please try again.');
         }
       }
     } catch (error) {

@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { demoCredentials, demoUsers, storage, User } from '../lib/mockData';
+import { supabase } from '../lib/supabase';
+import { db, User } from '../lib/database';
 
+// Authentication Context
 interface AuthContextType {
   user: User | null;
   userType: 'buyer' | 'supplier' | 'admin' | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   register: (userData: Partial<User> & { password: string }) => Promise<{ success: boolean; user?: User; error?: string }>;
-  updateUser: (userId: string, userData: Partial<User>) => Promise<{ success: boolean; user?: User; error?: string }>;
   loading: boolean;
 }
 
@@ -23,119 +24,155 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userType, setUserType] = useState<'buyer' | 'supplier' | 'admin' | null>(null);
 
   useEffect(() => {
-    // Simple session check
-    const checkSession = () => {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
-        const savedUser = localStorage.getItem('solomon_current_user');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          setUser(userData);
-          setUserType(userData.user_type);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
         }
+
+        if (session?.user) {
+          // Fetch user profile from public.users table
+          const profile = await db.getUserById(session.user.id);
+          if (profile) {
+            setUser(profile);
+            setUserType(profile.user_type);
+          }
+        }
+        setLoading(false);
       } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
+        console.error('Error in getInitialSession:', error);
         setLoading(false);
       }
     };
 
-    // Add small delay to prevent flash
-    setTimeout(checkSession, 100);
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await db.getUserById(session.user.id);
+        if (profile) {
+          setUser(profile);
+          setUserType(profile.user_type);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserType(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      // Check demo credentials
-      const demoUser = demoCredentials.find(cred => cred.email === email && cred.password === password);
-      if (demoUser) {
-        const userData = demoUsers.find(u => u.email === email);
-        if (userData) {
-          setUser(userData);
-          setUserType(userData.user_type);
-          localStorage.setItem('solomon_current_user', JSON.stringify(userData));
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        // Fetch user profile
+        const profile = await db.getUserById(data.user.id);
+        if (profile) {
+          setUser(profile);
+          setUserType(profile.user_type);
+          setLoading(false);
           return { success: true };
+        } else {
+          setLoading(false);
+          return { success: false, error: 'User profile not found' };
         }
       }
 
-      // Check registered users
-      const users = storage.get('users');
-      const registeredUser = users.find((u: User) => u.email === email);
-      if (registeredUser) {
-        setUser(registeredUser);
-        setUserType(registeredUser.user_type);
-        localStorage.setItem('solomon_current_user', JSON.stringify(registeredUser));
-        return { success: true };
-      }
-
-      return { success: false, error: 'Invalid credentials' };
+      setLoading(false);
+      return { success: false, error: 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
+      setLoading(false);
       return { success: false, error: 'Login failed' };
     }
   };
 
   const register = async (userData: Partial<User> & { password: string }): Promise<{ success: boolean; user?: User; error?: string }> => {
     try {
-      const users = storage.get('users');
-      
-      // Check if email already exists
-      if (users.find((u: User) => u.email === userData.email)) {
-        return { success: false, error: 'Email already exists' };
+      setLoading(true);
+
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userData.email!,
+        password: userData.password
+      });
+
+      if (authError) {
+        setLoading(false);
+        return { success: false, error: authError.message };
       }
 
-      const newUser: User = {
-        id: storage.generateId(),
-        email: userData.email!,
-        name: userData.name!,
-        company: userData.company!,
-        country: userData.country!,
-        phone: userData.phone,
-        user_type: userData.user_type || 'buyer'
-      };
+      if (authData.user) {
+        // Create user profile in public.users table
+        const newUserProfile: Partial<User> = {
+          id: authData.user.id,
+          email: userData.email!,
+          name: userData.name!,
+          company: userData.company!,
+          country: userData.country!,
+          phone: userData.phone,
+          user_type: userData.user_type || 'buyer',
+          profile_completed: true,
+          verification_status: 'verified'
+        };
 
-      users.push(newUser);
-      storage.set('users', users);
+        const createdUser = await db.createUser(newUserProfile);
 
-      setUser(newUser);
-      setUserType(newUser.user_type);
-      localStorage.setItem('solomon_current_user', JSON.stringify(newUser));
+        if (!createdUser) {
+          setLoading(false);
+          return { success: false, error: 'Failed to create user profile' };
+        }
 
-      return { success: true, user: newUser };
+        setUser(createdUser);
+        setUserType(createdUser.user_type);
+        setLoading(false);
+        return { success: true, user: createdUser };
+      }
+
+      setLoading(false);
+      return { success: false, error: 'Registration failed' };
     } catch (error) {
       console.error('Registration error:', error);
+      setLoading(false);
       return { success: false, error: 'Registration failed' };
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('solomon_current_user');
-    setUser(null);
-    setUserType(null);
-  };
-
-  const updateUser = async (userId: string, userData: Partial<User>): Promise<{ success: boolean; user?: User; error?: string }> => {
+  const logout = async () => {
     try {
-      const users = storage.get('users');
-      const userIndex = users.findIndex((u: User) => u.id === userId);
-      
-      if (userIndex === -1) {
-        return { success: false, error: 'User not found' };
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
       }
-
-      const updatedUser = { ...users[userIndex], ...userData };
-      users[userIndex] = updatedUser;
-      storage.set('users', users);
-
-      // Update current user if it's the same user
-      if (user?.id === userId) {
-        setUser(updatedUser);
-        localStorage.setItem('solomon_current_user', JSON.stringify(updatedUser));
-      }
-
-      return { success: true, user: updatedUser };
+      setUser(null);
+      setUserType(null);
+      setLoading(false);
     } catch (error) {
-      console.error('Update user error:', error);
-      return { success: false, error: 'Failed to update user' };
+      console.error('Logout error:', error);
+      setLoading(false);
     }
   };
 
@@ -145,7 +182,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     register,
-    updateUser,
     loading
   };
 
