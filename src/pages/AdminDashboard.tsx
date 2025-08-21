@@ -185,6 +185,7 @@ const AdminDashboard = () => {
 
   const pendingRFQs = rfqs.filter(rfq => rfq.status === 'pending_approval');
   const pendingQuotations = quotations.filter(q => q.status === 'pending_review');
+  const pendingQueries = queries.filter(q => q.status === 'pending_admin_review');
 
   const handleViewRFQDetails = (rfq: RFQ) => {
     // Load full RFQ details from localStorage
