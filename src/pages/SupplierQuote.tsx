@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, FileText, DollarSign } from 'lucide-react';
-import FileUpload from '../components/FileUpload';
-import QASystem from '../components/QASystem';
 
 const SupplierQuote = () => {
   const { rfqId } = useParams();
@@ -17,9 +15,7 @@ const SupplierQuote = () => {
     validity_days: '15',
     quality_guarantee: true,
     sample_available: true,
-    notes: '',
-    product_images: [] as File[],
-    product_videos: [] as File[]
+    notes: ''
   });
 
   // Mock RFQ data
@@ -339,30 +335,6 @@ const SupplierQuote = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-
-                  {/* Product Images */}
-                  <div>
-                    <FileUpload
-                      label="Product Images"
-                      description="Upload high-quality images of your products"
-                      acceptedTypes="image/*"
-                      maxFiles={10}
-                      maxSize={10}
-                      onFileSelect={(files) => setFormData(prev => ({ ...prev, product_images: files }))}
-                    />
-                  </div>
-
-                  {/* Product Videos */}
-                  <div>
-                    <FileUpload
-                      label="Product Videos"
-                      description="Upload videos showcasing your products and quality"
-                      acceptedTypes="video/*"
-                      maxFiles={3}
-                      maxSize={50}
-                      onFileSelect={(files) => setFormData(prev => ({ ...prev, product_videos: files }))}
-                    />
-                  </div>
                 </div>
 
                 {/* Form Actions */}
@@ -382,32 +354,6 @@ const SupplierQuote = () => {
                   </button>
                 </div>
               </form>
-            </div>
-          </div>
-
-          {/* Q&A Section */}
-          <div className="mt-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Questions & Answers</h3>
-              <QASystem 
-                rfqId={rfqId} 
-                mode="supplier_ask"
-                onQuestionSubmit={(question) => console.log('Question submitted:', question)}
-              />
-            </div>
-          </div>
-
-          {/* Public Q&A */}
-          <div className="mt-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Public Q&A</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Previous questions and answers that might help with your quotation:
-              </p>
-              <QASystem 
-                rfqId={rfqId} 
-                mode="public_view"
-              />
             </div>
           </div>
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, CheckCircle, X, Star, Award, Eye, Building, MapPin, DollarSign, FileText } from 'lucide-react';
-import QASystem from '../components/QASystem';
 
 interface Quotation {
   id: string;
@@ -22,10 +21,6 @@ interface Quotation {
   sample_available: boolean;
   notes: string;
   status: 'pending' | 'approved' | 'rejected';
-  factory_video?: string;
-  factory_images?: string[];
-  product_images?: string[];
-  product_videos?: string[];
 }
 
 const QuotationComparison = () => {
@@ -280,12 +275,6 @@ const QuotationComparison = () => {
                           >
                             Accept Quote
                           </button>
-                          <button
-                            onClick={() => handleViewQuotationDetails(quote)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                          >
-                            View Details
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -341,31 +330,6 @@ const QuotationComparison = () => {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Q&A Section for Buyer */}
-          <div className="mt-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Questions from Suppliers</h3>
-              <QASystem 
-                rfqId={rfqId} 
-                mode="buyer_answer"
-              />
-            </div>
-          </div>
-
-          {/* Public Q&A */}
-          <div className="mt-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Published Q&A</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Questions and answers visible to all suppliers:
-              </p>
-              <QASystem 
-                rfqId={rfqId} 
-                mode="public_view"
-              />
-            </div>
           </div>
 
           {/* Help Section */}
@@ -522,53 +486,6 @@ const QuotationComparison = () => {
                   </h4>
                   <div className="bg-white p-4 rounded-lg border">
                     <p className="text-gray-700 leading-relaxed">{selectedQuotation.notes}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Factory Video */}
-              {selectedQuotation.factory_video && (
-                <div className="mb-8 bg-indigo-50 rounded-lg p-6 border border-indigo-200">
-                  <h4 className="text-lg font-semibold text-indigo-900 mb-4">🏭 Factory Tour</h4>
-                  <div className="bg-white p-4 rounded-lg border">
-                    <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <span className="text-white text-2xl">▶</span>
-                        </div>
-                        <p className="text-gray-600">Factory Video: {selectedQuotation.factory_video}</p>
-                        <p className="text-sm text-gray-500 mt-2">Click to play factory tour video</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Product Images & Videos */}
-              {(selectedQuotation.product_images?.length || selectedQuotation.product_videos?.length) && (
-                <div className="mb-8 bg-green-50 rounded-lg p-6 border border-green-200">
-                  <h4 className="text-lg font-semibold text-green-900 mb-4">📸 Product Gallery</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {selectedQuotation.product_images?.map((image, index) => (
-                      <div key={index} className="bg-white p-3 rounded-lg border aspect-square flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <span className="text-white text-sm">📷</span>
-                          </div>
-                          <p className="text-xs text-gray-600">{image}</p>
-                        </div>
-                      </div>
-                    ))}
-                    {selectedQuotation.product_videos?.map((video, index) => (
-                      <div key={index} className="bg-white p-3 rounded-lg border aspect-square flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                            <span className="text-white text-sm">🎥</span>
-                          </div>
-                          <p className="text-xs text-gray-600">{video}</p>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
