@@ -446,6 +446,17 @@ const CreateRFQ = () => {
               <li>• Mention any compliance standards required in your target market</li>
               <li>• Our team will review and match you with the best suppliers within 24-48 hours</li>
             </ul>
+            <div className="mt-4 pt-4 border-t border-blue-300">
+              <a 
+                href="https://wa.me/918595135554" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 text-blue-700 hover:text-blue-900 font-medium"
+              >
+                <Bell className="h-4 w-4" />
+                <span>Need help creating your RFQ? Chat with our experts</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>

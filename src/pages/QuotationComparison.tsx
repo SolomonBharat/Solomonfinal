@@ -466,9 +466,15 @@ const QuotationComparison = () => {
             <p className="text-sm text-blue-800 mb-3">
               Our sourcing experts can help you evaluate these quotations based on your specific requirements.
             </p>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">
-              Schedule Consultation
-            </button>
+            <a 
+              href="https://wa.me/918595135554" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 inline-flex items-center space-x-2"
+            >
+              <Bell className="h-4 w-4" />
+              <span>Get Expert Help on WhatsApp</span>
+            </a>
           </div>
         </div>
       </div>

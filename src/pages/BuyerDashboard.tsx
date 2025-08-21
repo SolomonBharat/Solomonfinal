@@ -508,7 +508,12 @@ const BuyerDashboard = () => {
             </div>
           </Link>
 
-          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+          <a 
+            href="https://wa.me/918595135554" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-blue-50 p-6 rounded-lg border border-blue-200 hover:border-blue-300 transition-colors block"
+          >
             <div className="flex items-center space-x-3">
               <Bell className="h-8 w-8 text-blue-500" />
               <div>
@@ -516,7 +521,7 @@ const BuyerDashboard = () => {
                 <p className="text-sm text-gray-600">Contact our sourcing experts</p>
               </div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
     </div>
