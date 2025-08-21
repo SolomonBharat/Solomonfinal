@@ -522,7 +522,7 @@ const OnboardSupplier: React.FC = () => {
         employee_count: formData.employeeCount,
         product_categories: formData.productCategories,
         certifications: formData.certifications,
-        export_countries: ['Worldwide'], // Default to all countries
+        export_countries: formData.exportCountries,
         production_capacity: formData.productionCapacity,
         minimum_order_quantity: formData.minimumOrderQuantity,
         quality_standards: formData.qualityStandards,

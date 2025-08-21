@@ -142,13 +142,6 @@ const AdminSuppliers = () => {
         ? { ...supplier, verified: true, status: 'active' as const } 
         : supplier
     ));
-    
-    // Update in localStorage
-    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const updatedSuppliers = onboardedSuppliers.map((supplier: any) => 
-      supplier.id === supplierId ? { ...supplier, verified: true } : supplier
-    );
-    localStorage.setItem('onboarded_suppliers', JSON.stringify(updatedSuppliers));
   };
 
   const handleSuspend = (supplierId: string) => {

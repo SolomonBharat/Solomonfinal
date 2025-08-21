@@ -475,41 +475,12 @@ const MyRFQs = () => {
             </div>
             
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowRfqModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  Close
-                </button>
-                {editMode ? (
-                  <button
-                    onClick={() => {
-                      // Save changes
-                      const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-                      const updatedUserRFQs = userRFQs.map((rfq: any) => 
-                        rfq.id === selectedRfq?.id ? { ...rfq, ...editFormData } : rfq
-                      );
-                      localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
-                      setEditMode(false);
-                      alert('RFQ updated successfully!');
-                      window.location.reload();
-                    }}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Save Changes
-                  </button>
-                ) : (
-                  (selectedRfq?.status === 'pending_approval' || selectedRfq?.status === 'rejected') && (
-                    <button
-                      onClick={() => setEditMode(true)}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                    >
-                      Edit RFQ
-                    </button>
-                  )
-                )}
-              </div>
+              <button
+                onClick={() => setShowRfqModal(false)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

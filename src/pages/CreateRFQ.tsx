@@ -19,9 +19,7 @@ const CreateRFQ = () => {
     shipping_terms: 'FOB',
     quality_standards: '',
     certifications_needed: '',
-    additional_requirements: '',
-    product_images: [],
-    delivery_country: ''
+    additional_requirements: ''
   });
 
   const categories = [
@@ -54,12 +52,6 @@ const CreateRFQ = () => {
     e.preventDefault();
     setLoading(true);
     
-    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline || !formData.delivery_country || !formData.shipping_terms) {
-      alert('Please fill in all required fields');
-      setLoading(false);
-      return;
-    }
-    
     // Create new RFQ with pending status
     const newRFQ = {
       id: `rfq-${Date.now()}`,
@@ -67,17 +59,13 @@ const CreateRFQ = () => {
       quantity: parseInt(formData.quantity),
       target_price: parseFloat(formData.target_price),
       max_price: formData.max_price ? parseFloat(formData.max_price) : null,
-      status: user?.verification_status === 'verified' ? 'pending_approval' : 'pending_approval',
-      buyer_verified: user?.verification_status === 'verified' || false,
+      status: 'pending_approval',
       created_at: new Date().toISOString().split('T')[0],
       quotations_count: 0,
       buyer_id: user?.id,
       buyer_name: user?.name,
       buyer_company: user?.company,
-      buyer_country: user?.country,
-      buyer_email: user?.email,
-      buyer_phone: user?.phone,
-      product_images: formData.product_images.map(f => f.name)
+      buyer_country: user?.country
     };
     
     // Add to localStorage for demo (in production, this would be Supabase)

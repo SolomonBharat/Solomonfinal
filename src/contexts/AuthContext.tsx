@@ -8,7 +8,6 @@ export interface User {
   company: string;
   country: string;
   phone?: string;
-  website?: string;
   user_type: 'buyer' | 'supplier' | 'admin';
   created_at: string;
   updated_at: string;
@@ -389,7 +388,6 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   register: (userData: Partial<User> & { password: string }) => Promise<User>;
-  updateUserVerification: (userId: string) => void;
   loading: boolean;
 }
 
@@ -518,7 +516,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       company: userData.company!,
       country: userData.country!,
       phone: userData.phone,
-      website: formData.website,
       user_type: 'buyer',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -537,21 +534,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return newUser;
   };
 
-  const updateUserVerification = (userId: string) => {
-    // Mark user as verified after first approved RFQ
-    const registeredBuyers = JSON.parse(localStorage.getItem('registered_buyers') || '[]');
-    const updatedBuyers = registeredBuyers.map((buyer: any) => 
-      buyer.id === userId ? { ...buyer, verification_status: 'verified' } : buyer
-    );
-    localStorage.setItem('registered_buyers', JSON.stringify(updatedBuyers));
-    
-    if (user && user.id === userId) {
-      const updatedUser = { ...user, verification_status: 'verified' as const };
-      setUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    }
-  };
-
   const logout = () => {
     setUser(null);
     setUserType(null);
@@ -564,7 +546,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     register,
-    updateUserVerification,
     loading
   };
 

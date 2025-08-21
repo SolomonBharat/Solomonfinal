@@ -44,7 +44,7 @@ const QuotationComparison = () => {
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        name: q.supplier_name || 'Supplier Name',
+        name: q.supplier_company || 'Supplier Company',
         contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
         email: q.supplier_email || 'supplier@example.com',
@@ -70,33 +70,23 @@ const QuotationComparison = () => {
   }, [rfqId]);
 
   const handleAcceptQuote = (quotationId: string) => {
-    // Check if any quote is already accepted for this RFQ
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const alreadyAccepted = supplierQuotations.some((quote: any) => 
-      quote.rfq_id === rfqId && quote.status === 'accepted'
-    );
-    
-    if (alreadyAccepted) {
-      alert('A quote has already been accepted for this RFQ. Only one quote can be accepted per RFQ.');
-      return;
-    }
-    
     const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
     
     // Update RFQ status to matched in localStorage
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const updatedRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'closed' } : rfq
+      rfq.id === rfqId ? { ...rfq, status: 'matched' } : rfq
     );
     localStorage.setItem('user_rfqs', JSON.stringify(updatedRFQs));
     
     // Update quotation status to accepted
+    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     const updatedQuotations = supplierQuotations.map((quote: any) => 
       quote.id === quotationId ? { ...quote, status: 'accepted' } : quote
     );
     localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
     
-    alert(`✅ Quote accepted from ${supplier}! RFQ status updated to CLOSED.`);
+    alert(`✅ Quote accepted from ${supplier}! RFQ status updated to MATCHED.`);
     
     // Redirect back to dashboard after a short delay
     setTimeout(() => {
@@ -205,14 +195,7 @@ const QuotationComparison = () => {
           {/* Quotations Comparison Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-gray-900">Detailed Comparison</h3>
-                <div className="flex space-x-2">
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
-                    Request Samples
-                  </button>
-                </div>
-              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Detailed Comparison</h3>
             </div>
 
             <div className="overflow-x-auto">
@@ -249,7 +232,7 @@ const QuotationComparison = () => {
                         <div className="flex items-start">
                           <div>
                             <div className="flex items-center space-x-2">
-                              <p className="text-sm font-medium text-gray-900">{quote.supplier.name}</p>
+                              <p className="text-sm font-medium text-gray-900">{quote.supplier.contact_person}</p>
                               {quote.supplier.verified && (
                                 <CheckCircle className="h-4 w-4 text-green-500" />
                               )}
@@ -281,7 +264,7 @@ const QuotationComparison = () => {
                         {quote.moq.toLocaleString()} pcs
                       </td>
                       <td className="px-6 py-4">
-                        <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.name}</h5>
+                        <span className="text-sm text-gray-900">{quote.lead_time}</span>
                         {quote.lead_time.includes(getFastestDelivery().toString()) && (
                           <span className="block text-xs text-blue-600 font-medium">Fastest</span>
                         )}
@@ -291,9 +274,6 @@ const QuotationComparison = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col space-y-2">
-                          <button className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700">
-                            Request Sample
-                          </button>
                           <button
                             onClick={() => handleAcceptQuote(quote.id)}
                             className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
@@ -394,14 +374,9 @@ const QuotationComparison = () => {
             <p className="text-sm text-blue-800 mb-3">
               Our sourcing experts can help you evaluate these quotations based on your specific requirements.
             </p>
-            <a 
-              href="https://wa.me/918595135554" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 inline-block"
-            >
+            <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700">
               Schedule Consultation
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -601,7 +576,7 @@ const QuotationComparison = () => {
             
             <div className="px-6 py-4 bg-gray-100 border-t border-gray-200 flex justify-between items-center">
               <div className="text-sm text-gray-600">
-                Quote from {selectedQuotation.supplier.name} • Total: ${selectedQuotation.total_price.toLocaleString()}
+                Quote from {selectedQuotation.supplier.contact_person} • Total: ${selectedQuotation.total_price.toLocaleString()}
               </div>
               <div className="flex space-x-3">
               <button
