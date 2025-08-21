@@ -167,6 +167,14 @@ export class DatabaseService {
 
   updateUser(id: string, updates: Partial<User>): User | null {
     const users = this.getUsers();
+          localStorage.setItem('solomon_user_type', 'buyer');
+          setLoading(false);
+          // Force navigation after state update
+          setTimeout(() => window.location.href = '/dashboard', 100);
+          return { success: true };
+        }
+      }
+      
     const index = users.findIndex(user => user.id === id);
     if (index !== -1) {
       users[index] = { ...users[index], ...updates, updated_at: new Date().toISOString() };
