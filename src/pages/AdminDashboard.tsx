@@ -20,7 +20,8 @@ import {
   Phone,
   Mail,
   Globe,
-  Plus
+  Plus,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/database';
