@@ -1,5 +1,8 @@
 /*
-  # Solomon Bharat B2B Marketplace Database Schema
+  # Solomon Bharat - Complete Database Setup
+  
+  This migration creates the complete database schema for the Solomon Bharat B2B marketplace.
+  Run this in your Supabase SQL Editor to set up all tables and policies.
 
   1. New Tables
     - `users` - User profiles linked to auth.users
