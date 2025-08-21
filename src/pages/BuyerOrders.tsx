@@ -3,61 +3,22 @@ import DashboardLayout from '../components/DashboardLayout';
 import DataTable from '../components/DataTable';
 import { Package, Truck, CheckCircle, Clock, Eye, Download, MapPin, Building } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-interface Order {
-  id: string;
-  rfq_title: string;
-  supplier_company: string;
-  supplier_contact: string;
-  supplier_location: string;
-  quantity: number;
-  unit_price: number;
-  total_value: number;
-  status: 'confirmed' | 'in_production' | 'shipped' | 'delivered' | 'completed';
-  order_date: string;
-  expected_delivery: string;
-  tracking_number?: string;
-  payment_status: 'pending' | 'partial' | 'completed';
-}
+import { db, Order } from '../lib/database';
 
 const BuyerOrders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Load buyer's orders
-    const mockOrders: Order[] = [
-      {
-        id: 'ORD-001',
-        rfq_title: 'Organic Cotton T-Shirts',
-        supplier_company: 'Global Textiles Pvt Ltd',
-        supplier_contact: 'Rajesh Kumar',
-        supplier_location: 'Tirupur, Tamil Nadu',
-        quantity: 5000,
-        unit_price: 8.25,
-        total_value: 41250,
-        status: 'in_production',
-        order_date: '2025-01-15',
-        expected_delivery: '2025-02-15',
-        payment_status: 'partial'
-      },
-      {
-        id: 'ORD-002',
-        rfq_title: 'Turmeric Powder Premium',
-        supplier_company: 'Spice Masters Ltd',
-        supplier_contact: 'Priya Sharma',
-        supplier_location: 'Cochin, Kerala',
-        quantity: 10,
-        unit_price: 2800,
-        total_value: 28000,
-        status: 'shipped',
-        order_date: '2025-01-10',
-        expected_delivery: '2025-02-10',
-        tracking_number: 'TRK123456789',
-        payment_status: 'completed'
+    // Load buyer's orders from Supabase
+    const loadOrders = async () => {
+      if (user?.id) {
+        const buyerOrders = await db.getOrdersByBuyer(user.id);
+        setOrders(buyerOrders);
       }
-    ];
-    setOrders(mockOrders);
+    };
+
+    loadOrders();
   }, []);
 
   const getStatusBadge = (status: string) => {

@@ -2,54 +2,51 @@ import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, CheckCircle, X, Eye, Users } from 'lucide-react';
-
-interface RFQ {
-  id: string;
-  title: string;
-  buyer: {
-    name: string;
-    company: string;
-    country: string;
-  };
-  category: string;
-  quantity: number;
-  unit: string;
-  budget: number;
-  status: 'pending_approval' | 'approved' | 'matched' | 'quoted' | 'closed' | 'rejected';
-  created_at: string;
-  urgency: 'low' | 'medium' | 'high';
-  matched_suppliers: number;
-}
+import { db, RFQ } from '../lib/database';
 
 const AdminRFQs = () => {
-  const [rfqs, setRFQs] = useState<RFQ[]>([]);
+  const [rfqs, setRFQs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load all RFQs including user submitted ones
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    
-    // Convert user RFQs to admin format
-    const convertedUserRFQs = userRFQs.map((rfq: any) => ({
-      id: rfq.id,
-      title: rfq.title,
-      buyer: {
-        name: rfq.buyer_name || 'User',
-        company: rfq.buyer_company || 'Company',
-        country: rfq.buyer_country || 'Country'
-      },
-      category: rfq.category,
-      quantity: parseInt(rfq.quantity),
-      unit: rfq.unit,
-      budget: parseFloat(rfq.target_price) * parseInt(rfq.quantity),
-      status: rfq.status || 'pending_approval',
-      created_at: rfq.created_at,
-      urgency: 'medium',
-      matched_suppliers: 0
-    }));
-    
-    setRfqs(convertedUserRFQs);
-    setLoading(false);
+    // Load all RFQs from Supabase
+    const loadRFQs = async () => {
+      try {
+        const allRFQs = await db.getRFQs();
+        
+        // Get buyer information for each RFQ
+        const rfqsWithBuyerInfo = await Promise.all(
+          allRFQs.map(async (rfq) => {
+            const buyer = await db.getUserById(rfq.buyer_id);
+            return {
+              id: rfq.id,
+              title: rfq.title,
+              buyer: {
+                name: buyer?.name || 'Unknown',
+                company: buyer?.company || 'Unknown Company',
+                country: buyer?.country || 'Unknown'
+              },
+              category: rfq.category,
+              quantity: rfq.quantity,
+              unit: rfq.unit,
+              budget: rfq.target_price * rfq.quantity,
+              status: rfq.status,
+              created_at: rfq.created_at,
+              urgency: 'medium',
+              matched_suppliers: rfq.matched_suppliers?.length || 0
+            };
+          })
+        );
+        
+        setRFQs(rfqsWithBuyerInfo);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error loading RFQs:', error);
+        setLoading(false);
+      }
+    };
+
+    loadRFQs();
   }, []);
 
   const [originalRFQs] = useState<RFQ[]>([
@@ -136,44 +133,47 @@ const AdminRFQs = () => {
   };
 
   const handleApprove = (rfqId: string) => {
-    setRFQs(prev => prev.map(rfq => 
-      rfq.id === rfqId ? { ...rfq, status: 'approved' as const } : rfq
-    ));
-    
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    const updateRFQStatus = async () => {
+      const updatedRFQ = await db.updateRFQ(rfqId, { status: 'approved' });
+      if (updatedRFQ) {
+        setRFQs(prev => prev.map(rfq => 
+          rfq.id === rfqId ? { ...rfq, status: 'approved' } : rfq
+        ));
+        alert('RFQ approved successfully!');
+      }
+    };
+    updateRFQStatus();
   };
 
   const handleReject = (rfqId: string) => {
-    setRFQs(prev => prev.map(rfq => 
-      rfq.id === rfqId ? { ...rfq, status: 'rejected' as const } : rfq
-    ));
-    
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    const updateRFQStatus = async () => {
+      const updatedRFQ = await db.updateRFQ(rfqId, { status: 'rejected' });
+      if (updatedRFQ) {
+        setRFQs(prev => prev.map(rfq => 
+          rfq.id === rfqId ? { ...rfq, status: 'rejected' } : rfq
+        ));
+        alert('RFQ rejected.');
+      }
+    };
+    updateRFQStatus();
   };
 
   const handleAssignSuppliers = (rfqId: string) => {
-    setRFQs(prev => prev.map(rfq => 
-      rfq.id === rfqId 
-        ? { ...rfq, status: 'matched' as const, matched_suppliers: 3 } 
-        : rfq
-    ));
-    
-    // Update localStorage for user RFQs
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const updatedUserRFQs = userRFQs.map((rfq: any) => 
-      rfq.id === rfqId ? { ...rfq, status: 'matched' } : rfq
-    );
-    localStorage.setItem('user_rfqs', JSON.stringify(updatedUserRFQs));
+    const updateRFQStatus = async () => {
+      const updatedRFQ = await db.updateRFQ(rfqId, { 
+        status: 'matched',
+        matched_suppliers: ['supplier1', 'supplier2', 'supplier3']
+      });
+      if (updatedRFQ) {
+        setRFQs(prev => prev.map(rfq => 
+          rfq.id === rfqId 
+            ? { ...rfq, status: 'matched', matched_suppliers: 3 } 
+            : rfq
+        ));
+        alert('Suppliers assigned successfully!');
+      }
+    };
+    updateRFQStatus();
   };
 
   const getStatusBadge = (status: string) => {

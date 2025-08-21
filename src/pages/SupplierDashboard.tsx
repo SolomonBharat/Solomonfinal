@@ -2,28 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-
-interface RFQ {
-  id: string;
-  title: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  target_price: number;
-  buyer_company: string;
-  buyer_country: string;
-  delivery_timeline: string;
-  created_at: string;
-  status: 'new' | 'quoted' | 'expired';
-  description: string;
-  urgency: 'low' | 'medium' | 'high';
-  match_score?: number;
-  max_price?: number;
-  shipping_terms?: string;
-  quality_standards?: string;
-  certifications_needed?: string;
-  additional_requirements?: string;
-}
+import { db, RFQ } from '../lib/database';
 
 const SupplierDashboard = () => {
   const { user, logout } = useAuth();
@@ -39,34 +18,47 @@ const SupplierDashboard = () => {
   });
 
   useEffect(() => {
-    // Get supplier's categories from profile
-    const savedUser = localStorage.getItem('solomon_user');
-    let supplierCategories = ['Textiles & Apparel']; // Default category
-    
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      if (user.product_categories && user.product_categories.length > 0) {
-        supplierCategories = user.product_categories;
+    // Load approved RFQs from Supabase
+    const loadRFQs = async () => {
+      try {
+        // Get supplier profile to find categories
+        let supplierCategories = ['Textiles & Apparel']; // Default
+        if (user?.id) {
+          const supplierProfile = await db.getSupplierById(user.id);
+          if (supplierProfile?.product_categories?.length) {
+            supplierCategories = supplierProfile.product_categories;
+          }
+        }
+        
+        // Get approved RFQs that match supplier categories
+        const allRFQs = await db.getRFQs();
+        const matchedRFQs = allRFQs.filter(rfq => 
+          rfq.status === 'approved' && supplierCategories.includes(rfq.category)
+        );
+        
+        // Get buyer information for each RFQ
+        const rfqsWithBuyerInfo = await Promise.all(
+          matchedRFQs.map(async (rfq) => {
+            const buyer = await db.getUserById(rfq.buyer_id);
+            return {
+              ...rfq,
+              buyer_company: buyer?.company || 'Unknown Company',
+              buyer_country: buyer?.country || 'Unknown',
+              status: 'new' as const,
+              urgency: 'medium' as const,
+              match_score: 90
+            };
+          })
+        );
+        
+        setRfqs(rfqsWithBuyerInfo);
+      } catch (error) {
+        console.error('Error loading RFQs:', error);
       }
-    }
-    
-    // Load approved RFQs from localStorage that match supplier's categories
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const approvedRFQs = userRFQs.filter((rfq: any) => 
-      rfq.status === 'approved' && supplierCategories.includes(rfq.category)
-    ).map((rfq: any) => ({
-      ...rfq,
-      target_price: parseFloat(rfq.target_price) || 0,
-      buyer_company: rfq.buyer_company || 'Buyer Company',
-      buyer_country: rfq.buyer_country || 'Country',
-      delivery_timeline: rfq.delivery_timeline || '30 days',
-      status: 'new' as const,
-      urgency: 'medium' as const,
-      match_score: 90
-    }));
-    
-    setRfqs(approvedRFQs);
-  }, []);
+    };
+
+    loadRFQs();
+  }, [user?.id]);
 
   const [stats] = useState({
     total_rfqs: 12,
@@ -102,61 +94,63 @@ const SupplierDashboard = () => {
         return;
       }
       
-      // Update RFQ status to quoted
-      setRfqs(prev => prev.map(rfq => 
-        rfq.id === selectedRfq.id 
-          ? { ...rfq, status: 'quoted' as const }
-          : rfq
-      ));
-      
-      // Store quotation in localStorage for demo
-      const quotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-      
-      // Get current supplier info
-      const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
-      
-      const newQuotation = {
-        id: `q-${Date.now()}`,
-        rfq_id: selectedRfq.id,
-        rfq_title: selectedRfq.title,
-        supplier_id: currentUser.id,
-        supplier_name: currentUser.name || 'Supplier User',
-        supplier_company: currentUser.company || 'Supplier Company',
-        supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
-        supplier_email: currentUser.email,
-        supplier_phone: currentUser.phone || '+91 XXXXXXXXXX',
-        buyer_company: selectedRfq.buyer_company,
-        buyer_country: selectedRfq.buyer_country,
-        quoted_price: parseFloat(quoteForm.price_per_unit),
-        moq: parseInt(quoteForm.moq) || selectedRfq.quantity,
-        lead_time: quoteForm.lead_time,
-        payment_terms: quoteForm.payment_terms,
-        shipping_terms: quoteForm.shipping_terms,
-        validity_days: parseInt(quoteForm.validity_days),
-        quality_guarantee: quoteForm.quality_guarantee,
-        sample_available: quoteForm.sample_available,
-        status: 'pending_review',
-        submitted_at: new Date().toISOString().split('T')[0],
-        notes: quoteForm.notes,
-        total_value: parseFloat(quoteForm.price_per_unit) * (parseInt(quoteForm.moq) || selectedRfq.quantity)
+      // Submit quotation to Supabase
+      const submitQuotation = async () => {
+        try {
+          const quotationData = {
+            rfq_id: selectedRfq.id,
+            supplier_id: user?.id,
+            supplier_name: user?.name || 'Supplier User',
+            supplier_company: user?.company || 'Supplier Company',
+            supplier_location: 'India',
+            supplier_email: user?.email || '',
+            supplier_phone: user?.phone || '',
+            quoted_price: parseFloat(quoteForm.price_per_unit),
+            moq: parseInt(quoteForm.moq) || selectedRfq.quantity,
+            lead_time: quoteForm.lead_time,
+            payment_terms: quoteForm.payment_terms,
+            shipping_terms: quoteForm.shipping_terms,
+            validity_days: parseInt(quoteForm.validity_days),
+            quality_guarantee: quoteForm.quality_guarantee,
+            sample_available: quoteForm.sample_available,
+            notes: quoteForm.notes,
+            total_value: parseFloat(quoteForm.price_per_unit) * (parseInt(quoteForm.moq) || selectedRfq.quantity)
+          };
+
+          const newQuotation = await db.createQuotation(quotationData);
+          
+          if (newQuotation) {
+            // Update RFQ status to quoted
+            setRfqs(prev => prev.map(rfq => 
+              rfq.id === selectedRfq.id 
+                ? { ...rfq, status: 'quoted' as const }
+                : rfq
+            ));
+            
+            setShowQuoteModal(false);
+            setSelectedRfq(null);
+            setQuoteForm({
+              price_per_unit: '',
+              moq: '',
+              lead_time: '',
+              payment_terms: '',
+              shipping_terms: '',
+              validity_days: '',
+              quality_guarantee: true,
+              sample_available: true,
+              notes: ''
+            });
+            alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
+          } else {
+            alert('Failed to submit quote. Please try again.');
+          }
+        } catch (error) {
+          console.error('Error submitting quotation:', error);
+          alert('Failed to submit quote. Please try again.');
+        }
       };
-      quotations.push(newQuotation);
-      localStorage.setItem('supplier_quotations', JSON.stringify(quotations));
-      
-      setShowQuoteModal(false);
-      setSelectedRfq(null);
-      setQuoteForm({
-        price_per_unit: '',
-        moq: '',
-        lead_time: '',
-        payment_terms: '',
-        shipping_terms: '',
-        validity_days: '',
-        quality_guarantee: true,
-        sample_available: true,
-        notes: ''
-      });
-      alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
+
+      submitQuotation();
     }
   };
 

@@ -29,56 +29,66 @@ const BuyerAnalytics = () => {
   });
 
   useEffect(() => {
-    // Load buyer-specific analytics
-    const rfqs = db.getRFQs().filter(rfq => rfq.buyer_id === user?.id);
-    const orders = db.getOrders().filter(order => order.buyer_id === user?.id);
-    const quotations = db.getQuotations();
+    // Load buyer-specific analytics from Supabase
+    const loadAnalytics = async () => {
+      if (user?.id) {
+        try {
+          const rfqs = await db.getRFQsByBuyer(user.id);
+          const orders = await db.getOrdersByBuyer(user.id);
+          const allQuotations = await db.getQuotations();
 
-    const totalSpent = orders.reduce((sum, order) => sum + order.order_value, 0);
-    const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status));
-    const completedOrders = orders.filter(order => order.status === 'completed');
+          const totalSpent = orders.reduce((sum, order) => sum + order.order_value, 0);
+          const activeRFQs = rfqs.filter(rfq => ['approved', 'matched', 'quoted'].includes(rfq.status));
+          const completedOrders = orders.filter(order => order.status === 'completed');
 
-    // Calculate category distribution
-    const categoryCount: { [key: string]: number } = {};
-    rfqs.forEach(rfq => {
-      categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
-    });
+          // Calculate category distribution
+          const categoryCount: { [key: string]: number } = {};
+          rfqs.forEach(rfq => {
+            categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
+          });
 
-    const topCategories = Object.entries(categoryCount)
-      .map(([category, count]) => ({ category, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+          const topCategories = Object.entries(categoryCount)
+            .map(([category, count]) => ({ category, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5);
 
-    // Calculate monthly spend (last 6 months)
-    const monthlySpend = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthOrders = orders.filter(order => {
-        const orderDate = new Date(order.created_at);
-        return orderDate.getMonth() === date.getMonth() && 
-               orderDate.getFullYear() === date.getFullYear();
-      });
-      const monthSpend = monthOrders.reduce((sum, order) => sum + order.order_value, 0);
-      monthlySpend.push({
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
-        amount: monthSpend
-      });
-    }
+          // Calculate monthly spend (last 6 months)
+          const monthlySpend = [];
+          for (let i = 5; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            const monthOrders = orders.filter(order => {
+              const orderDate = new Date(order.created_at);
+              return orderDate.getMonth() === date.getMonth() && 
+                     orderDate.getFullYear() === date.getFullYear();
+            });
+            const monthSpend = monthOrders.reduce((sum, order) => sum + order.order_value, 0);
+            monthlySpend.push({
+              month: date.toLocaleDateString('en-US', { month: 'short' }),
+              amount: monthSpend
+            });
+          }
 
-    setAnalytics({
-      totalRFQs: rfqs.length,
-      activeRFQs: activeRFQs.length,
-      completedOrders: completedOrders.length,
-      totalSpent,
-      avgResponseTime: 2.5, // days
-      supplierCount: new Set(quotations.filter(q => 
-        rfqs.some(rfq => rfq.id === q.rfq_id)
-      ).map(q => q.supplier_id)).size,
-      topCategories,
-      monthlySpend,
-      rfqSuccessRate: rfqs.length > 0 ? (completedOrders.length / rfqs.length) * 100 : 0
-    });
+          setAnalytics({
+            totalRFQs: rfqs.length,
+            activeRFQs: activeRFQs.length,
+            completedOrders: completedOrders.length,
+            totalSpent,
+            avgResponseTime: 2.5, // days
+            supplierCount: new Set(allQuotations.filter(q => 
+              rfqs.some(rfq => rfq.id === q.rfq_id)
+            ).map(q => q.supplier_id)).size,
+            topCategories,
+            monthlySpend,
+            rfqSuccessRate: rfqs.length > 0 ? (completedOrders.length / rfqs.length) * 100 : 0
+          });
+        } catch (error) {
+          console.error('Error loading buyer analytics:', error);
+        }
+      }
+    };
+
+    loadAnalytics();
   }, [user?.id]);
 
   return (

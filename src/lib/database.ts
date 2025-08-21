@@ -1,4 +1,6 @@
-// Enhanced Database Layer with proper data management
+import { supabase } from './supabase';
+
+// Enhanced Database Layer with Supabase integration
 export interface User {
   id: string;
   email: string;
@@ -62,7 +64,6 @@ export interface Quotation {
 
 export interface Supplier {
   id: string;
-  user_id: string;
   company_name: string;
   contact_person: string;
   business_type: string;
@@ -102,17 +103,6 @@ export interface Order {
   tracking_info?: string;
 }
 
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  receiver_id: string;
-  message: string;
-  attachments?: string[];
-  read: boolean;
-  created_at: string;
-}
-
 export interface Analytics {
   total_users: number;
   total_buyers: number;
@@ -128,7 +118,7 @@ export interface Analytics {
   top_countries: { country: string; count: number }[];
 }
 
-// Database Service Class
+// Database Service Class with Supabase
 export class DatabaseService {
   private static instance: DatabaseService;
   
@@ -140,239 +130,608 @@ export class DatabaseService {
   }
 
   // User Management
-  async createUser(userData: Partial<User>): Promise<User> {
-    const user: User = {
-      id: `user_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      profile_completed: false,
-      verification_status: 'pending',
-      ...userData
-    } as User;
-
-    const users = this.getUsers();
-    users.push(user);
-    localStorage.setItem('users', JSON.stringify(users));
-    return user;
-  }
-
-  getUsers(): User[] {
-    return JSON.parse(localStorage.getItem('users') || '[]');
-  }
-
-  getUserById(id: string): User | null {
-    const users = this.getUsers();
-    return users.find(user => user.id === id) || null;
-  }
-
-  updateUser(id: string, updates: Partial<User>): User | null {
-    const users = this.getUsers();
-    const index = users.findIndex(user => user.id === id);
-    if (index !== -1) {
-      users[index] = { ...users[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('users', JSON.stringify(users));
-      return users[index];
+  async createUser(userData: Partial<User>): Promise<User | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([userData])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating user:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return null;
     }
-    return null;
+  }
+
+  async getUsers(): Promise<User[]> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user by ID:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      return null;
+    }
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating user:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      return null;
+    }
   }
 
   // RFQ Management
-  createRFQ(rfqData: Partial<RFQ>): RFQ {
-    const rfq: RFQ = {
-      id: `rfq_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      matched_suppliers: [],
-      quotations_count: 0,
-      status: 'pending_approval',
-      ...rfqData
-    } as RFQ;
-
-    const rfqs = this.getRFQs();
-    rfqs.push(rfq);
-    localStorage.setItem('rfqs', JSON.stringify(rfqs));
-    return rfq;
-  }
-
-  getRFQs(): RFQ[] {
-    return JSON.parse(localStorage.getItem('rfqs') || '[]');
-  }
-
-  getRFQById(id: string): RFQ | null {
-    const rfqs = this.getRFQs();
-    return rfqs.find(rfq => rfq.id === id) || null;
-  }
-
-  updateRFQ(id: string, updates: Partial<RFQ>): RFQ | null {
-    const rfqs = this.getRFQs();
-    const index = rfqs.findIndex(rfq => rfq.id === id);
-    if (index !== -1) {
-      rfqs[index] = { ...rfqs[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('rfqs', JSON.stringify(rfqs));
-      return rfqs[index];
+  async createRFQ(rfqData: Partial<RFQ>): Promise<RFQ | null> {
+    try {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .insert([{
+          ...rfqData,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          matched_suppliers: [],
+          quotations_count: 0,
+          status: 'pending_approval'
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating RFQ:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error creating RFQ:', error);
+      return null;
     }
-    return null;
+  }
+
+  async getRFQs(): Promise<RFQ[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching RFQs:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching RFQs:', error);
+      return [];
+    }
+  }
+
+  async getRFQById(id: string): Promise<RFQ | null> {
+    try {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching RFQ by ID:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching RFQ by ID:', error);
+      return null;
+    }
+  }
+
+  async updateRFQ(id: string, updates: Partial<RFQ>): Promise<RFQ | null> {
+    try {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating RFQ:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating RFQ:', error);
+      return null;
+    }
+  }
+
+  async getRFQsByBuyer(buyerId: string): Promise<RFQ[]> {
+    try {
+      const { data, error } = await supabase
+        .from('rfqs')
+        .select('*')
+        .eq('buyer_id', buyerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching buyer RFQs:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching buyer RFQs:', error);
+      return [];
+    }
   }
 
   // Quotation Management
-  createQuotation(quotationData: Partial<Quotation>): Quotation {
-    const quotation: Quotation = {
-      id: `quote_${Date.now()}`,
-      submitted_at: new Date().toISOString(),
-      status: 'pending_review',
-      ...quotationData
-    } as Quotation;
-
-    const quotations = this.getQuotations();
-    quotations.push(quotation);
-    localStorage.setItem('quotations', JSON.stringify(quotations));
-    return quotation;
-  }
-
-  getQuotations(): Quotation[] {
-    return JSON.parse(localStorage.getItem('quotations') || '[]');
-  }
-
-  updateQuotation(id: string, updates: Partial<Quotation>): Quotation | null {
-    const quotations = this.getQuotations();
-    const index = quotations.findIndex(q => q.id === id);
-    if (index !== -1) {
-      quotations[index] = { ...quotations[index], ...updates };
-      if (updates.status) {
-        quotations[index].reviewed_at = new Date().toISOString();
+  async createQuotation(quotationData: Partial<Quotation>): Promise<Quotation | null> {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .insert([{
+          ...quotationData,
+          status: 'pending_review'
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating quotation:', error);
+        return null;
       }
-      localStorage.setItem('quotations', JSON.stringify(quotations));
-      return quotations[index];
+      return data;
+    } catch (error) {
+      console.error('Error creating quotation:', error);
+      return null;
     }
-    return null;
+  }
+
+  async getQuotations(): Promise<Quotation[]> {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching quotations:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching quotations:', error);
+      return [];
+    }
+  }
+
+  async getQuotationsByRFQ(rfqId: string): Promise<Quotation[]> {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .select('*')
+        .eq('rfq_id', rfqId)
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching quotations by RFQ:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching quotations by RFQ:', error);
+      return [];
+    }
+  }
+
+  async getQuotationsBySupplier(supplierId: string): Promise<Quotation[]> {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .order('submitted_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching supplier quotations:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching supplier quotations:', error);
+      return [];
+    }
+  }
+
+  async updateQuotation(id: string, updates: Partial<Quotation>): Promise<Quotation | null> {
+    try {
+      const { data, error } = await supabase
+        .from('quotations')
+        .update({
+          ...updates,
+          reviewed_at: updates.status ? new Date().toISOString() : undefined
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating quotation:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating quotation:', error);
+      return null;
+    }
   }
 
   // Order Management
-  createOrder(orderData: Partial<Order>): Order {
-    const order: Order = {
-      id: `order_${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      status: 'confirmed',
-      ...orderData
-    } as Order;
-
-    const orders = this.getOrders();
-    orders.push(order);
-    localStorage.setItem('orders', JSON.stringify(orders));
-    return order;
-  }
-
-  getOrders(): Order[] {
-    return JSON.parse(localStorage.getItem('orders') || '[]');
-  }
-
-  updateOrder(id: string, updates: Partial<Order>): Order | null {
-    const orders = this.getOrders();
-    const index = orders.findIndex(order => order.id === id);
-    if (index !== -1) {
-      orders[index] = { ...orders[index], ...updates, updated_at: new Date().toISOString() };
-      localStorage.setItem('orders', JSON.stringify(orders));
-      return orders[index];
+  async createOrder(orderData: Partial<Order>): Promise<Order | null> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([{
+          ...orderData,
+          status: 'confirmed'
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating order:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      return null;
     }
-    return null;
+  }
+
+  async getOrders(): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching orders:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      return [];
+    }
+  }
+
+  async getOrdersByBuyer(buyerId: string): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('buyer_id', buyerId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching buyer orders:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching buyer orders:', error);
+      return [];
+    }
+  }
+
+  async getOrdersBySupplier(supplierId: string): Promise<Order[]> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching supplier orders:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching supplier orders:', error);
+      return [];
+    }
+  }
+
+  async updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating order:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating order:', error);
+      return null;
+    }
+  }
+
+  // Supplier Management
+  async createSupplierProfile(supplierData: Partial<Supplier>): Promise<Supplier | null> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .insert([supplierData])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating supplier profile:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error creating supplier profile:', error);
+      return null;
+    }
+  }
+
+  async getSuppliers(): Promise<Supplier[]> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching suppliers:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching suppliers:', error);
+      return [];
+    }
+  }
+
+  async getSupplierById(id: string): Promise<Supplier | null> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching supplier by ID:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching supplier by ID:', error);
+      return null;
+    }
+  }
+
+  async updateSupplierProfile(id: string, updates: Partial<Supplier>): Promise<Supplier | null> {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating supplier profile:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error updating supplier profile:', error);
+      return null;
+    }
   }
 
   // Analytics
-  getAnalytics(): Analytics {
-    const users = this.getUsers();
-    const rfqs = this.getRFQs();
-    const quotations = this.getQuotations();
-    const orders = this.getOrders();
+  async getAnalytics(): Promise<Analytics> {
+    try {
+      const [usersResult, rfqsResult, quotationsResult, ordersResult] = await Promise.all([
+        supabase.from('users').select('*'),
+        supabase.from('rfqs').select('*'),
+        supabase.from('quotations').select('*'),
+        supabase.from('orders').select('*')
+      ]);
 
-    const buyers = users.filter(u => u.user_type === 'buyer');
-    const suppliers = users.filter(u => u.user_type === 'supplier');
+      const users = usersResult.data || [];
+      const rfqs = rfqsResult.data || [];
+      const quotations = quotationsResult.data || [];
+      const orders = ordersResult.data || [];
 
-    const totalGMV = orders.reduce((sum, order) => sum + order.order_value, 0);
-    const currentMonth = new Date().getMonth();
-    const monthlyOrders = orders.filter(order => 
-      new Date(order.created_at).getMonth() === currentMonth
-    );
-    const monthlyGMV = monthlyOrders.reduce((sum, order) => sum + order.order_value, 0);
+      const buyers = users.filter(u => u.user_type === 'buyer');
+      const suppliers = users.filter(u => u.user_type === 'supplier');
 
-    const categoryCount: { [key: string]: number } = {};
-    rfqs.forEach(rfq => {
-      categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
-    });
+      const totalGMV = orders.reduce((sum, order) => sum + order.order_value, 0);
+      const currentMonth = new Date().getMonth();
+      const monthlyOrders = orders.filter(order => 
+        new Date(order.created_at).getMonth() === currentMonth
+      );
+      const monthlyGMV = monthlyOrders.reduce((sum, order) => sum + order.order_value, 0);
 
-    const countryCount: { [key: string]: number } = {};
-    buyers.forEach(buyer => {
-      countryCount[buyer.country] = (countryCount[buyer.country] || 0) + 1;
-    });
+      const categoryCount: { [key: string]: number } = {};
+      rfqs.forEach(rfq => {
+        categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
+      });
 
-    return {
-      total_users: users.length,
-      total_buyers: buyers.length,
-      total_suppliers: suppliers.length,
-      total_rfqs: rfqs.length,
-      total_quotations: quotations.length,
-      total_orders: orders.length,
-      total_gmv: totalGMV,
-      monthly_gmv: monthlyGMV,
-      avg_order_value: orders.length > 0 ? totalGMV / orders.length : 0,
-      success_rate: rfqs.length > 0 ? (orders.length / rfqs.length) * 100 : 0,
-      top_categories: Object.entries(categoryCount)
-        .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5),
-      top_countries: Object.entries(countryCount)
-        .map(([country, count]) => ({ country, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-    };
+      const countryCount: { [key: string]: number } = {};
+      buyers.forEach(buyer => {
+        countryCount[buyer.country] = (countryCount[buyer.country] || 0) + 1;
+      });
+
+      return {
+        total_users: users.length,
+        total_buyers: buyers.length,
+        total_suppliers: suppliers.length,
+        total_rfqs: rfqs.length,
+        total_quotations: quotations.length,
+        total_orders: orders.length,
+        total_gmv: totalGMV,
+        monthly_gmv: monthlyGMV,
+        avg_order_value: orders.length > 0 ? totalGMV / orders.length : 0,
+        success_rate: rfqs.length > 0 ? (orders.length / rfqs.length) * 100 : 0,
+        top_categories: Object.entries(categoryCount)
+          .map(([category, count]) => ({ category, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5),
+        top_countries: Object.entries(countryCount)
+          .map(([country, count]) => ({ country, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5)
+      };
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      return {
+        total_users: 0,
+        total_buyers: 0,
+        total_suppliers: 0,
+        total_rfqs: 0,
+        total_quotations: 0,
+        total_orders: 0,
+        total_gmv: 0,
+        monthly_gmv: 0,
+        avg_order_value: 0,
+        success_rate: 0,
+        top_categories: [],
+        top_countries: []
+      };
+    }
   }
 
   // Search and Filter
-  searchRFQs(query: string, filters?: { category?: string; status?: string }): RFQ[] {
-    let rfqs = this.getRFQs();
-    
-    if (query) {
-      rfqs = rfqs.filter(rfq => 
-        rfq.title.toLowerCase().includes(query.toLowerCase()) ||
-        rfq.description.toLowerCase().includes(query.toLowerCase()) ||
-        rfq.category.toLowerCase().includes(query.toLowerCase())
-      );
-    }
+  async searchRFQs(query: string, filters?: { category?: string; status?: string }): Promise<RFQ[]> {
+    try {
+      let queryBuilder = supabase.from('rfqs').select('*');
 
-    if (filters?.category) {
-      rfqs = rfqs.filter(rfq => rfq.category === filters.category);
-    }
+      if (query) {
+        queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
+      }
 
-    if (filters?.status) {
-      rfqs = rfqs.filter(rfq => rfq.status === filters.status);
-    }
+      if (filters?.category) {
+        queryBuilder = queryBuilder.eq('category', filters.category);
+      }
 
-    return rfqs;
+      if (filters?.status) {
+        queryBuilder = queryBuilder.eq('status', filters.status);
+      }
+
+      const { data, error } = await queryBuilder.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error searching RFQs:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error searching RFQs:', error);
+      return [];
+    }
   }
 
   // Notification System
-  createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    const notification = {
-      id: `notif_${Date.now()}`,
-      user_id: userId,
-      title,
-      message,
-      type,
-      read: false,
-      created_at: new Date().toISOString()
-    };
-    notifications.push(notification);
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-    return notification;
+  async createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert([{
+          user_id: userId,
+          title,
+          message,
+          type,
+          read: false
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating notification:', error);
+        return null;
+      }
+      return data;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      return null;
+    }
   }
 
-  getUserNotifications(userId: string) {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    return notifications.filter((n: any) => n.user_id === userId).sort((a: any, b: any) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+  async getUserNotifications(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return [];
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
   }
 }
 
