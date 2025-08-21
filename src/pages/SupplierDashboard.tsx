@@ -160,7 +160,6 @@ const SupplierDashboard = () => {
         sample_available: true,
         notes: '',
         images: []
-        images: []
       });
       alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
     }
