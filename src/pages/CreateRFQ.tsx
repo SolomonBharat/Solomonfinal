@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../lib/database';
+import { storage } from '../lib/mockData';
+import type { RFQ } from '../lib/mockData';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -51,8 +52,6 @@ const CreateRFQ = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted with data:', formData);
-    console.log('User:', user);
     
     // Validate required fields
     if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
@@ -61,20 +60,25 @@ const CreateRFQ = () => {
     }
     
     if (!user?.id) {
-      alert('User not authenticated. Please login again.');
+      alert('Please login to submit RFQ');
       return;
     }
     
     setLoading(true);
     
     try {
-      // Create new RFQ with Supabase
-      const newRFQ = await db.createRFQ({
-        buyer_id: user?.id,
+      // Get existing RFQs
+      const rfqs = storage.get('rfqs');
+      
+      // Create new RFQ
+      const newRFQ: RFQ = {
+        id: storage.generateId(),
+        buyer_id: user.id,
         title: formData.title,
         category: formData.category,
         description: formData.description,
         quantity: parseInt(formData.quantity),
+        unit: formData.unit,
         target_price: parseFloat(formData.target_price),
         max_price: formData.max_price ? parseFloat(formData.max_price) : undefined,
         delivery_timeline: formData.delivery_timeline,
@@ -82,23 +86,22 @@ const CreateRFQ = () => {
         quality_standards: formData.quality_standards,
         certifications_needed: formData.certifications_needed,
         additional_requirements: formData.additional_requirements,
-        unit: formData.unit
-      });
+        status: 'pending_approval',
+        created_at: new Date().toISOString(),
+        quotations_count: 0
+      };
 
-      console.log('RFQ creation result:', newRFQ);
+      // Save to localStorage
+      rfqs.push(newRFQ);
+      storage.set('rfqs', rfqs);
       
-      if (newRFQ) {
-        setLoading(false);
-        alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
-        navigate('/dashboard');
-      } else {
-        setLoading(false);
-        alert('Failed to submit RFQ. Please check all required fields and try again.');
-      }
+      setLoading(false);
+      alert('✅ RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error submitting RFQ:', error);
       setLoading(false);
-      alert(`Failed to submit RFQ: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+      alert('❌ Failed to submit RFQ. Please try again.');
     }
   };
 
@@ -278,11 +281,11 @@ const CreateRFQ = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Timeline</option>
-                      <option value="30-days">30 days</option>
-                      <option value="45-days">45 days</option>
-                      <option value="60-days">60 days</option>
-                      <option value="90-days">90 days</option>
-                      <option value="negotiable">Negotiable</option>
+                      <option value="30 days">30 days</option>
+                      <option value="45 days">45 days</option>
+                      <option value="60 days">60 days</option>
+                      <option value="90 days">90 days</option>
+                      <option value="Negotiable">Negotiable</option>
                     </select>
                   </div>
                 </div>

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, FileText, Clock, CheckCircle, X, Eye, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { db, RFQ } from '../lib/database';
-
+import { storage } from '../lib/mockData';
+import type { RFQ } from '../lib/mockData';
 
 const MyRFQs = () => {
   const { user } = useAuth();
@@ -13,25 +13,12 @@ const MyRFQs = () => {
   const [showRfqModal, setShowRfqModal] = useState(false);
 
   useEffect(() => {
-    // Load user's RFQs from Supabase
-    const loadRFQs = async () => {
+    // Load user's RFQs from localStorage
+    const loadRFQs = () => {
       if (user?.id) {
-        const userRFQs = await db.getRFQsByBuyer(user.id);
-        
-        // Update quotations count for each RFQ
-        const rfqsWithQuotations = await Promise.all(
-          userRFQs.map(async (rfq) => {
-            const quotations = await db.getQuotationsByRFQ(rfq.id);
-            const sentQuotations = quotations.filter(q => q.status === 'sent_to_buyer');
-            return {
-              ...rfq,
-              quotations_count: sentQuotations.length,
-              status: sentQuotations.length > 0 ? 'quoted' : rfq.status
-            };
-          })
-        );
-        
-        setRfqs(rfqsWithQuotations);
+        const allRfqs = storage.get('rfqs');
+        const userRfqs = allRfqs.filter((rfq: RFQ) => rfq.buyer_id === user.id);
+        setRfqs(userRfqs);
       }
     };
 
@@ -42,6 +29,7 @@ const MyRFQs = () => {
     setSelectedRfq(rfq);
     setShowRfqModal(true);
   };
+
   const getStatusBadge = (status: string) => {
     const badges = {
       pending_approval: 'bg-yellow-100 text-yellow-800',
@@ -85,227 +73,212 @@ const MyRFQs = () => {
   return (
     <>
       <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Link 
-              to="/dashboard" 
-              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span>Back to Dashboard</span>
-            </Link>
-            <span className="text-gray-300">|</span>
-            <span className="text-gray-900 font-medium">My RFQs</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Page Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">My RFQs</h1>
-              <p className="text-gray-600">
-                Track all your sourcing requests and their progress
-              </p>
-            </div>
-            <Link 
-              to="/create-rfq"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-            >
-              <Plus className="h-5 w-5" />
-              <span>Create New RFQ</span>
-            </Link>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total RFQs</p>
-                  <p className="text-2xl font-bold text-gray-900">{rfqs.length}</p>
-                </div>
-                <FileText className="h-8 w-8 text-blue-500" />
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {rfqs.filter(rfq => rfq.status === 'pending_approval').length}
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {rfqs.filter(rfq => ['approved', 'matched'].includes(rfq.status)).length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-blue-500" />
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Quoted</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {rfqs.filter(rfq => rfq.status === 'quoted').length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Bar */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="px-6 py-4">
             <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700">Filter by status:</span>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <Link 
+                to="/dashboard" 
+                className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
               >
-                <option value="all">All Status</option>
-                <option value="pending_approval">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="matched">Matched</option>
-                <option value="quoted">Quoted</option>
-                <option value="closed">Closed</option>
-                <option value="rejected">Rejected</option>
-              </select>
-              <span className="text-sm text-gray-500">
-                {filteredRFQs.length} RFQ{filteredRFQs.length !== 1 ? 's' : ''} found
-              </span>
+                <ArrowLeft className="h-5 w-5" />
+                <span>Back to Dashboard</span>
+              </Link>
+              <span className="text-gray-300">|</span>
+              <span className="text-gray-900 font-medium">My RFQs</span>
             </div>
           </div>
+        </header>
 
-          {/* RFQs Grid */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {filteredRFQs.map((rfq) => (
-              <div key={rfq.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {rfq.title}
-                      </h3>
-                      <p className="text-sm text-gray-600">{rfq.category}</p>
-                    </div>
-                    <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(rfq.status)}`}>
-                      {getStatusIcon(rfq.status)}
-                      <span className="capitalize">{rfq.status.replace('_', ' ')}</span>
-                    </span>
+        <div className="px-6 py-8">
+          <div className="max-w-6xl mx-auto">
+            {/* Page Header */}
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">My RFQs</h1>
+                <p className="text-gray-600">
+                  Track all your sourcing requests and their progress
+                </p>
+              </div>
+              <Link 
+                to="/create-rfq"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Create New RFQ</span>
+              </Link>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total RFQs</p>
+                    <p className="text-2xl font-bold text-gray-900">{rfqs.length}</p>
                   </div>
-
-                  {/* RFQ Details */}
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <span className="text-gray-500 text-sm">Quantity:</span>
-                      <p className="font-medium text-sm">{rfq.quantity.toLocaleString()} {rfq.unit}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Target Price:</span>
-                      <p className="font-medium text-sm">${rfq.target_price.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Created:</span>
-                      <p className="font-medium text-sm">{new Date(rfq.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 text-sm">Quotations:</span>
-                      <p className="font-medium text-sm">
-                        {rfq.quotations_count > 0 ? `${rfq.quotations_count} received` : 'None yet'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  {rfq.description && (
-                    <div className="mb-4">
-                      <p className="text-sm text-gray-600 line-clamp-2">{rfq.description}</p>
-                    </div>
-                  )}
-
-                  {/* Status Message */}
-                  <div className="mb-4 p-3 bg-gray-50 rounded-md">
-                    <p className="text-sm text-gray-700">
-                      <strong>Status:</strong> {getStatusMessage(rfq.status)}
+                  <FileText className="h-8 w-8 text-blue-500" />
+                </div>
+              </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {rfqs.filter(rfq => rfq.status === 'pending_approval').length}
                     </p>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-between items-center">
-                    <div className="flex space-x-2">
-                      {rfq.status === 'matched' && (
-                        <Link 
-                          to={`/rfq/${rfq.id}/suppliers`}
-                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                        >
-                          View Suppliers
-                        </Link>
-                      )}
-                      {rfq.status === 'quoted' && (
-                        <Link 
-                          to={`/rfq/${rfq.id}/quotations`}
-                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                        >
-                          View Quotes ({rfq.quotations_count})
-                        </Link>
-                      )}
-                      <button className="flex items-center space-x-1 text-gray-600 hover:text-gray-800 text-sm">
-                        <Eye className="h-3 w-3" />
-                        <span>Quick View</span>
-                      </button>
-                    </div>
-                  </div>
+                  <Clock className="h-8 w-8 text-yellow-500" />
                 </div>
               </div>
-            ))}
-          </div>
+              
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Active</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {rfqs.filter(rfq => ['approved', 'matched'].includes(rfq.status)).length}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-blue-500" />
+                </div>
+              </div>
 
-          {/* Empty State */}
-          {filteredRFQs.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs found</h3>
-              <p className="text-gray-600 mb-6">
-                {filterStatus === 'all' 
-                  ? "You haven't created any RFQs yet. Start sourcing your first product!"
-                  : `No RFQs with status "${filterStatus.replace('_', ' ')}" found.`
-                }
-              </p>
-              {filterStatus === 'all' && (
-                <Link 
-                  to="/create-rfq"
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Create Your First RFQ</span>
-                </Link>
-              )}
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Quoted</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {rfqs.filter(rfq => rfq.status === 'quoted').length}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </div>
             </div>
-          )}
+
+            {/* Filter Bar */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+              <div className="flex items-center space-x-4">
+                <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="pending_approval">Pending Approval</option>
+                  <option value="approved">Approved</option>
+                  <option value="matched">Matched</option>
+                  <option value="quoted">Quoted</option>
+                  <option value="closed">Closed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+                <span className="text-sm text-gray-500">
+                  {filteredRFQs.length} RFQ{filteredRFQs.length !== 1 ? 's' : ''} found
+                </span>
+              </div>
+            </div>
+
+            {/* RFQs Grid */}
+            {filteredRFQs.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs found</h3>
+                <p className="text-gray-600 mb-6">
+                  {filterStatus === 'all' 
+                    ? "You haven't created any RFQs yet. Start sourcing your first product!"
+                    : `No RFQs with status "${filterStatus.replace('_', ' ')}" found.`
+                  }
+                </p>
+                {filterStatus === 'all' && (
+                  <Link 
+                    to="/create-rfq"
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-flex items-center space-x-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span>Create Your First RFQ</span>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-2 gap-6">
+                {filteredRFQs.map((rfq) => (
+                  <div key={rfq.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            {rfq.title}
+                          </h3>
+                          <p className="text-sm text-gray-600">{rfq.category}</p>
+                        </div>
+                        <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(rfq.status)}`}>
+                          {getStatusIcon(rfq.status)}
+                          <span className="capitalize">{rfq.status.replace('_', ' ')}</span>
+                        </span>
+                      </div>
+
+                      {/* RFQ Details */}
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <span className="text-gray-500 text-sm">Quantity:</span>
+                          <p className="font-medium text-sm">{rfq.quantity.toLocaleString()} {rfq.unit}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm">Target Price:</span>
+                          <p className="font-medium text-sm">${rfq.target_price.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm">Created:</span>
+                          <p className="font-medium text-sm">{new Date(rfq.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 text-sm">Quotations:</span>
+                          <p className="font-medium text-sm">
+                            {rfq.quotations_count > 0 ? `${rfq.quotations_count} received` : 'None yet'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      {rfq.description && (
+                        <div className="mb-4">
+                          <p className="text-sm text-gray-600 line-clamp-2">{rfq.description}</p>
+                        </div>
+                      )}
+
+                      {/* Status Message */}
+                      <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                        <p className="text-sm text-gray-700">
+                          <strong>Status:</strong> {getStatusMessage(rfq.status)}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={() => handleViewRfqDetails(rfq)}
+                          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          <Eye className="h-3 w-3" />
+                          <span>View Details</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      </div>
+
       {/* RFQ Details Modal */}
       {showRfqModal && selectedRfq && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-xl font-semibold text-gray-900">RFQ Details</h3>
               <button
@@ -318,7 +291,7 @@ const MyRFQs = () => {
             
             <div className="p-6">
               {/* Basic Information */}
-              <div className="mb-8">
+              <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
@@ -343,8 +316,18 @@ const MyRFQs = () => {
                 </div>
               </div>
 
+              {/* Product Description */}
+              {selectedRfq.description && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Description</h4>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-700">{selectedRfq.description}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Pricing Information */}
-              <div className="mb-8">
+              <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h4>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="bg-blue-50 p-4 rounded-lg">
@@ -367,18 +350,8 @@ const MyRFQs = () => {
                 </div>
               </div>
 
-              {/* Product Description */}
-              {selectedRfq.description && (
-                <div className="mb-8">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Description</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-700">{selectedRfq.description}</p>
-                  </div>
-                </div>
-              )}
-
               {/* Requirements & Terms */}
-              <div className="mb-8">
+              <div className="mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Requirements & Terms</h4>
                 <div className="grid md:grid-cols-2 gap-6">
                   {selectedRfq.delivery_timeline && (
@@ -410,30 +383,13 @@ const MyRFQs = () => {
 
               {/* Additional Requirements */}
               {selectedRfq.additional_requirements && (
-                <div className="mb-8">
+                <div className="mb-6">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Additional Requirements</h4>
                   <div className="bg-yellow-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-700">{selectedRfq.additional_requirements}</p>
                   </div>
                 </div>
               )}
-
-              {/* Timeline */}
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h4>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Created Date</label>
-                    <p className="mt-1 text-sm text-gray-900">{new Date(selectedRfq.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Quotations Received</label>
-                    <p className="mt-1 text-sm text-gray-900 font-medium">
-                      {selectedRfq.quotations_count > 0 ? `${selectedRfq.quotations_count} quotations` : 'No quotations yet'}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
             
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
