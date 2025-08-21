@@ -20,36 +20,6 @@ const MatchingResults = () => {
   const { rfqId } = useParams();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-  useEffect(() => {
-    // Load onboarded suppliers that match the RFQ category
-    const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const currentRFQ = userRFQs.find((rfq: any) => rfq.id === rfqId);
-    
-    if (currentRFQ) {
-      const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-      const matchingSuppliers = onboardedSuppliers
-        .filter((supplier: any) => 
-          supplier.productCategories?.includes(currentRFQ.category) ||
-          supplier.product_categories?.includes(currentRFQ.category)
-        )
-        .map((supplier: any) => ({
-          id: supplier.id,
-          name: supplier.contactPerson || supplier.contact_person,
-          location: supplier.address?.split(',').slice(0, 2).join(', ') || 'India',
-          rating: 4.5,
-          years_experience: parseInt(supplier.yearsInBusiness || supplier.years_in_business) || 0,
-          moq: supplier.minimumOrderQuantity || supplier.minimum_order_quantity || '1,000 pieces',
-          lead_time: '25-30 days',
-          specialization: supplier.productCategories || supplier.product_categories || [],
-          certifications: supplier.certifications || [],
-          match_score: 85 + Math.floor(Math.random() * 15), // 85-100% match
-          verified: supplier.verified || false
-        }));
-      
-      setSuppliers(matchingSuppliers);
-    }
-  }, [rfqId]);
-
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
 
   const handleSupplierSelect = (supplierId: string) => {

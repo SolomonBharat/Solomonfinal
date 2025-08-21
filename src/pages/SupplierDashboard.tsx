@@ -41,15 +41,12 @@ const SupplierDashboard = () => {
   useEffect(() => {
     // Get supplier's categories from profile
     const savedUser = localStorage.getItem('solomon_user');
-    let supplierCategories = [];
+    let supplierCategories = ['Textiles & Apparel']; // Default category
     
     if (savedUser) {
       const user = JSON.parse(savedUser);
       if (user.product_categories && user.product_categories.length > 0) {
         supplierCategories = user.product_categories;
-      } else {
-        // If no categories set, default to common ones
-        supplierCategories = ['Textiles & Apparel'];
       }
     }
     
@@ -71,28 +68,12 @@ const SupplierDashboard = () => {
     setRfqs(approvedRFQs);
   }, []);
 
-  const [stats, setStats] = useState({
-    total_rfqs: 0,
-    new_rfqs: 0,
-    quotes_sent: 0,
-    monthly_revenue: 0
+  const [stats] = useState({
+    total_rfqs: 12,
+    new_rfqs: 3,
+    quotes_sent: 8,
+    monthly_revenue: 28000
   });
-
-  useEffect(() => {
-    // Calculate real stats
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const userQuotations = supplierQuotations.filter((q: any) => q.supplier_id === user?.id);
-    const sentQuotes = userQuotations.filter((q: any) => q.status !== 'pending_review');
-    const acceptedQuotes = userQuotations.filter((q: any) => q.status === 'accepted');
-    const monthlyRevenue = acceptedQuotes.reduce((sum: number, q: any) => sum + (q.total_value || 0), 0);
-
-    setStats({
-      total_rfqs: rfqs.length,
-      new_rfqs: rfqs.filter(rfq => rfq.status === 'new').length,
-      quotes_sent: sentQuotes.length,
-      monthly_revenue: monthlyRevenue
-    });
-  }, [rfqs, user?.id]);
 
   const handleQuoteSubmit = (rfqId: string) => {
     const rfq = rfqs.find(r => r.id === rfqId);
