@@ -454,7 +454,7 @@ const AdminRFQs = () => {
                             className="flex items-center space-x-1 text-purple-600 hover:text-purple-800 text-sm"
                           >
                             <MessageCircle className="h-3 w-3" />
-                            <span>Q&A ({db.getRFQQuestionsByRFQId(rfq.id).length})</span>
+                            <span>Q&A ({db.getRFQQuestions(rfq.id).length})</span>
                           </button>
                         </div>
                       </td>

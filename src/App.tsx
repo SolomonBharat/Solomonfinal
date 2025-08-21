@@ -24,6 +24,7 @@ import AdminAnalytics from './pages/AdminAnalytics';
 import OnboardSupplier from './pages/OnboardSupplier';
 import BuyerOrders from './pages/BuyerOrders';
 import SupplierOrders from './pages/SupplierOrders';
+import AdminSettings from './pages/AdminSettings';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
