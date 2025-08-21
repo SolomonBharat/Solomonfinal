@@ -74,6 +74,11 @@ const BuyerDashboard = () => {
     setShowRfqModal(true);
   };
 
+  const handleViewQuery = (query: any) => {
+    setSelectedQuery(query);
+    setShowQueryModal(true);
+  };
+
   const handleRespondToQuery = () => {
     if (!buyerResponse.trim() || !selectedQuery) return;
     

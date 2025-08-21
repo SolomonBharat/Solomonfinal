@@ -18,6 +18,8 @@ import {
   MessageCircle,
   Package,
   TrendingUp
+  HelpCircle,
+  Send
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -61,6 +63,9 @@ const SupplierDashboard = () => {
   const [selectedQuery, setSelectedQuery] = useState<Query | null>(null);
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [buyerResponse, setBuyerResponse] = useState('');
+  const [showQueryForm, setShowQueryForm] = useState(false);
+  const [queryText, setQueryText] = useState('');
+  const [queryRfqId, setQueryRfqId] = useState<string>('');
 
   useEffect(() => {
     // Load approved RFQs that match supplier's category
@@ -89,6 +94,35 @@ const SupplierDashboard = () => {
     window.location.href = `/supplier/quote/${rfqId}`;
   };
 
+  const handleRaiseQuery = (rfq: RFQ) => {
+    setQueryRfqId(rfq.id);
+    setShowQueryForm(true);
+  };
+
+  const handleSubmitQuery = () => {
+    if (!queryText.trim()) return;
+    
+    const newQuery = {
+      id: `query_${Date.now()}`,
+      rfq_id: queryRfqId,
+      rfq_title: selectedRfq?.title || '',
+      supplier_id: user?.id || '',
+      supplier_name: user?.name || '',
+      supplier_company: user?.company || '',
+      question: queryText,
+      status: 'pending_admin_review',
+      created_at: new Date().toISOString()
+    };
+    
+    const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+    queries.push(newQuery);
+    localStorage.setItem('supplier_queries', JSON.stringify(queries));
+    
+    setQueryText('');
+    setShowQueryForm(false);
+    setShowRfqModal(false);
+    alert('✅ Query submitted!\n\n📋 Your question has been sent to admin.\n⏰ Admin will review and forward to the buyer.\n📧 You\'ll be notified when the buyer responds.');
+  };
   const getStatusBadge = (status: string) => {
     const badges = {
       pending_approval: 'bg-yellow-100 text-yellow-800',
@@ -269,6 +303,13 @@ const SupplierDashboard = () => {
                           >
                             <Eye className="h-3 w-3" />
                             <span>View Details</span>
+                          </button>
+                          <button
+                            onClick={() => handleRaiseQuery(rfq)}
+                            className="text-orange-600 hover:text-orange-800 text-sm font-medium flex items-center space-x-1"
+                          >
+                            <HelpCircle className="h-3 w-3" />
+                            <span>Ask Question</span>
                           </button>
                           <button
                             onClick={() => handleQuoteNow(rfq.id)}
@@ -568,7 +609,82 @@ const SupplierDashboard = () => {
                 >
                   🚀 Quote Now
                 </button>
+                <button
+                  onClick={() => {
+                    setQueryRfqId(selectedRfq.id);
+                    setShowQueryForm(true);
+                  }}
+                  className="px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors font-medium"
+                >
+                  ❓ Ask Question
+                </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Query Form Modal */}
+      {showQueryForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-900">Ask a Question</h3>
+              <button
+                onClick={() => setShowQueryForm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>RFQ:</strong> {rfqs.find(r => r.id === queryRfqId)?.title}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Buyer:</strong> {rfqs.find(r => r.id === queryRfqId)?.buyer_company}
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Question *
+                </label>
+                <textarea
+                  id="query"
+                  rows={4}
+                  value={queryText}
+                  onChange={(e) => setQueryText(e.target.value)}
+                  placeholder="Ask about specifications, quality requirements, delivery terms, or any other details..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Process:</strong> Your question will be reviewed by admin and then forwarded to the buyer. 
+                  You'll be notified when the buyer responds.
+                </p>
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowQueryForm(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitQuery}
+                disabled={!queryText.trim()}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+              >
+                <Send className="h-4 w-4" />
+                <span>Submit Question</span>
+              </button>
             </div>
           </div>
         </div>
