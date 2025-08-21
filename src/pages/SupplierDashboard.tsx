@@ -31,45 +31,45 @@ const SupplierDashboard = () => {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showRfqDetailsModal, setShowRfqDetailsModal] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({
+    price_per_unit: '',
+    moq: '',
+    lead_time: '',
+    notes: ''
+  });
 
   useEffect(() => {
-    // Get supplier's categories from onboarded suppliers
-    const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const currentSupplier = onboardedSuppliers.find((s: any) => s.email === user?.email);
-    
+    // Get supplier's categories from profile
+    const savedUser = localStorage.getItem('solomon_user');
     let supplierCategories = [];
-    if (currentSupplier && currentSupplier.productCategories) {
-      supplierCategories = currentSupplier.productCategories;
-    } else {
-      supplierCategories = ['Textiles & Apparel'];
+    
+    if (savedUser) {
+      const user = JSON.parse(savedUser);
+      if (user.product_categories && user.product_categories.length > 0) {
+        supplierCategories = user.product_categories;
+      } else {
+        // If no categories set, default to common ones
+        supplierCategories = ['Textiles & Apparel'];
+      }
     }
     
     // Load approved RFQs from localStorage that match supplier's categories
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    
     const approvedRFQs = userRFQs.filter((rfq: any) => 
       rfq.status === 'approved' && supplierCategories.includes(rfq.category)
-    ).map((rfq: any) => {
-      // Check if this supplier has already quoted for this RFQ
-      const hasQuoted = supplierQuotations.some((q: any) => 
-        q.rfq_id === rfq.id && q.supplier_email === user?.email
-      );
-      
-      return {
-        ...rfq,
-        target_price: parseFloat(rfq.target_price) || 0,
-        buyer_company: rfq.buyer_company || 'Buyer Company',
-        buyer_country: rfq.buyer_country || 'Country',
-        delivery_timeline: rfq.delivery_timeline || '30 days',
-        status: hasQuoted ? 'quoted' as const : 'new' as const,
-        urgency: 'medium' as const,
-        match_score: 90
-      };
-    });
+    ).map((rfq: any) => ({
+      ...rfq,
+      target_price: parseFloat(rfq.target_price) || 0,
+      buyer_company: rfq.buyer_company || 'Buyer Company',
+      buyer_country: rfq.buyer_country || 'Country',
+      delivery_timeline: rfq.delivery_timeline || '30 days',
+      status: 'new' as const,
+      urgency: 'medium' as const,
+      match_score: 90
+    }));
     
     setRfqs(approvedRFQs);
-  }, [user?.email]);
+  }, []);
 
   const [stats, setStats] = useState({
     total_rfqs: 0,
@@ -81,7 +81,7 @@ const SupplierDashboard = () => {
   useEffect(() => {
     // Calculate real stats
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const userQuotations = supplierQuotations.filter((q: any) => q.supplier_email === user?.email);
+    const userQuotations = supplierQuotations.filter((q: any) => q.supplier_id === user?.id);
     const sentQuotes = userQuotations.filter((q: any) => q.status !== 'pending_review');
     const acceptedQuotes = userQuotations.filter((q: any) => q.status === 'accepted');
     const monthlyRevenue = acceptedQuotes.reduce((sum: number, q: any) => sum + (q.total_value || 0), 0);
@@ -92,19 +92,92 @@ const SupplierDashboard = () => {
       quotes_sent: sentQuotes.length,
       monthly_revenue: monthlyRevenue
     });
-  }, [rfqs, user?.email]);
+  }, [rfqs, user?.id]);
 
   const handleQuoteSubmit = (rfqId: string) => {
     const rfq = rfqs.find(r => r.id === rfqId);
     if (rfq) {
-      // Redirect to quote page
-      window.location.href = `/supplier/quote/${rfqId}`;
+      setSelectedRfq(rfq);
+      setQuoteForm({
+        price_per_unit: '',
+        moq: rfq.quantity.toString(),
+        lead_time: '',
+        notes: ''
+      });
+      setShowQuoteModal(true);
     }
   };
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
     setShowRfqDetailsModal(true);
+  };
+  
+  const submitQuote = () => {
+    if (selectedRfq) {
+      // Validate required fields
+      if (!quoteForm.price_per_unit || !quoteForm.lead_time || !quoteForm.payment_terms || !quoteForm.shipping_terms || !quoteForm.validity_days) {
+        alert('Please fill in all required fields (Price, Lead Time, Payment Terms, Shipping Terms, and Quote Validity)');
+        return;
+      }
+      
+      // Update RFQ status to quoted
+      setRfqs(prev => prev.map(rfq => 
+        rfq.id === selectedRfq.id 
+          ? { ...rfq, status: 'quoted' as const }
+          : rfq
+      ));
+      
+      // Store quotation in localStorage for demo
+      const quotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
+      
+      // Get current supplier info
+      const currentUser = JSON.parse(localStorage.getItem('solomon_user') || '{}');
+      const currentAuthUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      
+      const newQuotation = {
+        id: `q-${Date.now()}`,
+        rfq_id: selectedRfq.id,
+        rfq_title: selectedRfq.title,
+        supplier_id: currentAuthUser.id,
+        supplier_name: currentAuthUser.name || 'Supplier User',
+        supplier_company: currentAuthUser.company || 'Supplier Company',
+        supplier_location: `${currentUser.address?.split(',')[0] || 'City'}, India`,
+        supplier_email: currentAuthUser.email,
+        supplier_phone: currentAuthUser.phone || '+91 XXXXXXXXXX',
+        buyer_company: selectedRfq.buyer_company,
+        buyer_country: selectedRfq.buyer_country,
+        quoted_price: parseFloat(quoteForm.price_per_unit),
+        moq: parseInt(quoteForm.moq) || selectedRfq.quantity,
+        lead_time: quoteForm.lead_time,
+        payment_terms: quoteForm.payment_terms,
+        shipping_terms: quoteForm.shipping_terms,
+        validity_days: parseInt(quoteForm.validity_days),
+        quality_guarantee: quoteForm.quality_guarantee,
+        sample_available: quoteForm.sample_available,
+        status: 'pending_review',
+        submitted_at: new Date().toISOString().split('T')[0],
+        notes: quoteForm.notes,
+        total_value: parseFloat(quoteForm.price_per_unit) * (parseInt(quoteForm.moq) || selectedRfq.quantity)
+      };
+      quotations.push(newQuotation);
+      localStorage.setItem('supplier_quotations', JSON.stringify(quotations));
+      
+      setShowQuoteModal(false);
+      setSelectedRfq(null);
+      setQuoteForm({
+        price_per_unit: '',
+        moq: '',
+        lead_time: '',
+        payment_terms: '',
+        shipping_terms: '',
+        validity_days: '',
+        quality_guarantee: true,
+        sample_available: true,
+        notes: ''
+      });
+      alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -129,24 +202,24 @@ const SupplierDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+        <div className="px-6 py-4">
+          <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="text-xl sm:text-2xl font-bold text-blue-600">Solomon Bharat</Link>
-              <span className="text-gray-300 hidden sm:inline">|</span>
-              <span className="text-gray-600 text-sm sm:text-base">Supplier Portal</span>
+              <Link to="/" className="text-2xl font-bold text-blue-600">Solomon Bharat</Link>
+              <span className="text-gray-300">|</span>
+              <span className="text-gray-600">Supplier Portal</span>
             </div>
-            <div className="flex items-center justify-between sm:justify-end space-x-4">
+            <div className="flex items-center space-x-4">
               <Bell className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600" />
               <div className="flex items-center space-x-2">
                 <User className="h-5 w-5 text-gray-400" />
-                <span className="text-sm text-gray-700 truncate max-w-32 sm:max-w-none">{user?.name || 'Supplier User'}</span>
+                <span className="text-sm text-gray-700">{user?.name || 'Supplier User'}</span>
                 <button
                   onClick={logout}
                   className="text-sm text-gray-500 hover:text-red-600 flex items-center space-x-1"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Logout</span>
+                  <span>Logout</span>
                 </button>
               </div>
             </div>
@@ -154,68 +227,68 @@ const SupplierDashboard = () => {
         </div>
       </header>
 
-      <div className="px-4 sm:px-6 py-6 sm:py-8">
+      <div className="px-6 py-8">
         {/* Welcome Section */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Welcome, {user?.name || 'Supplier'}
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
+          <p className="text-gray-600">
             Manage your quotations and connect with global buyers
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">Total RFQs</p>
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.total_rfqs}</p>
+                <p className="text-sm text-gray-600">Total RFQs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.total_rfqs}</p>
               </div>
-              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <FileText className="h-8 w-8 text-blue-500" />
             </div>
           </div>
           
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">New RFQs</p>
-                <p className="text-xl sm:text-2xl font-bold text-blue-600">{stats.new_rfqs}</p>
+                <p className="text-sm text-gray-600">New RFQs</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.new_rfqs}</p>
               </div>
-              <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <Clock className="h-8 w-8 text-blue-500" />
             </div>
           </div>
           
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">Quotes Sent</p>
-                <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.quotes_sent}</p>
+                <p className="text-sm text-gray-600">Quotes Sent</p>
+                <p className="text-2xl font-bold text-green-600">{stats.quotes_sent}</p>
               </div>
-              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
           </div>
 
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">Monthly Revenue</p>
-                <p className="text-xl sm:text-2xl font-bold text-purple-600">${stats.monthly_revenue.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Monthly Revenue</p>
+                <p className="text-2xl font-bold text-purple-600">${stats.monthly_revenue.toLocaleString()}</p>
               </div>
-              <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-purple-500" />
+              <DollarSign className="h-8 w-8 text-purple-500" />
             </div>
           </div>
         </div>
 
-        {/* Available RFQs */}
-        <div className="mb-6 sm:mb-8">
-          <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Available RFQs for Your Category</h2>
-            <p className="text-gray-600 text-sm sm:text-base">Opportunities matched to your expertise</p>
+        {/* Available RFQs - Card Layout */}
+        <div className="mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Available RFQs for Your Category</h2>
+            <p className="text-gray-600">Textiles & Apparel opportunities matched to your expertise</p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
             {rfqs.map((rfq) => (
               <div key={rfq.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                 {/* Match Score Badge */}
@@ -230,10 +303,10 @@ const SupplierDashboard = () => {
                   </div>
                 </div>
 
-                <div className="p-4 sm:p-6">
+                <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
                         {rfq.title}
                       </h3>
                       <div className="flex items-center text-gray-600 text-sm">
@@ -266,6 +339,27 @@ const SupplierDashboard = () => {
                     </div>
                   </div>
 
+                  {/* Payment & Terms Info */}
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 className="text-sm font-semibold text-blue-900 mb-2">💼 Buyer Requirements</h5>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <span className="text-blue-700 font-medium">Shipping Terms:</span>
+                        <p className="text-blue-800">{rfq.shipping_terms || 'FOB'}</p>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 font-medium">Quality Standards:</span>
+                        <p className="text-blue-800">{rfq.quality_standards || 'Standard Quality'}</p>
+                      </div>
+                      {rfq.certifications_needed && (
+                        <div className="col-span-2">
+                          <span className="text-blue-700 font-medium">Required Certifications:</span>
+                          <p className="text-blue-800">{rfq.certifications_needed}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Description */}
                   <div className="mb-4">
                     <p className="text-sm text-gray-700 line-clamp-2">{rfq.description}</p>
@@ -279,7 +373,7 @@ const SupplierDashboard = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                  <div className="flex space-x-3">
                     {rfq.status === 'new' && (
                       <Link
                         to={`/supplier/quote/${rfq.id}`}
@@ -290,16 +384,13 @@ const SupplierDashboard = () => {
                       </Link>
                     )}
                     {rfq.status === 'quoted' && (
-                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                        <div className="bg-green-50 text-green-700 py-2 px-3 rounded-md text-sm font-medium text-center">
-                          ✅ Quote Submitted
+                      <div className="flex space-x-2">
+                        <div className="bg-green-50 text-green-700 py-2 px-3 rounded-md text-sm font-medium">
+                          Quote Submitted
                         </div>
-                        <Link
-                          to={`/supplier/quote/${rfq.id}?edit=true`}
-                          className="bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100 text-center"
-                        >
+                        <button className="bg-blue-50 text-blue-700 py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-100">
                           Edit Quote
-                        </Link>
+                        </button>
                       </div>
                     )}
                     <button 
@@ -313,83 +404,304 @@ const SupplierDashboard = () => {
               </div>
             ))}
           </div>
-
-          {rfqs.length === 0 && (
-            <div className="text-center py-8 sm:py-12">
-              <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No RFQs Available</h3>
-              <p className="text-gray-600 mb-6">
-                No approved RFQs match your product categories yet.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           <Link 
             to="/supplier/quotations"
-            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <FileText className="h-8 w-8 text-blue-500" />
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">My Quotations</h3>
-                <p className="text-xs sm:text-sm text-gray-600">View all submitted quotes</p>
+                <h3 className="font-semibold text-gray-900">My Quotations</h3>
+                <p className="text-sm text-gray-600">View all submitted quotes</p>
               </div>
             </div>
           </Link>
 
           <Link 
             to="/supplier/profile"
-            className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
+            className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:border-blue-300 transition-colors"
           >
             <div className="flex items-center space-x-3">
-              <User className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
+              <User className="h-8 w-8 text-green-500" />
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Company Profile</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Update your business details</p>
+                <h3 className="font-semibold text-gray-900">Company Profile</h3>
+                <p className="text-sm text-gray-600">Update your business details</p>
               </div>
             </div>
           </Link>
 
-          <a 
-            href="https://wa.me/918595135554" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-blue-50 p-4 sm:p-6 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors cursor-pointer"
-          >
+          <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
             <div className="flex items-center space-x-3">
-              <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
+              <Bell className="h-8 w-8 text-blue-500" />
               <div>
-                <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Need Support?</h3>
-                <p className="text-xs sm:text-sm text-gray-600">Contact our team for help</p>
+                <h3 className="font-semibold text-gray-900">Need Support?</h3>
+                <p className="text-sm text-gray-600">Contact our team for help</p>
               </div>
             </div>
-          </a>
+          </div>
         </div>
       </div>
 
+      {/* Quick Quote Modal */}
+      {showQuoteModal && selectedRfq && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Submit Quote</h3>
+              <p className="text-sm text-gray-600">{selectedRfq.title}</p>
+            </div>
+            
+            <div className="p-6">
+              {/* RFQ Summary */}
+              <div className="bg-gray-50 p-4 rounded-md mb-6">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">Buyer Location:</span>
+                    <p className="font-medium">Buyer from {selectedRfq.buyer_country}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Quantity:</span>
+                    <p className="font-medium">{selectedRfq.quantity.toLocaleString()} {selectedRfq.unit}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Target Price:</span>
+                    <p className="font-medium">${selectedRfq.target_price.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Timeline:</span>
+                    <p className="font-medium">{selectedRfq.delivery_timeline}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quote Form */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price per Unit (USD) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={quoteForm.price_per_unit}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, price_per_unit: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="8.50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Buyer's target: ${selectedRfq.target_price.toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      MOQ
+                    </label>
+                    <input
+                      type="number"
+                      value={quoteForm.moq}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, moq: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Lead Time *
+                    </label>
+                    <select
+                      value={quoteForm.lead_time}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, lead_time: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Lead Time</option>
+                      <option value="15-20 days">15-20 days</option>
+                      <option value="20-25 days">20-25 days</option>
+                      <option value="25-30 days">25-30 days</option>
+                      <option value="30-35 days">30-35 days</option>
+                      <option value="35-40 days">35-40 days</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Buyer needs: {selectedRfq.delivery_timeline}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Payment Terms *
+                    </label>
+                    <select
+                      value={quoteForm.payment_terms}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, payment_terms: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Payment Terms</option>
+                      <option value="30% advance, 70% on shipment">30% advance, 70% on shipment</option>
+                      <option value="40% advance, 60% on shipment">40% advance, 60% on shipment</option>
+                      <option value="50% advance, 50% on shipment">50% advance, 50% on shipment</option>
+                      <option value="25% advance, 75% against documents">25% advance, 75% against documents</option>
+                      <option value="100% advance">100% advance</option>
+                      <option value="LC at sight">LC at sight</option>
+                      <option value="LC 30 days">LC 30 days</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Shipping Terms (Incoterms) *
+                    </label>
+                    <select
+                      value={quoteForm.shipping_terms}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, shipping_terms: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Incoterms</option>
+                      <option value="FOB">FOB (Free on Board)</option>
+                      <option value="CIF">CIF (Cost, Insurance & Freight)</option>
+                      <option value="CFR">CFR (Cost & Freight)</option>
+                      <option value="EXW">EXW (Ex Works)</option>
+                      <option value="FCA">FCA (Free Carrier)</option>
+                      <option value="CPT">CPT (Carriage Paid To)</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Buyer prefers: {selectedRfq.shipping_terms || 'FOB'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Quote Validity (Days) *
+                    </label>
+                    <select
+                      value={quoteForm.validity_days}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, validity_days: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select Validity</option>
+                      <option value="7">7 days</option>
+                      <option value="15">15 days</option>
+                      <option value="30">30 days</option>
+                      <option value="45">45 days</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Quality & Services */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="quality_guarantee"
+                      checked={quoteForm.quality_guarantee}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, quality_guarantee: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="quality_guarantee" className="text-sm text-gray-700">
+                      Quality guarantee provided
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="sample_available"
+                      checked={quoteForm.sample_available}
+                      onChange={(e) => setQuoteForm(prev => ({ ...prev, sample_available: e.target.checked }))}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="sample_available" className="text-sm text-gray-700">
+                      Samples available for approval
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Notes & Negotiation Terms
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={quoteForm.notes}
+                    onChange={(e) => setQuoteForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Bulk discounts, special certifications, negotiable terms, or any other value-added services..."
+                  />
+                </div>
+
+                {/* Total Calculation */}
+                {quoteForm.price_per_unit && quoteForm.moq && (
+                  <div className="bg-green-50 p-4 rounded-md border border-green-200">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-green-800 font-bold text-lg">
+                          Total Quote Value: ${(parseFloat(quoteForm.price_per_unit) * parseInt(quoteForm.moq)).toLocaleString()}
+                        </p>
+                        <p className="text-green-600 text-sm">
+                          {parseInt(quoteForm.moq).toLocaleString()} units × ${parseFloat(quoteForm.price_per_unit).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-green-700 text-sm">
+                          vs Buyer Budget: ${(selectedRfq.target_price * selectedRfq.quantity).toLocaleString()}
+                        </p>
+                        <p className={`text-sm font-medium ${
+                          (parseFloat(quoteForm.price_per_unit) * parseInt(quoteForm.moq)) <= (selectedRfq.target_price * selectedRfq.quantity)
+                            ? 'text-green-600' : 'text-orange-600'
+                        }`}>
+                          {(parseFloat(quoteForm.price_per_unit) * parseInt(quoteForm.moq)) <= (selectedRfq.target_price * selectedRfq.quantity)
+                            ? '✅ Within Budget' : '⚠️ Above Budget'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowQuoteModal(false)}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitQuote}
+                disabled={!quoteForm.price_per_unit || !quoteForm.lead_time || !quoteForm.payment_terms || !quoteForm.shipping_terms || !quoteForm.validity_days}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                Submit Quote
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* RFQ Details Modal */}
       {showRfqDetailsModal && selectedRfq && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">RFQ Details</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-xl font-semibold text-gray-900">RFQ Details</h3>
               <button
                 onClick={() => setShowRfqDetailsModal(false)}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
             
-            <div className="p-4 sm:p-6">
+            <div className="p-6">
               {/* Buyer Information */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Buyer Information</h4>
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-blue-700">Buyer</label>
                       <p className="mt-1 text-sm text-blue-900 font-medium">{selectedRfq.buyer_name || 'International Buyer'}</p>
@@ -403,9 +715,9 @@ const SupplierDashboard = () => {
               </div>
 
               {/* Product Information */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Requirements</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Product Title</label>
                     <p className="mt-1 text-sm text-gray-900 font-medium">{selectedRfq.title}</p>
@@ -428,9 +740,9 @@ const SupplierDashboard = () => {
               </div>
 
               {/* Pricing Information */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="bg-green-50 p-4 rounded-lg">
                     <label className="block text-sm font-medium text-green-700">Target Price</label>
                     <p className="mt-1 text-xl font-bold text-green-900">${selectedRfq.target_price.toFixed(2)}</p>
@@ -452,7 +764,7 @@ const SupplierDashboard = () => {
               </div>
 
               {/* Product Description */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Product Description</h4>
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <p className="text-sm text-gray-700">{selectedRfq.description}</p>
@@ -460,9 +772,9 @@ const SupplierDashboard = () => {
               </div>
 
               {/* Requirements & Terms */}
-              <div className="mb-6 sm:mb-8">
+              <div className="mb-8">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Requirements & Terms</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Delivery Timeline</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedRfq.delivery_timeline}</p>
@@ -490,7 +802,7 @@ const SupplierDashboard = () => {
 
               {/* Additional Requirements */}
               {selectedRfq.additional_requirements && (
-                <div className="mb-6 sm:mb-8">
+                <div className="mb-8">
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Additional Requirements</h4>
                   <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                     <p className="text-sm text-gray-700">{selectedRfq.additional_requirements}</p>
@@ -501,7 +813,7 @@ const SupplierDashboard = () => {
               {/* Timeline */}
               <div>
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Timeline</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Posted Date</label>
                     <p className="mt-1 text-sm text-gray-900">{new Date(selectedRfq.created_at).toLocaleDateString()}</p>
@@ -516,7 +828,7 @@ const SupplierDashboard = () => {
               </div>
             </div>
             
-            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row sm:justify-between space-y-4 sm:space-y-0">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
               <button
                 onClick={() => setShowRfqDetailsModal(false)}
                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
@@ -529,7 +841,7 @@ const SupplierDashboard = () => {
                     setShowRfqDetailsModal(false);
                     handleQuoteSubmit(selectedRfq.id);
                   }}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center space-x-2"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
                 >
                   <Send className="h-4 w-4" />
                   <span>Submit Quote</span>

@@ -100,7 +100,7 @@ const QASystem: React.FC<QASystemProps> = ({ rfqId, mode, onQuestionSubmit }) =>
     );
     localStorage.setItem('rfq_questions', JSON.stringify(updatedQuestions));
     loadQuestions();
-    alert('✅ Question approved and sent to buyer for response!');
+    alert('Question approved and sent to buyer!');
   };
 
   const answerQuestion = (questionId: string) => {

@@ -435,18 +435,21 @@ const OnboardSupplier: React.FC = () => {
   ];
 
   const productCategoryOptions = [
+    'Electronics & Electrical',
     'Textiles & Apparel',
-    'Spices & Food Products',
-    'Handicrafts & Home Decor',
-    'Electronics & Components',
-    'Pharmaceuticals & Healthcare',
-    'Chemicals & Materials',
+    'Machinery & Equipment',
     'Automotive Parts',
-    'Jewelry & Gems',
-    'Leather Goods',
-    'Agricultural Products',
-    'Industrial Equipment',
-    'Other'
+    'Chemicals & Pharmaceuticals',
+    'Food & Beverages',
+    'Home & Garden',
+    'Sports & Recreation',
+    'Health & Beauty',
+    'Industrial Supplies',
+    'Construction Materials',
+    'Agriculture & Farming',
+    'Packaging Materials',
+    'Furniture & Furnishing',
+    'Toys & Games'
   ];
 
   const certificationOptions = [

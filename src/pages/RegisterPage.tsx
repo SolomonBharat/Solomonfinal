@@ -20,6 +20,12 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const countries = [
+    'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France',
+    'Netherlands', 'Belgium', 'Italy', 'Spain', 'Japan', 'South Korea', 'Singapore',
+    'UAE', 'Saudi Arabia', 'Other'
+  ];
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({
       ...prev,
@@ -64,7 +70,7 @@ const RegisterPage = () => {
       id: `buyer-${Date.now()}`,
       name: formData.name,
       email: formData.email,
-      password: formData.password,
+      password: formData.password, // Store the actual password they set
       company: formData.company,
       country: formData.country,
       phone: formData.phone,
@@ -72,7 +78,7 @@ const RegisterPage = () => {
       user_type: 'buyer',
       created_at: new Date().toISOString(),
       profile_completed: true,
-      verification_status: 'unverified'
+      verification_status: 'verified'
     };
 
     // Save to localStorage
@@ -87,13 +93,13 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex items-center justify-center space-x-2 mb-6 sm:mb-8">
-          <Globe className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-          <span className="text-xl sm:text-2xl font-bold text-gray-900">Solomon Bharat</span>
+        <Link to="/" className="flex items-center justify-center space-x-2 mb-8">
+          <Globe className="h-8 w-8 text-blue-600" />
+          <span className="text-2xl font-bold text-gray-900">Solomon Bharat</span>
         </Link>
-        <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900">
+        <h2 className="text-center text-3xl font-bold text-gray-900">
           Create Buyer Account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
@@ -101,11 +107,11 @@ const RegisterPage = () => {
         </p>
       </div>
 
-      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-6 sm:py-8 px-4 sm:px-10 shadow rounded-lg">
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3 sm:p-4">
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
                 <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
@@ -122,7 +128,7 @@ const RegisterPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="John Smith"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -138,7 +144,7 @@ const RegisterPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="john@company.com"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -155,7 +161,7 @@ const RegisterPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
-                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
                 <button
                   type="button"
@@ -185,7 +191,7 @@ const RegisterPage = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm your password"
-                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                  className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
                 <button
                   type="button"
@@ -213,7 +219,7 @@ const RegisterPage = () => {
                 value={formData.company}
                 onChange={handleChange}
                 placeholder="Global Trade Corp"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -221,16 +227,20 @@ const RegisterPage = () => {
               <label htmlFor="country" className="block text-sm font-medium text-gray-700">
                 Country *
               </label>
-              <input
-                type="text"
+              <select
                 id="country"
                 name="country"
                 required
                 value={formData.country}
                 onChange={handleChange}
                 placeholder="Enter your country"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-              />
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select your country</option>
+                {countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -245,7 +255,7 @@ const RegisterPage = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+1 234 567 8900"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -260,7 +270,7 @@ const RegisterPage = () => {
                 value={formData.website}
                 onChange={handleChange}
                 placeholder="https://www.company.com"
-                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                className="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -296,7 +306,7 @@ const RegisterPage = () => {
           </div>
 
           {/* Demo Info */}
-          <div className="mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-800">
               <strong>Demo Accounts:</strong><br/>
               • Buyer: buyer@example.com / buyer123<br/>

@@ -7,11 +7,7 @@ interface Quotation {
   id: string;
   supplier: {
     name: string;
-    company: string;
-    contact_person: string;
     location: string;
-    email: string;
-    phone: string;
     rating: number;
     verified: boolean;
   };
@@ -30,7 +26,6 @@ interface Quotation {
   factory_images?: string[];
   product_images?: string[];
   product_videos?: string[];
-  sample_status?: string;
 }
 
 const QuotationComparison = () => {
@@ -49,8 +44,7 @@ const QuotationComparison = () => {
     const convertedQuotations = rfqQuotations.map((q: any) => ({
       id: q.id,
       supplier: {
-        name: q.supplier_name || 'Contact Person',
-        company: q.supplier_company || 'Supplier Company',
+        name: q.supplier_name || 'Supplier Name',
         contact_person: q.supplier_name || 'Contact Person',
         location: q.supplier_location || 'India',
         email: q.supplier_email || 'supplier@example.com',
@@ -68,8 +62,7 @@ const QuotationComparison = () => {
       quality_guarantee: q.quality_guarantee || true,
       sample_available: q.sample_available || true,
       notes: q.notes || '',
-      status: 'approved',
-      sample_status: q.sample_status || 'not_requested'
+      status: 'approved'
     }));
 
     setQuotations(convertedQuotations);
@@ -90,7 +83,7 @@ const QuotationComparison = () => {
     
     const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
     
-    // Update RFQ status to closed in localStorage
+    // Update RFQ status to matched in localStorage
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const updatedRFQs = userRFQs.map((rfq: any) => 
       rfq.id === rfqId ? { ...rfq, status: 'closed' } : rfq
@@ -111,32 +104,16 @@ const QuotationComparison = () => {
     }, 1500);
   };
 
-  const handleRequestSample = (quotationId: string) => {
-    const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const updatedQuotations = supplierQuotations.map((quote: any) => 
-      quote.id === quotationId ? { ...quote, sample_status: 'sample_requested' } : quote
-    );
-    localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
-    
-    // Update local state
-    setQuotations(prev => prev.map(quote => 
-      quote.id === quotationId ? { ...quote, sample_status: 'sample_requested' } : quote
-    ));
-    
-    const supplier = quotations.find(q => q.id === quotationId)?.supplier.name;
-    alert(`Sample requested from ${supplier}! Supplier will provide tracking details.`);
-  };
-
   const handleViewQuotationDetails = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setShowQuotationModal(true);
   };
-
   const getBestPrice = () => {
     return Math.min(...quotations.map(q => q.price_per_unit));
   };
 
   const getFastestDelivery = () => {
+    // Simple logic to find fastest delivery (lowest number in lead time)
     const deliveryTimes = quotations.map(q => {
       const match = q.lead_time.match(/(\d+)/);
       return match ? parseInt(match[1]) : 999;
@@ -148,21 +125,20 @@ const QuotationComparison = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link 
                 to="/dashboard" 
                 className="flex items-center space-x-2 text-gray-600 hover:text-blue-600"
               >
                 <ArrowLeft className="h-5 w-5" />
-                <span className="hidden sm:inline">Back to Dashboard</span>
-                <span className="sm:hidden">Back</span>
+                <span>Back to Dashboard</span>
               </Link>
               <span className="text-gray-300">|</span>
-              <span className="text-gray-900 font-medium text-sm sm:text-base">Compare Quotations</span>
+              <span className="text-gray-900 font-medium">Compare Quotations</span>
             </div>
-            <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 text-sm">
+            <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
               <Download className="h-4 w-4" />
               <span>Export Comparison</span>
             </button>
@@ -170,71 +146,98 @@ const QuotationComparison = () => {
         </div>
       </header>
 
-      <div className="px-4 sm:px-6 py-6 sm:py-8">
+      <div className="px-6 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Compare Quotations</h1>
-            <p className="text-gray-600 text-sm sm:text-base">
-              You received {quotations.length} approved quotations for your RFQ
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Compare Quotations</h1>
+            <p className="text-gray-600">
+              You received {quotations.length} approved quotations for <strong>Organic Cotton T-Shirts</strong>
             </p>
           </div>
 
+          {/* RFQ Summary */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Requirements</h3>
+            <div className="grid md:grid-cols-5 gap-4 text-sm">
+              <div>
+                <span className="text-gray-500">Product:</span>
+                <p className="font-medium">Organic Cotton T-Shirts</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Quantity:</span>
+                <p className="font-medium">5,000 pieces</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Target Price:</span>
+                <p className="font-medium">$8.50 per piece</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Max Budget:</span>
+                <p className="font-medium">$42,500</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Timeline:</span>
+                <p className="font-medium">30 days</p>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <h4 className="font-semibold text-green-800 mb-1">Best Price</h4>
-              <p className="text-xl sm:text-2xl font-bold text-green-900">${getBestPrice().toFixed(2)}</p>
+              <p className="text-2xl font-bold text-green-900">${getBestPrice().toFixed(2)}</p>
               <p className="text-sm text-green-700">per unit</p>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h4 className="font-semibold text-blue-800 mb-1">Fastest Delivery</h4>
-              <p className="text-xl sm:text-2xl font-bold text-blue-900">{getFastestDelivery()}</p>
+              <p className="text-2xl font-bold text-blue-900">{getFastestDelivery()}</p>
               <p className="text-sm text-blue-700">days minimum</p>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
               <h4 className="font-semibold text-purple-800 mb-1">Quotations</h4>
-              <p className="text-xl sm:text-2xl font-bold text-purple-900">{quotations.length}</p>
+              <p className="text-2xl font-bold text-purple-900">{quotations.length}</p>
               <p className="text-sm text-purple-700">approved quotes</p>
             </div>
           </div>
 
           {/* Quotations Comparison Table */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6 sm:mb-8">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">Detailed Comparison</h3>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <div className="flex space-x-2">
                   <button className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700">
-                    Request All Samples
+                    Request Samples
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-full">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Supplier
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Price/Unit
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Total Price
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       MOQ
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Lead Time
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Payment Terms
                     </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
@@ -242,7 +245,7 @@ const QuotationComparison = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {quotations.map((quote) => (
                     <tr key={quote.id} className="hover:bg-gray-50">
-                      <td className="px-3 sm:px-6 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex items-start">
                           <div>
                             <div className="flex items-center space-x-2">
@@ -251,7 +254,6 @@ const QuotationComparison = () => {
                                 <CheckCircle className="h-4 w-4 text-green-500" />
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">{quote.supplier.company}</p>
                             <p className="text-xs text-gray-500">{quote.supplier.location}</p>
                             <div className="flex items-center mt-1">
                               <Star className="h-3 w-3 text-yellow-400 fill-current" />
@@ -260,7 +262,7 @@ const QuotationComparison = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-4">
+                      <td className="px-6 py-4">
                         <div className="flex flex-col">
                           <span className={`text-sm font-semibold ${
                             quote.price_per_unit === getBestPrice() ? 'text-green-600' : 'text-gray-900'
@@ -272,44 +274,35 @@ const QuotationComparison = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 font-medium">
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">
                         ${quote.total_price.toLocaleString()}
                       </td>
-                      <td className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-gray-900">
                         {quote.moq.toLocaleString()} pcs
                       </td>
-                      <td className="px-3 sm:px-6 py-4 hidden sm:table-cell">
-                        <span className="text-sm text-gray-900">{quote.lead_time}</span>
+                      <td className="px-6 py-4">
+                        <h5 className="text-lg font-bold text-gray-900">{selectedQuotation.supplier.name}</h5>
                         {quote.lead_time.includes(getFastestDelivery().toString()) && (
                           <span className="block text-xs text-blue-600 font-medium">Fastest</span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-6 py-4 text-sm text-gray-900 hidden lg:table-cell">
+                      <td className="px-6 py-4 text-sm text-gray-900">
                         {quote.payment_terms}
                       </td>
-                      <td className="px-3 sm:px-6 py-4">
-                        <div className="flex flex-col space-y-1 sm:space-y-2">
-                          {quote.sample_status === 'sample_requested' ? (
-                            <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-medium text-center">
-                              Sample Requested
-                            </span>
-                          ) : (
-                            <button
-                              onClick={() => handleRequestSample(quote.id)}
-                              className="bg-orange-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-orange-700"
-                            >
-                              Request Sample
-                            </button>
-                          )}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col space-y-2">
+                          <button className="bg-orange-600 text-white px-3 py-1 rounded text-sm hover:bg-orange-700">
+                            Request Sample
+                          </button>
                           <button
                             onClick={() => handleAcceptQuote(quote.id)}
-                            className="bg-green-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-green-700"
+                            className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
                           >
                             Accept Quote
                           </button>
                           <button
                             onClick={() => handleViewQuotationDetails(quote)}
-                            className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-blue-700"
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
                           >
                             View Details
                           </button>
@@ -323,12 +316,12 @@ const QuotationComparison = () => {
           </div>
 
           {/* Detailed Information Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="mt-8 grid lg:grid-cols-3 gap-6">
             {quotations.map((quote) => (
               <div key={quote.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-4 sm:p-6">
+                <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{quote.supplier.contact_person}</h4>
+                    <h4 className="font-semibold text-gray-900">{quote.supplier.contact_person}</h4>
                     <div className="flex items-center space-x-1">
                       {quote.supplier.verified && <CheckCircle className="h-4 w-4 text-green-500" />}
                       <Award className="h-4 w-4 text-blue-500" />
@@ -336,10 +329,6 @@ const QuotationComparison = () => {
                   </div>
 
                   <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Company:</span>
-                      <span className="font-medium">{quote.supplier.company}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Shipping Terms:</span>
                       <span className="font-medium">{quote.shipping_terms}</span>
@@ -369,23 +358,14 @@ const QuotationComparison = () => {
                       </p>
                     </div>
                   )}
-
-                  {/* Sample Status */}
-                  {quote.sample_status === 'sample_requested' && (
-                    <div className="mt-4 p-3 bg-orange-50 rounded-md border border-orange-200">
-                      <p className="text-sm text-orange-800 font-medium">
-                        📦 Sample Requested - Awaiting tracking details from supplier
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
           </div>
 
           {/* Q&A Section for Buyer */}
-          <div className="mb-6 sm:mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="mt-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Questions from Suppliers</h3>
               <QASystem 
                 rfqId={rfqId} 
@@ -395,8 +375,8 @@ const QuotationComparison = () => {
           </div>
 
           {/* Public Q&A */}
-          <div className="mb-6 sm:mb-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <div className="mt-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Published Q&A</h3>
               <p className="text-sm text-gray-600 mb-4">
                 Questions and answers visible to all suppliers:
@@ -409,7 +389,7 @@ const QuotationComparison = () => {
           </div>
 
           {/* Help Section */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h4 className="font-semibold text-blue-900 mb-2">Need Help Deciding?</h4>
             <p className="text-sm text-blue-800 mb-3">
               Our sourcing experts can help you evaluate these quotations based on your specific requirements.
@@ -425,29 +405,28 @@ const QuotationComparison = () => {
           </div>
         </div>
       </div>
-
       {/* Quotation Details Modal */}
       {showQuotationModal && selectedQuotation && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Quotation Details</h3>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">Complete supplier quotation information</p>
+                <h3 className="text-2xl font-bold text-gray-900">Quotation Details</h3>
+                <p className="text-sm text-gray-500 mt-1">Complete supplier quotation information</p>
               </div>
               <button
                 onClick={() => setShowQuotationModal(false)}
                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
             
-            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-140px)]">
+            <div className="p-6 overflow-y-auto max-h-[calc(95vh-140px)]">
               {/* Supplier Information */}
-              <div className="mb-6 sm:mb-8 bg-blue-50 rounded-lg p-4 sm:p-6 border border-blue-200">
+              <div className="mb-8 bg-blue-50 rounded-lg p-6 border border-blue-200">
                 <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                  <Building className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <Building className="h-5 w-5 mr-2" />
                   Supplier Information
                 </h4>
                 <div className="bg-white p-4 rounded-lg border">
@@ -463,57 +442,43 @@ const QuotationComparison = () => {
                       <span className="font-bold text-yellow-600">{selectedQuotation.supplier.rating}</span>
                     </div>
                   </div>
-                  <p className="text-gray-600 flex items-center mb-2">
-                    <Building className="h-4 w-4 mr-1" />
-                    {selectedQuotation.supplier.company}
-                  </p>
-                  <p className="text-gray-600 flex items-center mb-2">
+                  <p className="text-gray-600 flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
                     {selectedQuotation.supplier.location}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                    <p className="text-gray-600 flex items-center">
-                      <span className="mr-1">📧</span>
-                      {selectedQuotation.supplier.email}
-                    </p>
-                    <p className="text-gray-600 flex items-center">
-                      <span className="mr-1">📞</span>
-                      {selectedQuotation.supplier.phone}
-                    </p>
-                  </div>
                 </div>
               </div>
 
               {/* Pricing Breakdown */}
-              <div className="mb-6 sm:mb-8 bg-green-50 rounded-lg p-4 sm:p-6 border border-green-200">
+              <div className="mb-8 bg-green-50 rounded-lg p-6 border border-green-200">
                 <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
-                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <DollarSign className="h-5 w-5 mr-2" />
                   Pricing Breakdown
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="bg-white p-4 rounded-lg border-2 border-blue-200">
                     <label className="block text-sm font-medium text-blue-700 mb-2">Price per Unit</label>
-                    <p className="text-2xl sm:text-3xl font-bold text-blue-900">${selectedQuotation.price_per_unit.toFixed(2)}</p>
+                    <p className="text-3xl font-bold text-blue-900">${selectedQuotation.price_per_unit.toFixed(2)}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg border-2 border-green-200">
                     <label className="block text-sm font-medium text-green-700 mb-2">Total Price</label>
-                    <p className="text-2xl sm:text-3xl font-bold text-green-900">${selectedQuotation.total_price.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-green-900">${selectedQuotation.total_price.toLocaleString()}</p>
                   </div>
                   <div className="bg-white p-4 rounded-lg border-2 border-purple-200">
                     <label className="block text-sm font-medium text-purple-700 mb-2">MOQ</label>
-                    <p className="text-2xl sm:text-3xl font-bold text-purple-900">{selectedQuotation.moq.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-purple-900">{selectedQuotation.moq.toLocaleString()}</p>
                     <p className="text-sm text-purple-600 mt-1">pieces</p>
                   </div>
                 </div>
               </div>
 
               {/* Terms & Conditions */}
-              <div className="mb-6 sm:mb-8 bg-yellow-50 rounded-lg p-4 sm:p-6 border border-yellow-200">
+              <div className="mb-8 bg-yellow-50 rounded-lg p-6 border border-yellow-200">
                 <h4 className="text-lg font-semibold text-yellow-900 mb-4 flex items-center">
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <FileText className="h-5 w-5 mr-2" />
                   Terms & Conditions
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-yellow-700 mb-1">Lead Time</label>
                     <div className="bg-white p-3 rounded-md border">
@@ -542,12 +507,12 @@ const QuotationComparison = () => {
               </div>
 
               {/* Guarantees & Services */}
-              <div className="mb-6 sm:mb-8 bg-purple-50 rounded-lg p-4 sm:p-6 border border-purple-200">
+              <div className="mb-8 bg-purple-50 rounded-lg p-6 border border-purple-200">
                 <h4 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
-                  <Award className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  <Award className="h-5 w-5 mr-2" />
                   Guarantees & Services
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-white p-4 rounded-lg border">
                     <div className="flex items-center space-x-3">
                       <div className={`w-5 h-5 rounded-full ${selectedQuotation.quality_guarantee ? 'bg-green-500' : 'bg-red-500'}`}></div>
@@ -575,53 +540,85 @@ const QuotationComparison = () => {
 
               {/* Supplier Notes */}
               {selectedQuotation.notes && (
-                <div className="mb-6 sm:mb-8 bg-orange-50 rounded-lg p-4 sm:p-6 border border-orange-200">
+                <div className="mb-8 bg-orange-50 rounded-lg p-6 border border-orange-200">
                   <h4 className="text-lg font-semibold text-orange-900 mb-4 flex items-center">
-                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    <FileText className="h-5 w-5 mr-2" />
                     Supplier Notes
                   </h4>
                   <div className="bg-white p-4 rounded-lg border">
-                    <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{selectedQuotation.notes}</p>
+                    <p className="text-gray-700 leading-relaxed">{selectedQuotation.notes}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Factory Video */}
+              {selectedQuotation.factory_video && (
+                <div className="mb-8 bg-indigo-50 rounded-lg p-6 border border-indigo-200">
+                  <h4 className="text-lg font-semibold text-indigo-900 mb-4">🏭 Factory Tour</h4>
+                  <div className="bg-white p-4 rounded-lg border">
+                    <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-white text-2xl">▶</span>
+                        </div>
+                        <p className="text-gray-600">Factory Video: {selectedQuotation.factory_video}</p>
+                        <p className="text-sm text-gray-500 mt-2">Click to play factory tour video</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Product Images & Videos */}
+              {(selectedQuotation.product_images?.length || selectedQuotation.product_videos?.length) && (
+                <div className="mb-8 bg-green-50 rounded-lg p-6 border border-green-200">
+                  <h4 className="text-lg font-semibold text-green-900 mb-4">📸 Product Gallery</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {selectedQuotation.product_images?.map((image, index) => (
+                      <div key={index} className="bg-white p-3 rounded-lg border aspect-square flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span className="text-white text-sm">📷</span>
+                          </div>
+                          <p className="text-xs text-gray-600">{image}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {selectedQuotation.product_videos?.map((video, index) => (
+                      <div key={index} className="bg-white p-3 rounded-lg border aspect-square flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span className="text-white text-sm">🎥</span>
+                          </div>
+                          <p className="text-xs text-gray-600">{video}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
             
-            <div className="px-4 sm:px-6 py-4 bg-gray-100 border-t border-gray-200 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
+            <div className="px-6 py-4 bg-gray-100 border-t border-gray-200 flex justify-between items-center">
               <div className="text-sm text-gray-600">
                 Quote from {selectedQuotation.supplier.name} • Total: ${selectedQuotation.total_price.toLocaleString()}
               </div>
-              <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                <button
-                  onClick={() => setShowQuotationModal(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Close
-                </button>
-                {selectedQuotation.sample_status === 'sample_requested' ? (
-                  <span className="px-6 py-2 bg-orange-100 text-orange-800 rounded-lg font-medium text-center">
-                    Sample Requested
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => {
-                      handleRequestSample(selectedQuotation.id);
-                      setShowQuotationModal(false);
-                    }}
-                    className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-                  >
-                    Request Sample
-                  </button>
-                )}
-                <button
-                  onClick={() => {
-                    handleAcceptQuote(selectedQuotation.id);
-                    setShowQuotationModal(false);
-                  }}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  Accept This Quote
-                </button>
+              <div className="flex space-x-3">
+              <button
+                onClick={() => setShowQuotationModal(false)}
+                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  handleAcceptQuote(selectedQuotation.id);
+                  setShowQuotationModal(false);
+                }}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                Accept This Quote
+              </button>
               </div>
             </div>
           </div>
