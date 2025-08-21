@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { PRODUCT_CATEGORIES } from '../constants/categories';
+import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
+import type { Profile } from '../lib/supabase';
 
 interface User {
   id: string;
@@ -8,6 +10,7 @@ interface User {
   company: string;
   country?: string;
   phone?: string;
+  user_type?: 'buyer' | 'supplier' | 'admin';
 }
 
 interface AuthContextType {
@@ -44,87 +47,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('solomon_user');
-    const savedUserType = localStorage.getItem('solomon_user_type');
-    
-    if (savedUser && savedUserType) {
-      setUser(JSON.parse(savedUser));
-      setUserType(savedUserType as 'buyer' | 'admin' | 'supplier');
-    }
-    
-    setLoading(false);
+    // Check for existing Supabase session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const profile = await api.getCurrentProfile();
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            company: '', // Will be loaded from company table
+            country: profile.country || '',
+            phone: profile.phone || '',
+            user_type: profile.user_type
+          });
+          setUserType(profile.user_type);
+        }
+      }
+      setLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await api.getCurrentProfile();
+        if (profile) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            name: profile.name,
+            company: '', // Will be loaded from company table
+            country: profile.country || '',
+            phone: profile.phone || '',
+            user_type: profile.user_type
+          });
+          setUserType(profile.user_type);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserType(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       
-      // Trim whitespace from inputs
-      const trimmedEmail = email.trim().toLowerCase();
-      const trimmedPassword = password.trim();
+      const result = await api.signIn(email.trim().toLowerCase(), password.trim());
       
-      // Mock login - in production, this would call Supabase
-      if (trimmedEmail === 'admin@solomonbharat.com' && trimmedPassword === 'admin123') {
-        const adminUser = {
-          id: 'admin-1',
-          email: 'admin@solomonbharat.com',
-          name: 'Admin User',
-          company: 'Solomon Bharat',
-          country: 'India'
-        };
-        setUser(adminUser);
-        setUserType('admin');
-        localStorage.setItem('solomon_user', JSON.stringify(adminUser));
-        localStorage.setItem('solomon_user_type', 'admin');
-        setLoading(false);
-        // Force navigation after state update
-        setTimeout(() => window.location.href = '/admin', 100);
+      if (result.success) {
+        // Profile will be loaded by the auth state change listener
         return { success: true };
+      } else {
+        return { success: false, error: result.error };
       }
-      
-      if (trimmedEmail === 'buyer@example.com' && trimmedPassword === 'buyer123') {
-        const buyerUser = {
-          id: 'buyer-1',
-          email: 'buyer@example.com',
-          name: 'John Smith',
-          company: 'Global Trade Corp',
-          country: 'United States'
-        };
-        setUser(buyerUser);
-        setUserType('buyer');
-        localStorage.setItem('solomon_user', JSON.stringify(buyerUser));
-        localStorage.setItem('solomon_user_type', 'buyer');
-        setLoading(false);
-        // Force navigation after state update
-        setTimeout(() => window.location.href = '/dashboard', 100);
-        return { success: true };
-      }
-      
-      if (trimmedEmail === 'supplier@example.com' && trimmedPassword === 'supplier123') {
-        const supplierUser = {
-          id: 'supplier-1',
-          email: 'supplier@example.com',
-          name: 'Rajesh Kumar',
-          company: 'Global Textiles Pvt Ltd',
-          country: 'India',
-          product_categories: ['Textiles & Apparel']
-        };
-        setUser(supplierUser);
-        setUserType('supplier');
-        localStorage.setItem('solomon_user', JSON.stringify(supplierUser));
-        localStorage.setItem('solomon_user_type', 'supplier');
-        setLoading(false);
-        // Force navigation after state update
-        setTimeout(() => window.location.href = '/supplier/dashboard', 100);
-        return { success: true };
-      }
-      
-      setLoading(false);
-      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
-      setLoading(false);
       return { success: false, error: 'Login failed' };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -132,44 +121,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Check if user already exists (mock check)
-      const existingUser = localStorage.getItem('solomon_user');
-      if (existingUser) {
-        const user = JSON.parse(existingUser);
-        if (user.email === data.email) {
-          setLoading(false);
-          return { success: false, error: 'User with this email already exists' };
-        }
-      }
-      
-      // Mock registration - in production, this would call Supabase
-      const newUser = {
-        id: `buyer-${Date.now()}`,
-        email: data.email,
+      const result = await api.signUp(data.email, data.password, {
         name: data.name,
+        user_type: 'buyer',
         company: data.company,
         country: data.country,
-        product_categories: [PRODUCT_CATEGORIES[0]] // Use first category from standardized list
-      };
+        phone: data.phone
+      });
       
-      setUser(newUser);
-      setUserType('buyer');
-      localStorage.setItem('solomon_user', JSON.stringify(newUser));
-      localStorage.setItem('solomon_user_type', 'buyer');
-      
-      setLoading(false);
-      return { success: true };
+      if (result.success) {
+        return { success: true };
+      } else {
+        return { success: false, error: result.error };
+      }
     } catch (error) {
-      setLoading(false);
       return { success: false, error: 'Registration failed' };
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setUserType(null);
-    localStorage.removeItem('solomon_user');
-    localStorage.removeItem('solomon_user_type');
+  const logout = async () => {
+    try {
+      await api.signOut();
+      setUser(null);
+      setUserType(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (

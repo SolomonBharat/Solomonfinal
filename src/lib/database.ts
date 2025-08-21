@@ -1,3 +1,7 @@
+import { api } from './api';
+import { supabase } from './supabase';
+import type { RFQ, Quotation, Order, SampleRequest, SampleQuote } from './supabase';
+
 export interface RFQQuestion {
   id: string;
   rfq_id: string;
@@ -12,43 +16,76 @@ export interface RFQQuestion {
   shared_at?: string;
 }
 
-export interface SampleRequest {
-  id: string;
-  rfq_id: string;
-  rfq_title: string;
-  buyer_id: string;
-  buyer_name: string;
-  buyer_company: string;
-  supplier_ids: string[];
-  supplier_names: string[];
-  sample_quantity: number;
-  specifications: string;
-  delivery_location: string;
-  status: 'pending_admin_approval' | 'approved' | 'rejected' | 'sent_to_suppliers';
-  created_at: string;
-  approved_at?: string;
-  admin_notes?: string;
-}
-
-export interface SampleQuote {
-  id: string;
-  sample_request_id: string;
-  supplier_id: string;
-  supplier_name: string;
-  supplier_company: string;
-  sample_price: number;
-  shipping_cost: number;
-  total_cost: number;
-  delivery_time: string;
-  notes: string;
-  status: 'pending' | 'submitted' | 'accepted' | 'rejected';
-  created_at: string;
-  submitted_at?: string;
-}
-
 export class DatabaseService {
+  // RFQ Management
+  async createRFQ(rfqData: Omit<RFQ, 'id' | 'created_at' | 'updated_at'>): Promise<RFQ | null> {
+    const result = await api.createRFQ(rfqData);
+    return result.success ? result.data || null : null;
+  }
+
+  async getRFQs(filters?: { status?: string; buyer_id?: string; category?: string }): Promise<RFQ[]> {
+    return await api.getRFQs(filters);
+  }
+
+  async updateRFQ(id: string, updates: Partial<RFQ>): Promise<boolean> {
+    const result = await api.updateRFQ(id, updates);
+    return result.success;
+  }
+
+  // Quotation Management
+  async createQuotation(quotationData: Omit<Quotation, 'id' | 'created_at' | 'updated_at'>): Promise<Quotation | null> {
+    const result = await api.createQuotation(quotationData);
+    return result.success ? result.data || null : null;
+  }
+
+  async getQuotations(filters?: { rfq_id?: string; supplier_id?: string; status?: string }): Promise<Quotation[]> {
+    return await api.getQuotations(filters);
+  }
+
+  async updateQuotation(id: string, updates: Partial<Quotation>): Promise<boolean> {
+    const result = await api.updateQuotation(id, updates);
+    return result.success;
+  }
+
+  // Order Management
+  async createOrder(orderData: Omit<Order, 'id' | 'created_at' | 'updated_at'>): Promise<Order | null> {
+    const result = await api.createOrder(orderData);
+    return result.success ? result.data || null : null;
+  }
+
+  async getOrders(filters?: { buyer_id?: string; supplier_id?: string; status?: string }): Promise<Order[]> {
+    return await api.getOrders(filters);
+  }
+
+  // Sample Request Management
+  async createSampleRequest(requestData: Omit<SampleRequest, 'id' | 'created_at'>): Promise<SampleRequest | null> {
+    const result = await api.createSampleRequest(requestData);
+    return result.success ? result.data || null : null;
+  }
+
+  async getSampleRequests(filters?: { buyer_id?: string; status?: string }): Promise<SampleRequest[]> {
+    return await api.getSampleRequests(filters);
+  }
+
+  async updateSampleRequest(id: string, updates: Partial<SampleRequest>): Promise<boolean> {
+    const result = await api.updateSampleRequest(id, updates);
+    return result.success;
+  }
+
+  // Sample Quote Management
+  async createSampleQuote(quoteData: Omit<SampleQuote, 'id' | 'created_at' | 'total_cost'>): Promise<SampleQuote | null> {
+    const result = await api.createSampleQuote(quoteData);
+    return result.success ? result.data || null : null;
+  }
+
+  async getSampleQuotes(filters?: { supplier_id?: string; sample_request_id?: string }): Promise<SampleQuote[]> {
+    return await api.getSampleQuotes(filters);
+  }
+
   // RFQ Questions Management
-  createRFQQuestion(question: Omit<RFQQuestion, 'id' | 'created_at' | 'status'>): RFQQuestion {
+  async createRFQQuestion(question: Omit<RFQQuestion, 'id' | 'created_at' | 'status'>): Promise<RFQQuestion> {
+    // For now, keep using localStorage for RFQ questions
+    // In a future migration, these can be moved to Supabase
     const newQuestion: RFQQuestion = {
       ...question,
       id: Date.now().toString(),
@@ -63,12 +100,12 @@ export class DatabaseService {
     return newQuestion;
   }
 
-  getRFQQuestions(rfqId?: string): RFQQuestion[] {
+  async getRFQQuestions(rfqId?: string): Promise<RFQQuestion[]> {
     const questions = JSON.parse(localStorage.getItem('rfq_questions') || '[]');
     return rfqId ? questions.filter((q: RFQQuestion) => q.rfq_id === rfqId) : questions;
   }
 
-  updateRFQQuestion(questionId: string, updates: Partial<RFQQuestion>): void {
+  async updateRFQQuestion(questionId: string, updates: Partial<RFQQuestion>): Promise<void> {
     const questions = this.getRFQQuestions();
     const updatedQuestions = questions.map(q => 
       q.id === questionId ? { ...q, ...updates } : q
@@ -79,14 +116,12 @@ export class DatabaseService {
     if (updates.buyer_answer && updates.status === 'answered_by_buyer') {
       const question = questions.find(q => q.id === questionId);
       if (question) {
-        this.createNotification({
+        await api.createNotification({
           user_id: question.supplier_id,
-          user_type: 'supplier',
           title: 'Question Answered',
           message: `Your question about "${question.rfq_title || 'RFQ'}" has been answered by the buyer.`,
           type: 'question_answered',
-          related_id: question.rfq_id,
-          unread: true
+          related_id: question.rfq_id
         });
       }
     }
@@ -95,236 +130,123 @@ export class DatabaseService {
     if (updates.status === 'shared_with_suppliers') {
       const question = questions.find(q => q.id === questionId);
       if (question) {
-        // Get all suppliers who can see this RFQ (same category)
-        const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-        const rfq = userRFQs.find((r: any) => r.id === question.rfq_id);
+        // Notify all suppliers who can see this RFQ
+        const rfqs = await this.getRFQs({ status: 'approved' });
+        const rfq = rfqs.find(r => r.id === question.rfq_id);
         
         if (rfq) {
-          // For demo, notify the current supplier
-          this.createNotification({
-            user_id: 'supplier-1', // In real app, would notify all relevant suppliers
-            user_type: 'supplier',
+          await api.createNotification({
+            user_id: question.supplier_id,
             title: 'New Q&A Available',
             message: `New Q&A available for "${rfq.title}". Check RFQ details for updated information.`,
             type: 'qa_shared',
-            related_id: question.rfq_id,
-            unread: true
+            related_id: question.rfq_id
           });
         }
       }
     }
   }
 
-  static answerRFQQuestion(questionId: string, buyerAnswer: string): void {
+  static async answerRFQQuestion(questionId: string, buyerAnswer: string): Promise<void> {
     const dbInstance = new DatabaseService();
-    dbInstance.updateRFQQuestion(questionId, {
+    await dbInstance.updateRFQQuestion(questionId, {
       buyer_answer: buyerAnswer,
       status: 'answered_by_buyer',
       answered_at: new Date().toISOString()
     });
   }
 
-  shareRFQAnswer(questionId: string): void {
-    this.updateRFQQuestion(questionId, {
+  async shareRFQAnswer(questionId: string): Promise<void> {
+    await this.updateRFQQuestion(questionId, {
       status: 'shared_with_suppliers',
       shared_at: new Date().toISOString()
     });
   }
 
-  getSharedRFQQuestions(rfqId: string): RFQQuestion[] {
-    return this.getRFQQuestions(rfqId).filter(q => q.status === 'shared_with_suppliers');
+  async getSharedRFQQuestions(rfqId: string): Promise<RFQQuestion[]> {
+    const questions = await this.getRFQQuestions(rfqId);
+    return questions.filter(q => q.status === 'shared_with_suppliers');
   }
 
-  getPendingRFQQuestions(): RFQQuestion[] {
-    return this.getRFQQuestions().filter(q => q.status === 'pending_admin_review');
+  async getPendingRFQQuestions(): Promise<RFQQuestion[]> {
+    const questions = await this.getRFQQuestions();
+    return questions.filter(q => q.status === 'pending_admin_review');
   }
 
   // Mock data methods for analytics
-  getAnalytics() {
-    return {
-      totalUsers: 1247,
-      totalBuyers: 892,
-      totalSuppliers: 355,
-      totalRFQs: 2156,
-      totalQuotations: 8924,
-      totalOrders: 1847,
-      totalRevenue: 12450000,
-      avgOrderValue: 6742,
-      conversionRate: 0.21,
-      topCategories: [
-        { name: 'Electronics', count: 456 },
-        { name: 'Machinery', count: 342 },
-        { name: 'Raw Materials', count: 289 },
-        { name: 'Textiles', count: 234 },
-        { name: 'Chemicals', count: 198 }
-      ]
-    };
+  async getAnalytics() {
+    return await api.getAnalytics();
   }
 
-  getRFQs() {
-    return JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-  }
-
-  getOrders() {
-    return [
-      { id: '1', created_at: '2025-01-15', order_value: 41250, status: 'completed', buyer_id: 'buyer-1', supplier_id: 'supplier-1' },
-      { id: '2', created_at: '2025-01-14', order_value: 28900, status: 'processing', buyer_id: 'buyer-2', supplier_id: 'supplier-2' },
-      { id: '3', created_at: '2025-01-13', order_value: 15600, status: 'shipped', buyer_id: 'buyer-3', supplier_id: 'supplier-3' },
-      { id: '4', created_at: '2025-01-12', order_value: 67800, status: 'completed', buyer_id: 'buyer-4', supplier_id: 'supplier-4' },
-      { id: '5', created_at: '2025-01-11', order_value: 33400, status: 'cancelled', buyer_id: 'buyer-5', supplier_id: 'supplier-5' }
-    ];
-  }
-
-  getQuotations() {
-    return JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-  }
-
-  getRFQById(rfqId: string) {
-    const rfqs = this.getRFQs();
-    return rfqs.find((rfq: any) => rfq.id === rfqId);
+  async getRFQById(rfqId: string): Promise<RFQ | null> {
+    const rfqs = await this.getRFQs();
+    return rfqs.find(rfq => rfq.id === rfqId) || null;
   }
 
   // Notification system
-  createNotification(notification: {
+  async createNotification(notification: {
     user_id: string;
-    user_type: 'buyer' | 'supplier' | 'admin';
     title: string;
     message: string;
     type: string;
     related_id?: string;
-    unread: boolean;
-  }): void {
-    const newNotification = {
-      id: Date.now().toString(),
-      ...notification,
-      created_at: new Date().toISOString()
-    };
-
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    notifications.push(newNotification);
-    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }): Promise<void> {
+    await api.createNotification(notification);
   }
 
-  getNotifications(userId: string, userType: string): any[] {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    return notifications.filter((n: any) => n.user_id === userId && n.user_type === userType);
+  async getNotifications(userId: string): Promise<any[]> {
+    return await api.getNotifications(userId);
   }
 
-  markNotificationAsRead(notificationId: string): void {
-    const notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-    const updatedNotifications = notifications.map((n: any) => 
-      n.id === notificationId ? { ...n, unread: false } : n
-    );
-    localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-  }
-
-  // Sample Request Management
-  createSampleRequest(request: Omit<SampleRequest, 'id' | 'created_at' | 'status'>): SampleRequest {
-    const newRequest: SampleRequest = {
-      ...request,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      status: 'pending_admin_approval'
-    };
-
-    const existingRequests = this.getSampleRequests();
-    const updatedRequests = [...existingRequests, newRequest];
-    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
+  async markNotificationAsRead(notificationId: string): Promise<void> {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notificationId);
     
-    return newRequest;
-  }
-
-  getSampleRequests(buyerId?: string): SampleRequest[] {
-    const requests = JSON.parse(localStorage.getItem('sample_requests') || '[]');
-    return buyerId ? requests.filter((r: SampleRequest) => r.buyer_id === buyerId) : requests;
-  }
-
-  updateSampleRequest(requestId: string, updates: Partial<SampleRequest>): void {
-    const requests = this.getSampleRequests();
-    const updatedRequests = requests.map(r => 
-      r.id === requestId ? { ...r, ...updates } : r
-    );
-    localStorage.setItem('sample_requests', JSON.stringify(updatedRequests));
-
-    // Notify suppliers when sample request is approved
-    if (updates.status === 'sent_to_suppliers') {
-      const request = requests.find(r => r.id === requestId);
-      if (request) {
-        request.supplier_ids.forEach((supplierId, index) => {
-          this.createNotification({
-            user_id: supplierId,
-            user_type: 'supplier',
-            title: 'Sample Request Approved',
-            message: `Sample request for "${request.rfq_title}" has been approved. Please provide sample pricing.`,
-            type: 'sample_request',
-            related_id: requestId,
-            unread: true
-          });
-        });
-      }
+    if (error) {
+      console.error('Error marking notification as read:', error);
     }
   }
 
-  // Sample Quote Management
-  createSampleQuote(quote: Omit<SampleQuote, 'id' | 'created_at' | 'status'>): SampleQuote {
-    const newQuote: SampleQuote = {
-      ...quote,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      status: 'pending'
-    };
-
-    const existingQuotes = this.getSampleQuotes();
-    const updatedQuotes = [...existingQuotes, newQuote];
-    localStorage.setItem('sample_quotes', JSON.stringify(updatedQuotes));
-    
-    return newQuote;
+  // Legacy methods for backward compatibility (will be migrated)
+  async createSampleRequest(request: Omit<SampleRequest, 'id' | 'created_at'>): Promise<SampleRequest | null> {
+    return await api.createSampleRequest(request);
   }
 
-  getSampleQuotes(supplierId?: string, requestId?: string): SampleQuote[] {
-    const quotes = JSON.parse(localStorage.getItem('sample_quotes') || '[]');
-    let filtered = quotes;
-    
-    if (supplierId) {
-      filtered = filtered.filter((q: SampleQuote) => q.supplier_id === supplierId);
-    }
-    
-    if (requestId) {
-      filtered = filtered.filter((q: SampleQuote) => q.sample_request_id === requestId);
-    }
-    
-    return filtered;
+  async getSampleRequests(buyerId?: string): Promise<SampleRequest[]> {
+    return await api.getSampleRequests(buyerId ? { buyer_id: buyerId } : undefined);
   }
 
-  updateSampleQuote(quoteId: string, updates: Partial<SampleQuote>): void {
-    const quotes = this.getSampleQuotes();
-    const updatedQuotes = quotes.map(q => 
-      q.id === quoteId ? { ...q, ...updates } : q
-    );
-    localStorage.setItem('sample_quotes', JSON.stringify(updatedQuotes));
+  async updateSampleRequest(requestId: string, updates: Partial<SampleRequest>): Promise<boolean> {
+    return await api.updateSampleRequest(requestId, updates);
+  }
 
-    // Notify buyer when sample quote is submitted
-    if (updates.status === 'submitted') {
-      const quote = quotes.find(q => q.id === quoteId);
-      if (quote) {
-        const sampleRequest = this.getSampleRequests().find(r => r.id === quote.sample_request_id);
-        if (sampleRequest) {
-          this.createNotification({
-            user_id: sampleRequest.buyer_id,
-            user_type: 'buyer',
-            title: 'Sample Quote Received',
-            message: `${quote.supplier_company} has provided sample pricing for "${sampleRequest.rfq_title}".`,
-            type: 'sample_quote',
-            related_id: quote.sample_request_id,
-            unread: true
-          });
-        }
-      }
+  async createSampleQuote(quote: Omit<SampleQuote, 'id' | 'created_at' | 'total_cost'>): Promise<SampleQuote | null> {
+    return await api.createSampleQuote(quote);
+  }
+
+  async getSampleQuotes(supplierId?: string, requestId?: string): Promise<SampleQuote[]> {
+    const filters: any = {};
+    if (supplierId) filters.supplier_id = supplierId;
+    if (requestId) filters.sample_request_id = requestId;
+    
+    return await api.getSampleQuotes(filters);
+  }
+
+  async updateSampleQuote(quoteId: string, updates: Partial<SampleQuote>): Promise<void> {
+    const { error } = await supabase
+      .from('sample_quotes')
+      .update(updates)
+      .eq('id', quoteId);
+    
+    if (error) {
+      console.error('Error updating sample quote:', error);
     }
   }
 
-  getPendingSampleRequests(): SampleRequest[] {
-    return this.getSampleRequests().filter(r => r.status === 'pending_admin_approval');
+  async getPendingSampleRequests(): Promise<SampleRequest[]> {
+    return await api.getSampleRequests({ status: 'pending_admin_approval' });
   }
 }
 
