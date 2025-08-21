@@ -436,7 +436,6 @@ const CreateRFQ = () => {
               </button>
             </div>
           </form>
-          </form>
 
           {/* Help Box */}
           <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
