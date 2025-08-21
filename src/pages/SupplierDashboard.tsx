@@ -141,7 +141,8 @@ const SupplierDashboard = () => {
         status: 'pending_review',
         submitted_at: new Date().toISOString().split('T')[0],
         notes: quoteForm.notes,
-        total_value: parseFloat(quoteForm.price_per_unit) * (parseInt(quoteForm.moq) || selectedRfq.quantity)
+        total_value: parseFloat(quoteForm.price_per_unit) * (parseInt(quoteForm.moq) || selectedRfq.quantity),
+        images: quoteForm.images
       };
       quotations.push(newQuotation);
       localStorage.setItem('supplier_quotations', JSON.stringify(quotations));
@@ -158,6 +159,7 @@ const SupplierDashboard = () => {
         quality_guarantee: true,
         sample_available: true,
         notes: '',
+        images: []
         images: []
       });
       alert('Quote submitted successfully! It will be reviewed by admin before being sent to the buyer.');
