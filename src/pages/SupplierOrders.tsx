@@ -68,7 +68,7 @@ const SupplierOrders = () => {
       key: 'buyer_company',
       title: 'Buyer',
       sortable: true,
-      render: (value: string, row: Order) => (
+      render: (value: any, row: Order) => (
         <div>
           <p className="font-medium text-gray-900">{row.buyer_contact}</p>
           <p className="text-sm text-gray-500">International Buyer</p>

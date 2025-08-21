@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, User, Mail, Phone, MapPin, FileText, Award, Globe, Package, DollarSign, Users, Calendar, CheckCircle, ArrowRight } from 'lucide-react';
 import { db } from '../lib/database';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const OnboardSupplier: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);

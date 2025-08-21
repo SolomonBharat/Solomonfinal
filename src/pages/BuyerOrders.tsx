@@ -65,7 +65,7 @@ const BuyerOrders = () => {
       key: 'supplier_company',
       title: 'Supplier',
       sortable: true,
-      render: (value: string, row: Order) => (
+      render: (value: any, row: Order) => (
         <div>
           <p className="font-medium text-gray-900">{row.supplier_contact}</p>
           <p className="text-sm text-gray-500">Verified Supplier</p>
@@ -98,12 +98,12 @@ const BuyerOrders = () => {
       )
     },
     {
-      key: 'payment_status',
+      key: 'status',
       title: 'Payment',
       sortable: true,
-      render: (value: string) => (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentBadge(value)}`}>
-          {value}
+      render: (value: any, row: Order) => (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentBadge(row.payment_pending > 0 ? 'partial' : 'completed')}`}>
+          {row.payment_pending > 0 ? 'Partial' : 'Paid'}
         </span>
       )
     },

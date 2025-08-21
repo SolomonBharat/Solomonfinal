@@ -399,8 +399,8 @@ const AdminDashboard = () => {
                             <span> For: {quotation.buyer_company}</span>
                           </div>
                           <div className="text-xs text-blue-600 mt-1">
-                            <span>📧 {quotation.supplier_email}</span> • 
-                            <span>📞 {quotation.supplier_phone}</span>
+                            <span>📧 {quotation.supplier_email || 'N/A'}</span> • 
+                            <span>📞 {quotation.supplier_phone || 'N/A'}</span>
                           </div>
                         </div>
                         <div className="text-right">

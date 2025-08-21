@@ -277,7 +277,7 @@ export default function QuotationComparison() {
                       </span>
                     </div>
                     
-                    {quotation.status === 'pending_review' && (
+                    {quotation.status === 'sent_to_buyer' && (
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleRejectQuotation(quotation.id)}

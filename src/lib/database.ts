@@ -1,6 +1,6 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 
-// Enhanced Database Layer with Supabase integration
+// Enhanced Database Layer with Supabase integration and localStorage fallback
 export interface User {
   id: string;
   email: string;
@@ -101,6 +101,15 @@ export interface Order {
   updated_at: string;
   expected_delivery: string;
   tracking_info?: string;
+  total_value: number;
+  payment_received: number;
+  payment_pending: number;
+  buyer_contact: string;
+  buyer_country: string;
+  supplier_contact: string;
+  supplier_location: string;
+  rfq_title: string;
+  tracking_number?: string;
 }
 
 export interface Analytics {
@@ -118,7 +127,75 @@ export interface Analytics {
   top_countries: { country: string; count: number }[];
 }
 
-// Database Service Class with Supabase
+// Mock data for demo purposes
+const mockUsers: User[] = [
+  {
+    id: 'buyer-1',
+    email: 'buyer@example.com',
+    name: 'John Smith',
+    company: 'Global Trade Corp',
+    country: 'United States',
+    phone: '+1 555 123 4567',
+    user_type: 'buyer',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    profile_completed: true,
+    verification_status: 'verified'
+  },
+  {
+    id: 'supplier-1',
+    email: 'supplier@example.com',
+    name: 'Rajesh Kumar',
+    company: 'Global Textiles Pvt Ltd',
+    country: 'India',
+    phone: '+91 98765 43210',
+    user_type: 'supplier',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    profile_completed: true,
+    verification_status: 'verified'
+  },
+  {
+    id: 'admin-1',
+    email: 'admin@solomonbharat.com',
+    name: 'Admin User',
+    company: 'Solomon Bharat',
+    country: 'India',
+    phone: '+91 98765 00000',
+    user_type: 'admin',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    profile_completed: true,
+    verification_status: 'verified'
+  }
+];
+
+const mockSuppliers: Supplier[] = [
+  {
+    id: 'supplier-1',
+    company_name: 'Global Textiles Pvt Ltd',
+    contact_person: 'Rajesh Kumar',
+    business_type: 'Manufacturer',
+    years_in_business: 15,
+    annual_turnover: '5-10 Million USD',
+    employee_count: '100-500',
+    product_categories: ['Textiles & Apparel', 'Organic Cotton'],
+    certifications: ['GOTS', 'OEKO-TEX', 'ISO 9001'],
+    export_countries: ['USA', 'UK', 'Canada', 'Australia'],
+    production_capacity: '50,000 pieces per month',
+    minimum_order_quantity: '1,000 pieces',
+    quality_standards: 'ISO 9001:2015, GOTS Certified',
+    gst_number: '33AABCG1234M1Z5',
+    iec_code: 'AABCG1234M',
+    rating: 4.8,
+    total_orders: 156,
+    verified: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+// Database Service Class with Supabase and localStorage fallback
 export class DatabaseService {
   private static instance: DatabaseService;
   
@@ -129,20 +206,66 @@ export class DatabaseService {
     return DatabaseService.instance;
   }
 
+  private getStorageKey(table: string): string {
+    return `solomon_${table}`;
+  }
+
+  private getFromStorage<T>(table: string): T[] {
+    try {
+      const data = localStorage.getItem(this.getStorageKey(table));
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveToStorage<T>(table: string, data: T[]): void {
+    try {
+      localStorage.setItem(this.getStorageKey(table), JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+  }
+
+  private generateId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
   // User Management
   async createUser(userData: Partial<User>): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .insert([userData])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating user:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('users')
+          .insert([userData])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating user:', error);
+          return null;
+        }
+        return data;
+      } else {
+        // Fallback to localStorage
+        const users = this.getFromStorage<User>('users');
+        const newUser: User = {
+          id: userData.id || this.generateId(),
+          email: userData.email!,
+          name: userData.name!,
+          company: userData.company!,
+          country: userData.country!,
+          phone: userData.phone,
+          user_type: userData.user_type || 'buyer',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          profile_completed: userData.profile_completed || false,
+          verification_status: userData.verification_status || 'verified'
+        };
+        users.push(newUser);
+        this.saveToStorage('users', users);
+        return newUser;
       }
-      return data;
     } catch (error) {
       console.error('Error creating user:', error);
       return null;
@@ -151,54 +274,101 @@ export class DatabaseService {
 
   async getUsers(): Promise<User[]> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching users:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*');
+        
+        if (error) {
+          console.error('Error fetching users:', error);
+          return mockUsers;
+        }
+        return data || mockUsers;
+      } else {
+        const users = this.getFromStorage<User>('users');
+        return users.length > 0 ? users : mockUsers;
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching users:', error);
-      return [];
+      return mockUsers;
     }
   }
 
   async getUserById(id: string): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching user by ID:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user by ID:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const users = this.getFromStorage<User>('users');
+        const allUsers = users.length > 0 ? users : mockUsers;
+        return allUsers.find(user => user.id === id) || null;
       }
-      return data;
     } catch (error) {
       console.error('Error fetching user by ID:', error);
       return null;
     }
   }
 
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', email)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching user by email:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const users = this.getFromStorage<User>('users');
+        const allUsers = users.length > 0 ? users : mockUsers;
+        return allUsers.find(user => user.email === email) || null;
+      }
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      return null;
+    }
+  }
+
   async updateUser(id: string, updates: Partial<User>): Promise<User | null> {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating user:', error);
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('users')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating user:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const users = this.getFromStorage<User>('users');
+        const userIndex = users.findIndex(user => user.id === id);
+        if (userIndex !== -1) {
+          users[userIndex] = { ...users[userIndex], ...updates, updated_at: new Date().toISOString() };
+          this.saveToStorage('users', users);
+          return users[userIndex];
+        }
         return null;
       }
-      return data;
     } catch (error) {
       console.error('Error updating user:', error);
       return null;
@@ -208,23 +378,52 @@ export class DatabaseService {
   // RFQ Management
   async createRFQ(rfqData: Partial<RFQ>): Promise<RFQ | null> {
     try {
-      const { data, error } = await supabase
-        .from('rfqs')
-        .insert([{
-          ...rfqData,
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .insert([{
+            ...rfqData,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            matched_suppliers: [],
+            quotations_count: 0,
+            status: 'pending_approval'
+          }])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating RFQ:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const rfqs = this.getFromStorage<RFQ>('rfqs');
+        const newRFQ: RFQ = {
+          id: this.generateId(),
+          buyer_id: rfqData.buyer_id!,
+          title: rfqData.title!,
+          category: rfqData.category!,
+          description: rfqData.description || '',
+          quantity: rfqData.quantity!,
+          unit: rfqData.unit!,
+          target_price: rfqData.target_price!,
+          max_price: rfqData.max_price,
+          delivery_timeline: rfqData.delivery_timeline!,
+          shipping_terms: rfqData.shipping_terms!,
+          quality_standards: rfqData.quality_standards,
+          certifications_needed: rfqData.certifications_needed,
+          additional_requirements: rfqData.additional_requirements,
+          status: 'pending_approval',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           matched_suppliers: [],
-          quotations_count: 0,
-          status: 'pending_approval'
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating RFQ:', error);
-        return null;
+          quotations_count: 0
+        };
+        rfqs.push(newRFQ);
+        this.saveToStorage('rfqs', rfqs);
+        return newRFQ;
       }
-      return data;
     } catch (error) {
       console.error('Error creating RFQ:', error);
       return null;
@@ -233,16 +432,20 @@ export class DatabaseService {
 
   async getRFQs(): Promise<RFQ[]> {
     try {
-      const { data, error } = await supabase
-        .from('rfqs')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching RFQs:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching RFQs:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        return this.getFromStorage<RFQ>('rfqs');
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching RFQs:', error);
       return [];
@@ -251,17 +454,22 @@ export class DatabaseService {
 
   async getRFQById(id: string): Promise<RFQ | null> {
     try {
-      const { data, error } = await supabase
-        .from('rfqs')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching RFQ by ID:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching RFQ by ID:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const rfqs = this.getFromStorage<RFQ>('rfqs');
+        return rfqs.find(rfq => rfq.id === id) || null;
       }
-      return data;
     } catch (error) {
       console.error('Error fetching RFQ by ID:', error);
       return null;
@@ -270,18 +478,29 @@ export class DatabaseService {
 
   async updateRFQ(id: string, updates: Partial<RFQ>): Promise<RFQ | null> {
     try {
-      const { data, error } = await supabase
-        .from('rfqs')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating RFQ:', error);
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating RFQ:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const rfqs = this.getFromStorage<RFQ>('rfqs');
+        const rfqIndex = rfqs.findIndex(rfq => rfq.id === id);
+        if (rfqIndex !== -1) {
+          rfqs[rfqIndex] = { ...rfqs[rfqIndex], ...updates, updated_at: new Date().toISOString() };
+          this.saveToStorage('rfqs', rfqs);
+          return rfqs[rfqIndex];
+        }
         return null;
       }
-      return data;
     } catch (error) {
       console.error('Error updating RFQ:', error);
       return null;
@@ -290,17 +509,22 @@ export class DatabaseService {
 
   async getRFQsByBuyer(buyerId: string): Promise<RFQ[]> {
     try {
-      const { data, error } = await supabase
-        .from('rfqs')
-        .select('*')
-        .eq('buyer_id', buyerId)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching buyer RFQs:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('rfqs')
+          .select('*')
+          .eq('buyer_id', buyerId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching buyer RFQs:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const rfqs = this.getFromStorage<RFQ>('rfqs');
+        return rfqs.filter(rfq => rfq.buyer_id === buyerId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching buyer RFQs:', error);
       return [];
@@ -310,20 +534,49 @@ export class DatabaseService {
   // Quotation Management
   async createQuotation(quotationData: Partial<Quotation>): Promise<Quotation | null> {
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .insert([{
-          ...quotationData,
-          status: 'pending_review'
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating quotation:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('quotations')
+          .insert([{
+            ...quotationData,
+            status: 'pending_review'
+          }])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating quotation:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const quotations = this.getFromStorage<Quotation>('quotations');
+        const newQuotation: Quotation = {
+          id: this.generateId(),
+          rfq_id: quotationData.rfq_id!,
+          supplier_id: quotationData.supplier_id!,
+          supplier_name: quotationData.supplier_name!,
+          supplier_company: quotationData.supplier_company!,
+          supplier_location: quotationData.supplier_location!,
+          supplier_email: quotationData.supplier_email!,
+          supplier_phone: quotationData.supplier_phone!,
+          quoted_price: quotationData.quoted_price!,
+          moq: quotationData.moq!,
+          lead_time: quotationData.lead_time!,
+          payment_terms: quotationData.payment_terms!,
+          shipping_terms: quotationData.shipping_terms!,
+          validity_days: quotationData.validity_days!,
+          quality_guarantee: quotationData.quality_guarantee || false,
+          sample_available: quotationData.sample_available || false,
+          notes: quotationData.notes || '',
+          status: 'pending_review',
+          submitted_at: new Date().toISOString(),
+          total_value: quotationData.total_value!
+        };
+        quotations.push(newQuotation);
+        this.saveToStorage('quotations', quotations);
+        return newQuotation;
       }
-      return data;
     } catch (error) {
       console.error('Error creating quotation:', error);
       return null;
@@ -332,16 +585,20 @@ export class DatabaseService {
 
   async getQuotations(): Promise<Quotation[]> {
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .select('*')
-        .order('submitted_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching quotations:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('*')
+          .order('submitted_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching quotations:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        return this.getFromStorage<Quotation>('quotations');
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching quotations:', error);
       return [];
@@ -350,17 +607,22 @@ export class DatabaseService {
 
   async getQuotationsByRFQ(rfqId: string): Promise<Quotation[]> {
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .select('*')
-        .eq('rfq_id', rfqId)
-        .order('submitted_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching quotations by RFQ:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('*')
+          .eq('rfq_id', rfqId)
+          .order('submitted_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching quotations by RFQ:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const quotations = this.getFromStorage<Quotation>('quotations');
+        return quotations.filter(q => q.rfq_id === rfqId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching quotations by RFQ:', error);
       return [];
@@ -369,17 +631,22 @@ export class DatabaseService {
 
   async getQuotationsBySupplier(supplierId: string): Promise<Quotation[]> {
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .select('*')
-        .eq('supplier_id', supplierId)
-        .order('submitted_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching supplier quotations:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('quotations')
+          .select('*')
+          .eq('supplier_id', supplierId)
+          .order('submitted_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching supplier quotations:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const quotations = this.getFromStorage<Quotation>('quotations');
+        return quotations.filter(q => q.supplier_id === supplierId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching supplier quotations:', error);
       return [];
@@ -388,21 +655,36 @@ export class DatabaseService {
 
   async updateQuotation(id: string, updates: Partial<Quotation>): Promise<Quotation | null> {
     try {
-      const { data, error } = await supabase
-        .from('quotations')
-        .update({
-          ...updates,
-          reviewed_at: updates.status ? new Date().toISOString() : undefined
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating quotation:', error);
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('quotations')
+          .update({
+            ...updates,
+            reviewed_at: updates.status ? new Date().toISOString() : undefined
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating quotation:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const quotations = this.getFromStorage<Quotation>('quotations');
+        const quotationIndex = quotations.findIndex(q => q.id === id);
+        if (quotationIndex !== -1) {
+          quotations[quotationIndex] = { 
+            ...quotations[quotationIndex], 
+            ...updates,
+            reviewed_at: updates.status ? new Date().toISOString() : quotations[quotationIndex].reviewed_at
+          };
+          this.saveToStorage('quotations', quotations);
+          return quotations[quotationIndex];
+        }
         return null;
       }
-      return data;
     } catch (error) {
       console.error('Error updating quotation:', error);
       return null;
@@ -412,20 +694,52 @@ export class DatabaseService {
   // Order Management
   async createOrder(orderData: Partial<Order>): Promise<Order | null> {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([{
-          ...orderData,
-          status: 'confirmed'
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating order:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([{
+            ...orderData,
+            status: 'confirmed'
+          }])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating order:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const orders = this.getFromStorage<Order>('orders');
+        const newOrder: Order = {
+          id: this.generateId(),
+          rfq_id: orderData.rfq_id!,
+          quotation_id: orderData.quotation_id!,
+          buyer_id: orderData.buyer_id!,
+          supplier_id: orderData.supplier_id!,
+          order_value: orderData.order_value!,
+          quantity: orderData.quantity!,
+          unit_price: orderData.unit_price!,
+          payment_terms: orderData.payment_terms!,
+          delivery_terms: orderData.delivery_terms!,
+          status: 'confirmed',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          expected_delivery: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          tracking_info: orderData.tracking_info,
+          total_value: orderData.order_value!,
+          payment_received: orderData.order_value! * 0.3, // 30% advance
+          payment_pending: orderData.order_value! * 0.7, // 70% pending
+          buyer_contact: 'John Smith',
+          buyer_country: 'United States',
+          supplier_contact: 'Rajesh Kumar',
+          supplier_location: 'Tirupur, India',
+          rfq_title: 'Product Order'
+        };
+        orders.push(newOrder);
+        this.saveToStorage('orders', orders);
+        return newOrder;
       }
-      return data;
     } catch (error) {
       console.error('Error creating order:', error);
       return null;
@@ -434,16 +748,20 @@ export class DatabaseService {
 
   async getOrders(): Promise<Order[]> {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching orders:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching orders:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        return this.getFromStorage<Order>('orders');
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching orders:', error);
       return [];
@@ -452,17 +770,22 @@ export class DatabaseService {
 
   async getOrdersByBuyer(buyerId: string): Promise<Order[]> {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('buyer_id', buyerId)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching buyer orders:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('buyer_id', buyerId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching buyer orders:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const orders = this.getFromStorage<Order>('orders');
+        return orders.filter(order => order.buyer_id === buyerId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching buyer orders:', error);
       return [];
@@ -471,17 +794,22 @@ export class DatabaseService {
 
   async getOrdersBySupplier(supplierId: string): Promise<Order[]> {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('supplier_id', supplierId)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching supplier orders:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('supplier_id', supplierId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching supplier orders:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const orders = this.getFromStorage<Order>('orders');
+        return orders.filter(order => order.supplier_id === supplierId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching supplier orders:', error);
       return [];
@@ -490,18 +818,29 @@ export class DatabaseService {
 
   async updateOrder(id: string, updates: Partial<Order>): Promise<Order | null> {
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating order:', error);
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('orders')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating order:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const orders = this.getFromStorage<Order>('orders');
+        const orderIndex = orders.findIndex(order => order.id === id);
+        if (orderIndex !== -1) {
+          orders[orderIndex] = { ...orders[orderIndex], ...updates, updated_at: new Date().toISOString() };
+          this.saveToStorage('orders', orders);
+          return orders[orderIndex];
+        }
         return null;
       }
-      return data;
     } catch (error) {
       console.error('Error updating order:', error);
       return null;
@@ -511,17 +850,46 @@ export class DatabaseService {
   // Supplier Management
   async createSupplierProfile(supplierData: Partial<Supplier>): Promise<Supplier | null> {
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .insert([supplierData])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating supplier profile:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .insert([supplierData])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating supplier profile:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const suppliers = this.getFromStorage<Supplier>('suppliers');
+        const newSupplier: Supplier = {
+          id: supplierData.id!,
+          company_name: supplierData.company_name!,
+          contact_person: supplierData.contact_person!,
+          business_type: supplierData.business_type!,
+          years_in_business: supplierData.years_in_business!,
+          annual_turnover: supplierData.annual_turnover!,
+          employee_count: supplierData.employee_count!,
+          product_categories: supplierData.product_categories || [],
+          certifications: supplierData.certifications || [],
+          export_countries: supplierData.export_countries || [],
+          production_capacity: supplierData.production_capacity || '',
+          minimum_order_quantity: supplierData.minimum_order_quantity || '',
+          quality_standards: supplierData.quality_standards || '',
+          gst_number: supplierData.gst_number || '',
+          iec_code: supplierData.iec_code || '',
+          rating: supplierData.rating || 0,
+          total_orders: supplierData.total_orders || 0,
+          verified: supplierData.verified || false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        suppliers.push(newSupplier);
+        this.saveToStorage('suppliers', suppliers);
+        return newSupplier;
       }
-      return data;
     } catch (error) {
       console.error('Error creating supplier profile:', error);
       return null;
@@ -530,35 +898,46 @@ export class DatabaseService {
 
   async getSuppliers(): Promise<Supplier[]> {
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching suppliers:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching suppliers:', error);
+          return mockSuppliers;
+        }
+        return data || mockSuppliers;
+      } else {
+        const suppliers = this.getFromStorage<Supplier>('suppliers');
+        return suppliers.length > 0 ? suppliers : mockSuppliers;
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching suppliers:', error);
-      return [];
+      return mockSuppliers;
     }
   }
 
   async getSupplierById(id: string): Promise<Supplier | null> {
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching supplier by ID:', error);
-        return null;
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching supplier by ID:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const suppliers = this.getFromStorage<Supplier>('suppliers');
+        const allSuppliers = suppliers.length > 0 ? suppliers : mockSuppliers;
+        return allSuppliers.find(supplier => supplier.id === id) || null;
       }
-      return data;
     } catch (error) {
       console.error('Error fetching supplier by ID:', error);
       return null;
@@ -567,18 +946,29 @@ export class DatabaseService {
 
   async updateSupplierProfile(id: string, updates: Partial<Supplier>): Promise<Supplier | null> {
     try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error updating supplier profile:', error);
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('suppliers')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating supplier profile:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const suppliers = this.getFromStorage<Supplier>('suppliers');
+        const supplierIndex = suppliers.findIndex(supplier => supplier.id === id);
+        if (supplierIndex !== -1) {
+          suppliers[supplierIndex] = { ...suppliers[supplierIndex], ...updates, updated_at: new Date().toISOString() };
+          this.saveToStorage('suppliers', suppliers);
+          return suppliers[supplierIndex];
+        }
         return null;
       }
-      return data;
     } catch (error) {
       console.error('Error updating supplier profile:', error);
       return null;
@@ -588,58 +978,88 @@ export class DatabaseService {
   // Analytics
   async getAnalytics(): Promise<Analytics> {
     try {
-      const [usersResult, rfqsResult, quotationsResult, ordersResult] = await Promise.all([
-        supabase.from('users').select('*'),
-        supabase.from('rfqs').select('*'),
-        supabase.from('quotations').select('*'),
-        supabase.from('orders').select('*')
-      ]);
+      if (isSupabaseConfigured && supabase) {
+        const [usersResult, rfqsResult, quotationsResult, ordersResult] = await Promise.all([
+          supabase.from('users').select('*'),
+          supabase.from('rfqs').select('*'),
+          supabase.from('quotations').select('*'),
+          supabase.from('orders').select('*')
+        ]);
 
-      const users = usersResult.data || [];
-      const rfqs = rfqsResult.data || [];
-      const quotations = quotationsResult.data || [];
-      const orders = ordersResult.data || [];
+        const users = usersResult.data || [];
+        const rfqs = rfqsResult.data || [];
+        const quotations = quotationsResult.data || [];
+        const orders = ordersResult.data || [];
 
-      const buyers = users.filter(u => u.user_type === 'buyer');
-      const suppliers = users.filter(u => u.user_type === 'supplier');
+        const buyers = users.filter(u => u.user_type === 'buyer');
+        const suppliers = users.filter(u => u.user_type === 'supplier');
 
-      const totalGMV = orders.reduce((sum, order) => sum + order.order_value, 0);
-      const currentMonth = new Date().getMonth();
-      const monthlyOrders = orders.filter(order => 
-        new Date(order.created_at).getMonth() === currentMonth
-      );
-      const monthlyGMV = monthlyOrders.reduce((sum, order) => sum + order.order_value, 0);
+        const totalGMV = orders.reduce((sum, order) => sum + order.order_value, 0);
+        const currentMonth = new Date().getMonth();
+        const monthlyOrders = orders.filter(order => 
+          new Date(order.created_at).getMonth() === currentMonth
+        );
+        const monthlyGMV = monthlyOrders.reduce((sum, order) => sum + order.order_value, 0);
 
-      const categoryCount: { [key: string]: number } = {};
-      rfqs.forEach(rfq => {
-        categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
-      });
+        const categoryCount: { [key: string]: number } = {};
+        rfqs.forEach(rfq => {
+          categoryCount[rfq.category] = (categoryCount[rfq.category] || 0) + 1;
+        });
 
-      const countryCount: { [key: string]: number } = {};
-      buyers.forEach(buyer => {
-        countryCount[buyer.country] = (countryCount[buyer.country] || 0) + 1;
-      });
+        const countryCount: { [key: string]: number } = {};
+        buyers.forEach(buyer => {
+          countryCount[buyer.country] = (countryCount[buyer.country] || 0) + 1;
+        });
 
-      return {
-        total_users: users.length,
-        total_buyers: buyers.length,
-        total_suppliers: suppliers.length,
-        total_rfqs: rfqs.length,
-        total_quotations: quotations.length,
-        total_orders: orders.length,
-        total_gmv: totalGMV,
-        monthly_gmv: monthlyGMV,
-        avg_order_value: orders.length > 0 ? totalGMV / orders.length : 0,
-        success_rate: rfqs.length > 0 ? (orders.length / rfqs.length) * 100 : 0,
-        top_categories: Object.entries(categoryCount)
-          .map(([category, count]) => ({ category, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5),
-        top_countries: Object.entries(countryCount)
-          .map(([country, count]) => ({ country, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 5)
-      };
+        return {
+          total_users: users.length,
+          total_buyers: buyers.length,
+          total_suppliers: suppliers.length,
+          total_rfqs: rfqs.length,
+          total_quotations: quotations.length,
+          total_orders: orders.length,
+          total_gmv: totalGMV,
+          monthly_gmv: monthlyGMV,
+          avg_order_value: orders.length > 0 ? totalGMV / orders.length : 0,
+          success_rate: rfqs.length > 0 ? (orders.length / rfqs.length) * 100 : 0,
+          top_categories: Object.entries(categoryCount)
+            .map(([category, count]) => ({ category, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5),
+          top_countries: Object.entries(countryCount)
+            .map(([country, count]) => ({ country, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5)
+        };
+      } else {
+        // Mock analytics data
+        return {
+          total_users: 1250,
+          total_buyers: 890,
+          total_suppliers: 360,
+          total_rfqs: 456,
+          total_quotations: 1234,
+          total_orders: 234,
+          total_gmv: 5600000,
+          monthly_gmv: 890000,
+          avg_order_value: 23900,
+          success_rate: 78.5,
+          top_categories: [
+            { category: 'Textiles & Apparel', count: 156 },
+            { category: 'Spices & Food Products', count: 89 },
+            { category: 'Electronics & Components', count: 67 },
+            { category: 'Handicrafts & Home Decor', count: 45 },
+            { category: 'Agricultural Products', count: 34 }
+          ],
+          top_countries: [
+            { country: 'United States', count: 234 },
+            { country: 'United Kingdom', count: 156 },
+            { country: 'Germany', count: 123 },
+            { country: 'Canada', count: 89 },
+            { country: 'Australia', count: 67 }
+          ]
+        };
+      }
     } catch (error) {
       console.error('Error fetching analytics:', error);
       return {
@@ -662,27 +1082,42 @@ export class DatabaseService {
   // Search and Filter
   async searchRFQs(query: string, filters?: { category?: string; status?: string }): Promise<RFQ[]> {
     try {
-      let queryBuilder = supabase.from('rfqs').select('*');
+      if (isSupabaseConfigured && supabase) {
+        let queryBuilder = supabase.from('rfqs').select('*');
 
-      if (query) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
-      }
+        if (query) {
+          queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`);
+        }
 
-      if (filters?.category) {
-        queryBuilder = queryBuilder.eq('category', filters.category);
-      }
+        if (filters?.category) {
+          queryBuilder = queryBuilder.eq('category', filters.category);
+        }
 
-      if (filters?.status) {
-        queryBuilder = queryBuilder.eq('status', filters.status);
-      }
+        if (filters?.status) {
+          queryBuilder = queryBuilder.eq('status', filters.status);
+        }
 
-      const { data, error } = await queryBuilder.order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error searching RFQs:', error);
-        return [];
+        const { data, error } = await queryBuilder.order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error searching RFQs:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const rfqs = this.getFromStorage<RFQ>('rfqs');
+        return rfqs.filter(rfq => {
+          const matchesQuery = !query || 
+            rfq.title.toLowerCase().includes(query.toLowerCase()) ||
+            rfq.description.toLowerCase().includes(query.toLowerCase()) ||
+            rfq.category.toLowerCase().includes(query.toLowerCase());
+          
+          const matchesCategory = !filters?.category || rfq.category === filters.category;
+          const matchesStatus = !filters?.status || rfq.status === filters.status;
+          
+          return matchesQuery && matchesCategory && matchesStatus;
+        });
       }
-      return data || [];
     } catch (error) {
       console.error('Error searching RFQs:', error);
       return [];
@@ -692,23 +1127,39 @@ export class DatabaseService {
   // Notification System
   async createNotification(userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') {
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .insert([{
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('notifications')
+          .insert([{
+            user_id: userId,
+            title,
+            message,
+            type,
+            read: false
+          }])
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error creating notification:', error);
+          return null;
+        }
+        return data;
+      } else {
+        const notifications = this.getFromStorage('notifications');
+        const newNotification = {
+          id: this.generateId(),
           user_id: userId,
           title,
           message,
           type,
-          read: false
-        }])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Error creating notification:', error);
-        return null;
+          read: false,
+          created_at: new Date().toISOString()
+        };
+        notifications.push(newNotification);
+        this.saveToStorage('notifications', notifications);
+        return newNotification;
       }
-      return data;
     } catch (error) {
       console.error('Error creating notification:', error);
       return null;
@@ -717,17 +1168,22 @@ export class DatabaseService {
 
   async getUserNotifications(userId: string) {
     try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching notifications:', error);
-        return [];
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching notifications:', error);
+          return [];
+        }
+        return data || [];
+      } else {
+        const notifications = this.getFromStorage('notifications');
+        return notifications.filter((n: any) => n.user_id === userId);
       }
-      return data || [];
     } catch (error) {
       console.error('Error fetching notifications:', error);
       return [];

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db, User } from '../lib/database';
 
 // Authentication Context
@@ -18,90 +18,146 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Demo credentials for testing
+const demoCredentials = [
+  { email: 'buyer@example.com', password: 'buyer123', user_type: 'buyer' },
+  { email: 'supplier@example.com', password: 'supplier123', user_type: 'supplier' },
+  { email: 'admin@solomonbharat.com', password: 'admin123', user_type: 'admin' }
+];
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [userType, setUserType] = useState<'buyer' | 'supplier' | 'admin' | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    // Check for existing session
+    const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
+        // Check localStorage first
+        const savedUser = localStorage.getItem('solomon_user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          setUserType(userData.user_type);
           setLoading(false);
           return;
         }
 
-        if (session?.user) {
-          // Fetch user profile from public.users table
-          const profile = await db.getUserById(session.user.id);
-          if (profile) {
-            setUser(profile);
-            setUserType(profile.user_type);
+        // If Supabase is configured, check for session
+        if (isSupabaseConfigured && supabase) {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('Error getting session:', error);
+            setLoading(false);
+            return;
+          }
+
+          if (session?.user) {
+            const profile = await db.getUserById(session.user.id);
+            if (profile) {
+              setUser(profile);
+              setUserType(profile.user_type);
+              localStorage.setItem('solomon_user', JSON.stringify(profile));
+            }
           }
         }
         setLoading(false);
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('Error in checkSession:', error);
         setLoading(false);
       }
     };
 
-    getInitialSession();
+    checkSession();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const profile = await db.getUserById(session.user.id);
-        if (profile) {
-          setUser(profile);
-          setUserType(profile.user_type);
+    // Listen for auth changes if Supabase is configured
+    if (isSupabaseConfigured && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const profile = await db.getUserById(session.user.id);
+          if (profile) {
+            setUser(profile);
+            setUserType(profile.user_type);
+            localStorage.setItem('solomon_user', JSON.stringify(profile));
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setUserType(null);
+          localStorage.removeItem('solomon_user');
         }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setUserType(null);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        setLoading(false);
-        return { success: false, error: error.message };
-      }
-
-      if (data.user) {
-        // Fetch user profile
-        const profile = await db.getUserById(data.user.id);
-        if (profile) {
-          setUser(profile);
-          setUserType(profile.user_type);
+      // Check demo credentials first
+      const demoUser = demoCredentials.find(cred => cred.email === email && cred.password === password);
+      if (demoUser) {
+        // Find or create demo user
+        let user = await db.getUserByEmail(email);
+        if (!user) {
+          user = await db.createUser({
+            id: `demo-${demoUser.user_type}`,
+            email: demoUser.email,
+            name: demoUser.user_type === 'buyer' ? 'Demo Buyer' : 
+                  demoUser.user_type === 'supplier' ? 'Demo Supplier' : 'Admin User',
+            company: demoUser.user_type === 'buyer' ? 'Demo Company' : 
+                     demoUser.user_type === 'supplier' ? 'Demo Supplier Ltd' : 'Solomon Bharat',
+            country: demoUser.user_type === 'supplier' ? 'India' : 'United States',
+            user_type: demoUser.user_type as any,
+            profile_completed: true,
+            verification_status: 'verified'
+          });
+        }
+        
+        if (user) {
+          setUser(user);
+          setUserType(user.user_type);
+          localStorage.setItem('solomon_user', JSON.stringify(user));
           setLoading(false);
           return { success: true };
-        } else {
+        }
+      }
+
+      // Try Supabase authentication if configured
+      if (isSupabaseConfigured && supabase) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
           setLoading(false);
-          return { success: false, error: 'User profile not found' };
+          return { success: false, error: error.message };
+        }
+
+        if (data.user) {
+          const profile = await db.getUserById(data.user.id);
+          if (profile) {
+            setUser(profile);
+            setUserType(profile.user_type);
+            localStorage.setItem('solomon_user', JSON.stringify(profile));
+            setLoading(false);
+            return { success: true };
+          } else {
+            setLoading(false);
+            return { success: false, error: 'User profile not found' };
+          }
         }
       }
 
       setLoading(false);
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: 'Invalid credentials' };
     } catch (error) {
       console.error('Login error:', error);
       setLoading(false);
@@ -113,21 +169,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
 
-      // Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userData.email!,
-        password: userData.password
-      });
+      // Try Supabase registration if configured
+      if (isSupabaseConfigured && supabase) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: userData.email!,
+          password: userData.password
+        });
 
-      if (authError) {
-        setLoading(false);
-        return { success: false, error: authError.message };
-      }
+        if (authError) {
+          setLoading(false);
+          return { success: false, error: authError.message };
+        }
 
-      if (authData.user) {
-        // Create user profile in public.users table
-        const newUserProfile: Partial<User> = {
-          id: authData.user.id,
+        if (authData.user) {
+          const newUserProfile: Partial<User> = {
+            id: authData.user.id,
+            email: userData.email!,
+            name: userData.name!,
+            company: userData.company!,
+            country: userData.country!,
+            phone: userData.phone,
+            user_type: userData.user_type || 'buyer',
+            profile_completed: true,
+            verification_status: 'verified'
+          };
+
+          const createdUser = await db.createUser(newUserProfile);
+
+          if (!createdUser) {
+            setLoading(false);
+            return { success: false, error: 'Failed to create user profile' };
+          }
+
+          setUser(createdUser);
+          setUserType(createdUser.user_type);
+          localStorage.setItem('solomon_user', JSON.stringify(createdUser));
+          setLoading(false);
+          return { success: true, user: createdUser };
+        }
+      } else {
+        // Fallback to localStorage registration
+        const newUser = await db.createUser({
+          id: this.generateId(),
           email: userData.email!,
           name: userData.name!,
           company: userData.company!,
@@ -136,19 +219,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           user_type: userData.user_type || 'buyer',
           profile_completed: true,
           verification_status: 'verified'
-        };
+        });
 
-        const createdUser = await db.createUser(newUserProfile);
-
-        if (!createdUser) {
+        if (newUser) {
+          setUser(newUser);
+          setUserType(newUser.user_type);
+          localStorage.setItem('solomon_user', JSON.stringify(newUser));
           setLoading(false);
-          return { success: false, error: 'Failed to create user profile' };
+          return { success: true, user: newUser };
         }
-
-        setUser(createdUser);
-        setUserType(createdUser.user_type);
-        setLoading(false);
-        return { success: true, user: createdUser };
       }
 
       setLoading(false);
@@ -163,10 +242,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
+      
+      // Sign out from Supabase if configured
+      if (isSupabaseConfigured && supabase) {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Logout error:', error);
+        }
       }
+      
+      // Clear local storage
+      localStorage.removeItem('solomon_user');
       setUser(null);
       setUserType(null);
       setLoading(false);
@@ -174,6 +260,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Logout error:', error);
       setLoading(false);
     }
+  };
+
+  const generateId = (): string => {
+    return Math.random().toString(36).substr(2, 9);
   };
 
   const value: AuthContextType = {

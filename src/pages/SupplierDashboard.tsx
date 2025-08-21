@@ -14,7 +14,12 @@ const SupplierDashboard = () => {
     price_per_unit: '',
     moq: '',
     lead_time: '',
-    notes: ''
+    notes: '',
+    payment_terms: '30% advance, 70% on shipment',
+    shipping_terms: 'FOB',
+    validity_days: '15',
+    quality_guarantee: true,
+    sample_available: true
   });
 
   useEffect(() => {
