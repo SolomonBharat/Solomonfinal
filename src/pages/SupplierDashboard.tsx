@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
+import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X, MessageCircle, HelpCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { PRODUCT_CATEGORIES } from '../constants/categories';
 
@@ -32,6 +32,8 @@ const SupplierDashboard = () => {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
   const [showRfqDetailsModal, setShowRfqDetailsModal] = useState(false);
+  const [showQueryModal, setShowQueryModal] = useState(false);
+  const [queryText, setQueryText] = useState('');
   const [quoteForm, setQuoteForm] = useState({
     price_per_unit: '',
     moq: '',
@@ -95,6 +97,44 @@ const SupplierDashboard = () => {
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
     setShowRfqDetailsModal(true);
+  };
+
+  const handleRaiseQuery = (rfq: RFQ) => {
+    setSelectedRfq(rfq);
+    setQueryText('');
+    setShowQueryModal(true);
+  };
+
+  const submitQuery = () => {
+    if (!queryText.trim()) {
+      alert('Please enter your question');
+      return;
+    }
+
+    if (selectedRfq) {
+      // Store query in localStorage for admin review
+      const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
+      const newQuery = {
+        id: `query-${Date.now()}`,
+        rfq_id: selectedRfq.id,
+        rfq_title: selectedRfq.title,
+        supplier_id: user?.id,
+        supplier_name: user?.name || 'Supplier User',
+        supplier_company: user?.company || 'Supplier Company',
+        query_text: queryText,
+        status: 'pending_admin_review',
+        created_at: new Date().toISOString(),
+        buyer_response: null,
+        admin_notes: null
+      };
+      queries.push(newQuery);
+      localStorage.setItem('supplier_queries', JSON.stringify(queries));
+      
+      setShowQueryModal(false);
+      setSelectedRfq(null);
+      setQueryText('');
+      alert('✅ Query submitted successfully!\n\n📋 Your question will be reviewed by admin and forwarded to the buyer.\n⏰ You\'ll receive a response within 24-48 hours.');
+    }
   };
   
   const submitQuote = () => {
