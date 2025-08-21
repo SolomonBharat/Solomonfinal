@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { PRODUCT_CATEGORIES } from '../constants/categories';
 
 interface User {
   id: string;
@@ -148,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: data.name,
         company: data.company,
         country: data.country,
-        phone: data.phone
+        product_categories: [PRODUCT_CATEGORIES[0]] // Use first category from standardized list
       };
       
       setUser(newUser);

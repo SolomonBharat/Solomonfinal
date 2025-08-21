@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, Clock, CheckCircle, DollarSign, User, LogOut, Bell, Eye, Send, MapPin, Star, Award, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PRODUCT_CATEGORIES } from '../constants/categories';
 
 interface RFQ {
   id: string;
@@ -41,7 +42,7 @@ const SupplierDashboard = () => {
   useEffect(() => {
     // Get supplier's categories from profile
     const savedUser = localStorage.getItem('solomon_user');
-    let supplierCategories = ['Textiles & Apparel']; // Default category
+    let supplierCategories = [PRODUCT_CATEGORIES[0]]; // Default to first category
     
     if (savedUser) {
       const user = JSON.parse(savedUser);
@@ -265,7 +266,7 @@ const SupplierDashboard = () => {
         <div className="mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Available RFQs for Your Category</h2>
-            <p className="text-gray-600">Textiles & Apparel opportunities matched to your expertise</p>
+            <p className="text-gray-600">Opportunities matched to your expertise in {JSON.parse(localStorage.getItem('solomon_user') || '{}').product_categories?.[0] || PRODUCT_CATEGORIES[0]}</p>
           </div>
           
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">

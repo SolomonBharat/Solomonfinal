@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Building, Globe, Phone, Mail, Save, Award, FileText } from 'lucide-react';
+import { ArrowLeft, Building, Globe, Save, Award, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PRODUCT_CATEGORIES, CATEGORY_DESCRIPTIONS } from '../constants/categories';
 
 const SupplierProfile = () => {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ const SupplierProfile = () => {
     annual_turnover: '5-10 Million USD',
     employee_count: '100-500',
     export_countries: 'USA, UK, Canada, Australia, Germany',
-    product_categories: ['Textiles & Apparel', 'Organic Cotton Products'],
+    product_category: 'Textiles & Apparel',
     certifications: ['GOTS', 'OEKO-TEX', 'ISO 9001', 'ISO 14001'],
     quality_standards: 'ISO 9001:2015, GOTS Certified, OEKO-TEX Standard 100',
     production_capacity: '50,000 pieces per month',
@@ -34,25 +35,10 @@ const SupplierProfile = () => {
     'Manufacturer', 'Exporter', 'Trading Company', 'Supplier', 'Distributor'
   ];
 
-  const categories = [
-    'Textiles & Apparel', 'Spices & Food Products', 'Handicrafts & Home Decor',
-    'Electronics & Components', 'Pharmaceuticals & Healthcare', 'Chemicals & Materials',
-    'Automotive Parts', 'Jewelry & Gems', 'Leather Goods', 'Agricultural Products'
-  ];
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      product_categories: prev.product_categories.includes(category)
-        ? prev.product_categories.filter(c => c !== category)
-        : [...prev.product_categories, category]
     }));
   };
 
@@ -79,7 +65,7 @@ const SupplierProfile = () => {
         name: formData.contact_person,
         email: formData.email,
         phone: formData.phone,
-        product_categories: formData.product_categories,
+        product_categories: [formData.product_category], // Convert single category to array
         certifications: formData.certifications,
         business_type: formData.business_type,
         years_in_business: formData.years_in_business,
@@ -378,21 +364,29 @@ const SupplierProfile = () => {
             {/* Product Categories */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Product Categories</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Primary Product Category</h3>
+                <p className="text-sm text-gray-600 mt-1">Select your main area of expertise</p>
               </div>
               <div className="p-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {categories.map(category => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.product_categories.includes(category)}
-                        onChange={() => handleCategoryChange(category)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
-                    </label>
-                  ))}
+                <div>
+                  <select
+                    id="product_category"
+                    name="product_category"
+                    required
+                    value={formData.product_category}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Primary Category</option>
+                    {PRODUCT_CATEGORIES.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                  {formData.product_category && CATEGORY_DESCRIPTIONS[formData.product_category] && (
+                    <p className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                      <strong>This category includes:</strong> {CATEGORY_DESCRIPTIONS[formData.product_category]}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

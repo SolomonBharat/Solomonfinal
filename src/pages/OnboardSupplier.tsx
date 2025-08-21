@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building, User, Globe, Award, Save, Plus, X } from 'lucide-react';
+import { ArrowLeft, Building, User, Globe, Award, Save } from 'lucide-react';
+import { PRODUCT_CATEGORIES, CATEGORY_DESCRIPTIONS } from '../constants/categories';
 
 const OnboardSupplier = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const OnboardSupplier = () => {
     export_countries: '',
     
     // Product Information
-    product_categories: [] as string[],
+    product_category: '',
     certifications: [] as string[],
     quality_standards: '',
     production_capacity: '',
@@ -48,13 +49,6 @@ const OnboardSupplier = () => {
     'Manufacturer', 'Exporter', 'Trading Company', 'Supplier', 'Distributor'
   ];
 
-  const categories = [
-    'Textiles & Apparel', 'Spices & Food Products', 'Handicrafts & Home Decor',
-    'Electronics & Components', 'Pharmaceuticals & Healthcare', 'Chemicals & Materials',
-    'Automotive Parts', 'Jewelry & Gems', 'Leather Goods', 'Agricultural Products',
-    'Industrial Equipment', 'Software & IT Services'
-  ];
-
   const commonCertifications = [
     'ISO 9001', 'ISO 14001', 'GOTS', 'OEKO-TEX', 'BIS', 'FSSAI', 'CE', 'FDA', 
     'GMP', 'HACCP', 'Fair Trade', 'Organic India', 'Export License'
@@ -64,15 +58,6 @@ const OnboardSupplier = () => {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleCategoryChange = (category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      product_categories: prev.product_categories.includes(category)
-        ? prev.product_categories.filter(c => c !== category)
-        : [...prev.product_categories, category]
     }));
   };
 
@@ -94,6 +79,7 @@ const OnboardSupplier = () => {
       id: `supplier-${Date.now()}`,
       user_type: 'supplier',
       ...formData,
+      product_categories: [formData.product_category], // Convert single category to array
       status: 'pending_verification',
       created_at: new Date().toISOString(),
       verified: false,
@@ -408,21 +394,29 @@ const OnboardSupplier = () => {
             {/* Product Categories */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">Product Categories *</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Primary Product Category *</h3>
+                <p className="text-sm text-gray-600 mt-1">Select your main area of expertise</p>
               </div>
               <div className="p-6">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {categories.map(category => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={formData.product_categories.includes(category)}
-                        onChange={() => handleCategoryChange(category)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">{category}</span>
-                    </label>
-                  ))}
+                <div>
+                  <select
+                    id="product_category"
+                    name="product_category"
+                    required
+                    value={formData.product_category}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Primary Category</option>
+                    {PRODUCT_CATEGORIES.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                  {formData.product_category && CATEGORY_DESCRIPTIONS[formData.product_category] && (
+                    <p className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                      <strong>Category includes:</strong> {CATEGORY_DESCRIPTIONS[formData.product_category]}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -573,7 +567,7 @@ const OnboardSupplier = () => {
               </Link>
               <button
                 type="submit"
-                disabled={loading || formData.product_categories.length === 0}
+                disabled={loading || !formData.product_category}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
@@ -606,6 +600,13 @@ const OnboardSupplier = () => {
                   <li>• Customer references</li>
                 </ul>
               </div>
+            </div>
+            <div className="mt-4 p-4 bg-white rounded-lg border border-blue-300">
+              <h5 className="font-semibold text-blue-900 mb-2">📦 Category Selection:</h5>
+              <p className="text-sm text-blue-800">
+                Suppliers must select ONE primary category that best represents their core expertise. 
+                This ensures accurate matching with relevant buyer RFQs and maintains quality standards.
+              </p>
             </div>
           </div>
         </div>

@@ -1,4 +1,6 @@
 // Enhanced Database Layer with proper data management
+import { PRODUCT_CATEGORIES } from '../constants/categories';
+
 export interface User {
   id: string;
   email: string;
@@ -69,7 +71,7 @@ export interface Supplier {
   years_in_business: number;
   annual_turnover: string;
   employee_count: string;
-  product_categories: string[];
+  product_categories: string[]; // Array to maintain compatibility, but suppliers will have only one
   certifications: string[];
   export_countries: string[];
   production_capacity: string;

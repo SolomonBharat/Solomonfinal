@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PRODUCT_CATEGORIES, CATEGORY_DESCRIPTIONS } from '../constants/categories';
 
 const CreateRFQ = () => {
   const { user } = useAuth();
@@ -21,21 +22,6 @@ const CreateRFQ = () => {
     certifications_needed: '',
     additional_requirements: ''
   });
-
-  const categories = [
-    'Textiles & Apparel',
-    'Spices & Food Products',
-    'Handicrafts & Home Decor',
-    'Electronics & Components',
-    'Pharmaceuticals & Healthcare',
-    'Chemicals & Materials',
-    'Automotive Parts',
-    'Jewelry & Gems',
-    'Leather Goods',
-    'Agricultural Products',
-    'Industrial Equipment',
-    'Other'
-  ];
 
   const units = [
     'pieces', 'kg', 'tons', 'meters', 'liters', 'boxes', 'cartons', 'sets', 'pairs', 'dozens'
@@ -145,10 +131,15 @@ const CreateRFQ = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select Category</option>
-                      {categories.map(category => (
+                      {PRODUCT_CATEGORIES.map(category => (
                         <option key={category} value={category}>{category}</option>
                       ))}
                     </select>
+                    {formData.category && CATEGORY_DESCRIPTIONS[formData.category] && (
+                      <p className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                        <strong>This category includes:</strong> {CATEGORY_DESCRIPTIONS[formData.category]}
+                      </p>
+                    )}
                   </div>
                 </div>
 

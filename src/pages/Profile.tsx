@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, User, Building, Globe, Phone, Mail, Save } from 'lucide-react';
+import { ArrowLeft, User, Building, Globe, Save } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PRODUCT_CATEGORIES } from '../constants/categories';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -27,12 +28,6 @@ const Profile = () => {
 
   const businessTypes = [
     'Importer', 'Distributor', 'Retailer', 'E-commerce', 'Manufacturer', 'Trading Company', 'Other'
-  ];
-
-  const categories = [
-    'Textiles & Apparel', 'Spices & Food Products', 'Handicrafts & Home Decor',
-    'Electronics & Components', 'Pharmaceuticals & Healthcare', 'Chemicals & Materials',
-    'Automotive Parts', 'Jewelry & Gems', 'Leather Goods', 'Agricultural Products'
   ];
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -270,7 +265,7 @@ const Profile = () => {
                     Preferred Product Categories
                   </label>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {categories.map(category => (
+                    {PRODUCT_CATEGORIES.map(category => (
                       <label key={category} className="flex items-center">
                         <input
                           type="checkbox"
