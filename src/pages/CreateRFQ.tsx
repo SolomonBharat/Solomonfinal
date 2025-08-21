@@ -418,7 +418,6 @@ const CreateRFQ = () => {
                   )}
                 </div>
               </div>
-            </div>
 
             {/* Form Actions */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
@@ -436,6 +435,7 @@ const CreateRFQ = () => {
                 {loading ? 'Submitting...' : 'Submit RFQ'}
               </button>
             </div>
+          </form>
           </form>
 
           {/* Help Box */}
