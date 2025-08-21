@@ -221,9 +221,12 @@ export class DatabaseService {
 
   private saveToStorage<T>(table: string, data: T[]): void {
     try {
+      console.log(`Saving ${data.length} items to ${table}`);
       localStorage.setItem(this.getStorageKey(table), JSON.stringify(data));
+      console.log(`Successfully saved to localStorage: ${table}`);
     } catch (error) {
       console.error('Error saving to localStorage:', error);
+      throw error;
     }
   }
 
@@ -327,6 +330,8 @@ export class DatabaseService {
   // RFQ Management
   async createRFQ(rfqData: Partial<RFQ>): Promise<RFQ | null> {
     try {
+      console.log('Creating RFQ with data:', rfqData);
+      
       if (isSupabaseConfigured && supabase) {
         const { data, error } = await supabase
           .from('rfqs')
@@ -344,6 +349,7 @@ export class DatabaseService {
           console.error('Error creating RFQ:', error);
           return null;
         }
+        console.log('RFQ created successfully:', data);
         return data;
       } else {
         const rfqs = this.getFromStorage<RFQ>('rfqs');
@@ -369,8 +375,10 @@ export class DatabaseService {
           matched_suppliers: [],
           quotations_count: 0
         };
+        console.log('Creating RFQ in localStorage:', newRFQ);
         rfqs.push(newRFQ);
         this.saveToStorage('rfqs', rfqs);
+        console.log('RFQ saved to localStorage successfully');
         return newRFQ;
       }
     } catch (error) {

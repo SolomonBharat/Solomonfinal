@@ -51,6 +51,20 @@ const CreateRFQ = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    console.log('User:', user);
+    
+    // Validate required fields
+    if (!formData.title || !formData.category || !formData.description || !formData.quantity || !formData.unit || !formData.target_price || !formData.delivery_timeline) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    if (!user?.id) {
+      alert('User not authenticated. Please login again.');
+      return;
+    }
+    
     setLoading(true);
     
     try {
@@ -71,18 +85,20 @@ const CreateRFQ = () => {
         unit: formData.unit
       });
 
+      console.log('RFQ creation result:', newRFQ);
+      
       if (newRFQ) {
         setLoading(false);
         alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
         navigate('/dashboard');
       } else {
         setLoading(false);
-        alert('Failed to submit RFQ. Please try again.');
+        alert('Failed to submit RFQ. Please check all required fields and try again.');
       }
     } catch (error) {
       console.error('Error submitting RFQ:', error);
       setLoading(false);
-      alert('Failed to submit RFQ. Please try again.');
+      alert(`Failed to submit RFQ: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   };
 

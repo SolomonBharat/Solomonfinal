@@ -34,11 +34,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing session
     const checkSession = async () => {
       try {
+        console.log('Checking session...');
         setLoading(true);
         
         // Check localStorage first
         const savedUser = localStorage.getItem('solomon_user');
         if (savedUser) {
+          console.log('Found saved user:', savedUser);
           const userData = JSON.parse(savedUser);
           setUser(userData);
           setUserType(userData.user_type);
@@ -47,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         // Initialize with demo data if no saved user
-        console.log('No saved user found, initializing demo data');
+        console.log('No saved user found, setting loading to false');
         setLoading(false);
       } catch (error) {
         console.error('Error in checkSession:', error);
