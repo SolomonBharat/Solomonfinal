@@ -34,6 +34,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing session
     const checkSession = async () => {
       try {
+        setLoading(true);
+        
         // Check localStorage first
         const savedUser = localStorage.getItem('solomon_user');
         if (savedUser) {
@@ -44,25 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
 
-        // If Supabase is configured, check for session
-        if (isSupabaseConfigured && supabase) {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error('Error getting session:', error);
-            setLoading(false);
-            return;
-          }
-
-          if (session?.user) {
-            const profile = await db.getUserById(session.user.id);
-            if (profile) {
-              setUser(profile);
-              setUserType(profile.user_type);
-              localStorage.setItem('solomon_user', JSON.stringify(profile));
-            }
-          }
-        }
+        // Initialize with demo data if no saved user
+        console.log('No saved user found, initializing demo data');
         setLoading(false);
       } catch (error) {
         console.error('Error in checkSession:', error);
@@ -71,29 +56,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     checkSession();
-
-    // Listen for auth changes if Supabase is configured
-    if (isSupabaseConfigured && supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await db.getUserById(session.user.id);
-          if (profile) {
-            setUser(profile);
-            setUserType(profile.user_type);
-            localStorage.setItem('solomon_user', JSON.stringify(profile));
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setUserType(null);
-          localStorage.removeItem('solomon_user');
-        }
-        setLoading(false);
-      });
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {

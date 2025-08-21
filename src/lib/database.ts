@@ -234,38 +234,24 @@ export class DatabaseService {
   // User Management
   async createUser(userData: Partial<User>): Promise<User | null> {
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('users')
-          .insert([userData])
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Error creating user:', error);
-          return null;
-        }
-        return data;
-      } else {
-        // Fallback to localStorage
-        const users = this.getFromStorage<User>('users');
-        const newUser: User = {
-          id: userData.id || this.generateId(),
-          email: userData.email!,
-          name: userData.name!,
-          company: userData.company!,
-          country: userData.country!,
-          phone: userData.phone,
-          user_type: userData.user_type || 'buyer',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          profile_completed: userData.profile_completed || false,
-          verification_status: userData.verification_status || 'verified'
-        };
-        users.push(newUser);
-        this.saveToStorage('users', users);
-        return newUser;
-      }
+      // Always use localStorage for demo
+      const users = this.getFromStorage<User>('users');
+      const newUser: User = {
+        id: userData.id || this.generateId(),
+        email: userData.email!,
+        name: userData.name!,
+        company: userData.company!,
+        country: userData.country!,
+        phone: userData.phone,
+        user_type: userData.user_type || 'buyer',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profile_completed: userData.profile_completed || false,
+        verification_status: userData.verification_status || 'verified'
+      };
+      users.push(newUser);
+      this.saveToStorage('users', users);
+      return newUser;
     } catch (error) {
       console.error('Error creating user:', error);
       return null;
@@ -274,20 +260,9 @@ export class DatabaseService {
 
   async getUsers(): Promise<User[]> {
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*');
-        
-        if (error) {
-          console.error('Error fetching users:', error);
-          return mockUsers;
-        }
-        return data || mockUsers;
-      } else {
-        const users = this.getFromStorage<User>('users');
-        return users.length > 0 ? users : mockUsers;
-      }
+      // Always use localStorage for demo
+      const users = this.getFromStorage<User>('users');
+      return users.length > 0 ? users : mockUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       return mockUsers;
@@ -296,23 +271,10 @@ export class DatabaseService {
 
   async getUserById(id: string): Promise<User | null> {
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching user by ID:', error);
-          return null;
-        }
-        return data;
-      } else {
-        const users = this.getFromStorage<User>('users');
-        const allUsers = users.length > 0 ? users : mockUsers;
-        return allUsers.find(user => user.id === id) || null;
-      }
+      // Always use localStorage for demo
+      const users = this.getFromStorage<User>('users');
+      const allUsers = users.length > 0 ? users : mockUsers;
+      return allUsers.find(user => user.id === id) || null;
     } catch (error) {
       console.error('Error fetching user by ID:', error);
       return null;
@@ -321,23 +283,10 @@ export class DatabaseService {
 
   async getUserByEmail(email: string): Promise<User | null> {
     try {
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', email)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching user by email:', error);
-          return null;
-        }
-        return data;
-      } else {
-        const users = this.getFromStorage<User>('users');
-        const allUsers = users.length > 0 ? users : mockUsers;
-        return allUsers.find(user => user.email === email) || null;
-      }
+      // Always use localStorage for demo
+      const users = this.getFromStorage<User>('users');
+      const allUsers = users.length > 0 ? users : mockUsers;
+      return allUsers.find(user => user.email === email) || null;
     } catch (error) {
       console.error('Error fetching user by email:', error);
       return null;
