@@ -367,14 +367,30 @@ const CreateRFQ = () => {
                   Upload reference images, specifications, or samples to help suppliers understand your requirements better
                 </p>
                 
-                          PNG, JPG, GIF up to 10MB each
-                        </p>
-                      </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    id="images"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <label htmlFor="images" className="cursor-pointer">
+                    <div className="flex flex-col items-center space-y-2">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-700">
+                        Click to upload images
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF up to 10MB each
+                      </p>
                     </div>
-                    <p className="text-xs text-blue-600 mt-2">
-                      💡 <strong>Helpful:</strong> Product images help suppliers understand your exact requirements and provide more accurate quotes
-                    </p>
-                  </div>
+                  </label>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 <strong>Helpful:</strong> Product images help suppliers understand your exact requirements and provide more accurate quotes
+                </p>
 
                   {/* Image Preview */}
                   {formData.images.length > 0 && (
