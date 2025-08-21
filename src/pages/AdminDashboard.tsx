@@ -72,6 +72,7 @@ const AdminDashboard = () => {
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
   const [showRFQModal, setShowRFQModal] = useState(false);
   const [pendingQuestions, setPendingQuestions] = useState<any[]>([]);
+  const [pendingSampleRequests, setPendingSampleRequests] = useState<any[]>([]);
 
   useEffect(() => {
     // Load RFQs
@@ -105,6 +106,10 @@ const AdminDashboard = () => {
     const allQuestions = JSON.parse(localStorage.getItem('rfq_questions') || '[]');
     const pending = allQuestions.filter((q: any) => q.status === 'pending_admin_review');
     setPendingQuestions(pending);
+    
+    // Load pending sample requests
+    const sampleRequests = db.getPendingSampleRequests();
+    setPendingSampleRequests(sampleRequests);
   }, []);
 
   const [stats] = useState({
