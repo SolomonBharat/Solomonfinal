@@ -43,14 +43,15 @@ export class DatabaseService {
   }
 
   static answerRFQQuestion(questionId: string, buyerAnswer: string): void {
-    this.updateRFQQuestion(questionId, {
+    const dbInstance = new DatabaseService();
+    dbInstance.updateRFQQuestion(questionId, {
       buyer_answer: buyerAnswer,
       status: 'answered_by_buyer',
       answered_at: new Date().toISOString()
     });
   }
 
-  static shareRFQAnswer(questionId: string): void {
+  shareRFQAnswer(questionId: string): void {
     this.updateRFQQuestion(questionId, {
       status: 'shared_with_suppliers',
       shared_at: new Date().toISOString()
@@ -111,4 +112,4 @@ export class DatabaseService {
   }
 }
 
-export const db = DatabaseService;
+export const db = new DatabaseService();
