@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Building, User, Globe, Award, Save, Upload, X } from 'lucide-react';
+import { ArrowLeft, Building, User, Globe, Award, Save } from 'lucide-react';
 import { PRODUCT_CATEGORIES, CATEGORY_DESCRIPTIONS } from '../constants/categories';
 
 const OnboardSupplier = () => {

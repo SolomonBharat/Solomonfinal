@@ -58,36 +58,11 @@ const BuyerDashboard = () => {
     });
     
     setRfqs(userRFQs);
-    
-    // Load queries forwarded to this buyer
-    const supplierQueries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
-    const buyerQueries = supplierQueries.filter((q: any) => {
-      // Find RFQ to check if it belongs to this buyer
-      const rfq = allRFQs.find((r: any) => r.id === q.rfq_id);
-      return rfq && rfq.buyer_id === user?.id && q.status === 'forwarded_to_buyer';
-    });
-    setQueries(buyerQueries);
   }, [user?.id]);
 
   const handleViewRfqDetails = (rfq: RFQ) => {
     setSelectedRfq(rfq);
     setShowRfqModal(true);
-  };
-
-  const handleRespondToQuery = () => {
-    if (!buyerResponse.trim() || !selectedQuery) return;
-    
-    const queries = JSON.parse(localStorage.getItem('supplier_queries') || '[]');
-    const updatedQueries = queries.map((query: any) => 
-      query.id === selectedQuery.id 
-        ? { ...query, status: 'buyer_responded', buyer_response: buyerResponse }
-        : query
-    );
-    localStorage.setItem('supplier_queries', JSON.stringify(updatedQueries));
-    setQueries(updatedQueries);
-    setShowQueryModal(false);
-    setBuyerResponse('');
-    alert('✅ Response sent!\n\n📋 Your clarification has been sent to admin.\n⏰ Admin will review and forward to the supplier.\n📧 Supplier will be notified of your response.');
   };
   const getStatusBadge = (status: string) => {
     const badges = {
