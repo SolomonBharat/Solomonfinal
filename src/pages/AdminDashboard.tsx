@@ -19,8 +19,7 @@ import {
   Building,
   Phone,
   Mail,
-  Globe,
-  Plus
+  Globe
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 

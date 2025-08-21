@@ -123,7 +123,6 @@ const SupplierLogin = () => {
             <p className="text-sm font-medium text-gray-700 mb-2">Demo Credentials:</p>
             <div className="space-y-1 text-sm text-gray-600">
               <p><strong>Supplier:</strong> supplier@example.com / supplier123</p>
-              <p><strong>Onboarded Suppliers:</strong> Use email from onboarding / supplier123</p>
             </div>
           </div>
 

@@ -108,7 +108,7 @@ const OnboardSupplier = () => {
     
     setTimeout(() => {
       setLoading(false);
-      alert(`✅ Supplier onboarded successfully!\n\n📧 Email: ${formData.email}\n🔑 Password: supplier123\n\nThe supplier can now login using these credentials.`);
+      alert('✅ Supplier onboarded successfully! Account created and pending verification.');
       navigate('/admin/suppliers');
     }, 1500);
   };

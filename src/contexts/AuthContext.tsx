@@ -63,53 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const trimmedEmail = email.trim().toLowerCase();
       const trimmedPassword = password.trim();
       
-      // Check for dynamically created supplier accounts
-      const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-      const supplierAccount = onboardedSuppliers.find((supplier: any) => 
-        supplier.email.toLowerCase() === trimmedEmail
-      );
-      
-      if (supplierAccount) {
-        // For demo, use a simple password (in production, this would be hashed)
-        const expectedPassword = 'supplier123'; // Default password for onboarded suppliers
-        
-        if (trimmedPassword === expectedPassword) {
-          const supplierUser = {
-            id: supplierAccount.id,
-            email: supplierAccount.email,
-            name: supplierAccount.contact_person,
-            company: supplierAccount.company_name,
-            country: 'India',
-            phone: supplierAccount.phone,
-            product_categories: supplierAccount.product_categories,
-            certifications: supplierAccount.certifications,
-            business_type: supplierAccount.business_type,
-            years_in_business: supplierAccount.years_in_business,
-            annual_turnover: supplierAccount.annual_turnover,
-            employee_count: supplierAccount.employee_count,
-            export_countries: supplierAccount.export_countries,
-            quality_standards: supplierAccount.quality_standards,
-            production_capacity: supplierAccount.production_capacity,
-            minimum_order_quantity: supplierAccount.minimum_order_quantity,
-            payment_terms: supplierAccount.payment_terms,
-            lead_time: supplierAccount.lead_time,
-            about_company: supplierAccount.about_company,
-            address: supplierAccount.address,
-            website: supplierAccount.website,
-            gst_number: supplierAccount.gst_number,
-            iec_code: supplierAccount.iec_code
-          };
-          setUser(supplierUser);
-          setUserType('supplier');
-          localStorage.setItem('solomon_user', JSON.stringify(supplierUser));
-          localStorage.setItem('solomon_user_type', 'supplier');
-          setLoading(false);
-          // Force navigation after state update
-          setTimeout(() => window.location.href = '/supplier/dashboard', 100);
-          return { success: true };
-        }
-      }
-      
       // Mock login - in production, this would call Supabase
       if (trimmedEmail === 'admin@solomonbharat.com' && trimmedPassword === 'admin123') {
         const adminUser = {
