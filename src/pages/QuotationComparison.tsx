@@ -43,9 +43,7 @@ const QuotationComparison = () => {
   useEffect(() => {
     // Load quotations for this RFQ
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
-    const rfqQuotations = supplierQuotations.filter((q: any) => 
-      q.rfq_id === rfqId && q.status === 'sent_to_buyer'
-    );
+    const rfqQuotations = supplierQuotations.filter((q: any) => q.rfq_id === rfqId && q.status === 'sent_to_buyer');
     
     // Convert supplier quotations to the format expected by this component
     const convertedQuotations = rfqQuotations.map((q: any) => ({

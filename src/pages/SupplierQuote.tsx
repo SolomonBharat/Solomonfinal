@@ -41,7 +41,7 @@ const SupplierQuote = () => {
     if (isEdit) {
       const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
       const existingQuote = supplierQuotations.find((q: any) => 
-        q.rfq_id === rfqId && (q.supplier_email === user?.email || q.supplier_name === user?.name)
+        q.rfq_id === rfqId && q.supplier_email === user?.email
       );
       
       if (existingQuote) {
@@ -93,14 +93,12 @@ const SupplierQuote = () => {
     
     // Get current supplier info from onboarded suppliers
     const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const currentSupplier = onboardedSuppliers.find((s: any) => 
-      s.email === user?.email || s.contactPerson === user?.name
-    );
+    const currentSupplier = onboardedSuppliers.find((s: any) => s.email === user?.email);
     
     const quotationData = {
       id: isEdit ? 
         JSON.parse(localStorage.getItem('supplier_quotations') || '[]')
-          .find((q: any) => q.rfq_id === rfqId && (q.supplier_email === user?.email || q.supplier_name === user?.name))?.id || `q-${Date.now()}` 
+          .find((q: any) => q.rfq_id === rfqId && q.supplier_email === user?.email)?.id || `q-${Date.now()}` 
         : `q-${Date.now()}`,
       rfq_id: rfqId,
       rfq_title: rfqData?.title || 'Product RFQ',
@@ -134,7 +132,7 @@ const SupplierQuote = () => {
     if (isEdit) {
       // Update existing quotation
       const updatedQuotations = quotations.map((q: any) => 
-        q.rfq_id === rfqId && (q.supplier_email === user?.email || q.supplier_name === user?.name) ? quotationData : q
+        q.rfq_id === rfqId && q.supplier_email === user?.email ? quotationData : q
       );
       localStorage.setItem('supplier_quotations', JSON.stringify(updatedQuotations));
     } else {

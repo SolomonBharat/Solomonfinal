@@ -39,9 +39,7 @@ const MyRFQs = () => {
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     
     // Filter RFQs to show only the current user's RFQs
-    const userRFQs = allRFQs.filter((rfq: any) => 
-      rfq.buyer_id === user?.id || rfq.buyer_email === user?.email
-    ).map((rfq: any) => {
+    const userRFQs = allRFQs.filter((rfq: any) => rfq.buyer_id === user?.id).map((rfq: any) => {
       // Check if this RFQ has quotations
       const rfqQuotations = supplierQuotations.filter((q: any) => q.rfq_id === rfq.id && q.status === 'sent_to_buyer');
       

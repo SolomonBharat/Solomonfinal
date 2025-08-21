@@ -35,35 +35,25 @@ const SupplierDashboard = () => {
   useEffect(() => {
     // Get supplier's categories from onboarded suppliers
     const onboardedSuppliers = JSON.parse(localStorage.getItem('onboarded_suppliers') || '[]');
-    const currentSupplier = onboardedSuppliers.find((s: any) => 
-      s.email === user?.email || s.contactPerson === user?.name
-    );
+    const currentSupplier = onboardedSuppliers.find((s: any) => s.email === user?.email);
     
     let supplierCategories = [];
-    if (currentSupplier && (currentSupplier.productCategories || currentSupplier.product_categories)) {
-      supplierCategories = currentSupplier.productCategories || currentSupplier.product_categories;
+    if (currentSupplier && currentSupplier.productCategories) {
+      supplierCategories = currentSupplier.productCategories;
     } else {
-      // If no supplier found, show all categories for demo
-      supplierCategories = [
-        'Textiles & Apparel',
-        'Spices & Food Products', 
-        'Handicrafts & Home Decor',
-        'Electronics & Components'
-      ];
+      supplierCategories = ['Textiles & Apparel'];
     }
     
     // Load approved RFQs from localStorage that match supplier's categories
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
     const supplierQuotations = JSON.parse(localStorage.getItem('supplier_quotations') || '[]');
     
-    // Show approved and matched RFQs that match supplier's categories
-    const availableRFQs = userRFQs.filter((rfq: any) => 
-      (rfq.status === 'approved' || rfq.status === 'matched') && 
-      supplierCategories.includes(rfq.category)
+    const approvedRFQs = userRFQs.filter((rfq: any) => 
+      rfq.status === 'approved' && supplierCategories.includes(rfq.category)
     ).map((rfq: any) => {
       // Check if this supplier has already quoted for this RFQ
       const hasQuoted = supplierQuotations.some((q: any) => 
-        q.rfq_id === rfq.id && (q.supplier_email === user?.email || q.supplier_name === user?.name)
+        q.rfq_id === rfq.id && q.supplier_email === user?.email
       );
       
       return {
@@ -78,7 +68,7 @@ const SupplierDashboard = () => {
       };
     });
     
-    setRfqs(availableRFQs);
+    setRfqs(approvedRFQs);
   }, [user?.email]);
 
   const [stats, setStats] = useState({

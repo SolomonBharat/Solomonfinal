@@ -56,14 +56,6 @@ const QASystem: React.FC<QASystemProps> = ({ rfqId, mode, onQuestionSubmit }) =>
       filteredQuestions = allQuestions.filter((q: Question) => 
         q.rfq_id === rfqId && q.status === 'published'
       );
-    } else if (mode === 'supplier_ask' && rfqId) {
-      // Suppliers can only see their own questions and published Q&As
-      filteredQuestions = allQuestions.filter((q: Question) => 
-        q.rfq_id === rfqId && (
-          (q.supplier_id === user?.id || q.supplier_name === user?.name) ||
-          q.status === 'published'
-        )
-      );
     }
     
     setQuestions(filteredQuestions);
