@@ -61,7 +61,7 @@ const CreateRFQ = () => {
     
     setTimeout(() => {
       setLoading(false);
-      alert('RFQ submitted successfully! It will be reviewed by our team within 24 hours.');
+      alert('✅ RFQ submitted successfully!\n\n📋 Next Steps:\n1. Admin will review your RFQ within 24 hours\n2. Once approved, it will be visible to relevant suppliers\n3. You\'ll receive quotations from interested suppliers\n\n⏰ Expected timeline: 24-48 hours for first quotes');
       navigate('/dashboard');
     }, 1000);
   };

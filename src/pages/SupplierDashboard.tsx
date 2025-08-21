@@ -51,11 +51,12 @@ const SupplierDashboard = () => {
       }
     }
     
-    // Load approved RFQs from localStorage that match supplier's categories
+    // Load ONLY APPROVED RFQs from localStorage that match supplier's categories
     const userRFQs = JSON.parse(localStorage.getItem('user_rfqs') || '[]');
-    const approvedRFQs = userRFQs.filter((rfq: any) => 
-      rfq.status === 'approved' && supplierCategories.includes(rfq.category)
-    ).map((rfq: any) => ({
+    const approvedRFQs = userRFQs.filter((rfq: any) => {
+      // CRITICAL: Only show RFQs that are APPROVED by admin AND match supplier category
+      return rfq.status === 'approved' && supplierCategories.includes(rfq.category);
+    }).map((rfq: any) => ({
       ...rfq,
       target_price: parseFloat(rfq.target_price) || 0,
       buyer_company: rfq.buyer_company || 'Buyer Company',
@@ -265,11 +266,32 @@ const SupplierDashboard = () => {
         {/* Available RFQs - Card Layout */}
         <div className="mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Available RFQs for Your Category</h2>
-            <p className="text-gray-600">Opportunities matched to your expertise in {JSON.parse(localStorage.getItem('solomon_user') || '{}').product_categories?.[0] || PRODUCT_CATEGORIES[0]}</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin-Approved RFQs for Your Category</h2>
+            <p className="text-gray-600">
+              Verified opportunities in {JSON.parse(localStorage.getItem('solomon_user') || '{}').product_categories?.[0] || PRODUCT_CATEGORIES[0]} 
+              <span className="text-blue-600 font-medium"> (Admin Approved Only)</span>
+            </p>
           </div>
           
           <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+            {rfqs.length === 0 && (
+              <div className="lg:col-span-2 xl:col-span-3 text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Approved RFQs Available</h3>
+                <p className="text-gray-600 mb-4">
+                  There are currently no admin-approved RFQs in your category: <strong>{JSON.parse(localStorage.getItem('solomon_user') || '{}').product_categories?.[0] || PRODUCT_CATEGORIES[0]}</strong>
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-sm text-blue-800">
+                    <strong>📋 How it works:</strong><br/>
+                    1. Buyers submit RFQs<br/>
+                    2. Admin reviews & approves<br/>
+                    3. Approved RFQs appear here<br/>
+                    4. You can submit quotations
+                  </p>
+                </div>
+              </div>
+            )}
             {rfqs.map((rfq) => (
               <div key={rfq.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                 {/* Match Score Badge */}
